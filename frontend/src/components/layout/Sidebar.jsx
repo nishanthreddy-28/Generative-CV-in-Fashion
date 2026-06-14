@@ -1,118 +1,170 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  User, 
-  Shirt, 
-  Settings, 
-  LogOut, 
-  ShoppingBag, 
-  Sparkles, 
-  Bookmark, 
-  ScanFace 
-} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../ui/Button';
+import { useTheme } from '../../context/ThemeContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../../lib/utils';
+import {
+  LayoutDashboard,
+  Shirt,
+  Sparkles,
+  ScanFace,
+  Brain,
+  Settings,
+  User,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  LogOut,
+  Sun,
+  Moon,
+} from 'lucide-react';
 
-export function Sidebar() {
+const mainLinks = [
+  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { name: 'My Wardrobe', path: '/wardrobe', icon: Shirt },
+  { name: 'AI Stylist', path: '/ai-stylist', icon: Sparkles },
+  { name: 'Virtual Try-On', path: '/try-on', icon: ScanFace },
+  { name: 'Insights', path: '/insights', icon: Brain },
+];
+
+const accountLinks = [
+  { name: 'Profile', path: '/profile', icon: User },
+  { name: 'Settings', path: '/settings', icon: Settings },
+];
+
+export function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'My Wardrobe', href: '/wardrobe', icon: Shirt },
-    { name: 'AI Stylist', href: '/ai-stylist', icon: Sparkles },
-    { name: 'Virtual Try-On', href: '/try-on', icon: ScanFace },
-    { name: 'Saved Outfits', href: '/saved', icon: Bookmark },
-  ];
-
-  const secondaryNavigation = [
-    { name: 'Profile', href: '/profile', icon: User },
-    { name: 'Settings', href: '/settings', icon: Settings },
-  ];
+  const NavItem = ({ item }) => {
+    const isActive = location.pathname === item.path;
+    return (
+      <Link
+        to={item.path}
+        className={cn(
+          "group flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 relative overflow-hidden",
+          isActive 
+            ? "bg-black dark:bg-neutral-800 text-white" 
+            : "text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900"
+        )}
+      >
+        <item.icon className={cn("h-4 w-4 shrink-0 transition-colors", isActive ? "text-white" : "text-neutral-400 group-hover:text-black dark:group-hover:text-white")} strokeWidth={isActive ? 2 : 1.5} />
+        
+        <AnimatePresence initial={false}>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-sm font-medium whitespace-nowrap"
+            >
+              {item.name}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </Link>
+    );
+  };
 
   return (
-    <div className="hidden border-r bg-background/50 backdrop-blur-xl md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col z-30">
-      <div className="flex h-16 items-center px-6 border-b border-border/50">
-        <Link to="/" className="flex items-center gap-2 font-bold tracking-tight transition-opacity hover:opacity-80">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <ShoppingBag className="h-5 w-5 text-primary" />
-          </div>
-          <span className="text-lg">Drape & Drop</span>
-        </Link>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto py-6 px-3 custom-scrollbar">
-        <div className="mb-4 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Platform
+    <motion.aside
+      animate={{ width: collapsed ? 68 : 240 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="sticky top-0 h-screen flex flex-col border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#09090b] z-40 overflow-hidden"
+    >
+      {/* Header */}
+      <div className="h-16 flex items-center justify-between px-4 border-b border-neutral-100 dark:border-neutral-800">
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-2 overflow-hidden"
+            >
+              <span className="text-base font-medium tracking-tight text-black dark:text-white uppercase font-display">Drape&Drop</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleTheme}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+            aria-label="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-neutral-400 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
         </div>
-        <nav className="grid gap-1">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all",
-                  isActive 
-                    ? "bg-primary/10 text-primary" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon className={cn(
-                  "h-4 w-4 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                )} />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
+      </div>
 
-        <div className="mt-8 mb-4 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Account
+      {/* Main Nav */}
+      <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-6 custom-scrollbar">
+        <div className="space-y-1">
+          {mainLinks.map((item) => (
+            <NavItem key={item.path} item={item} />
+          ))}
         </div>
-        <nav className="grid gap-1">
-          {secondaryNavigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all",
-                  isActive 
-                    ? "bg-primary/10 text-primary" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
+
+        <div className="space-y-1">
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="px-3 text-xs font-semibold text-neutral-400 tracking-wider uppercase mb-2"
               >
-                <item.icon className={cn(
-                  "h-4 w-4 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                )} />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
+                Account
+              </motion.p>
+            )}
+          </AnimatePresence>
+          {accountLinks.map((item) => (
+            <NavItem key={item.path} item={item} />
+          ))}
+        </div>
       </div>
-      
-      <div className="mt-auto border-t border-border/50 p-4">
-        <div className="flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary font-bold shadow-inner">
+
+      {/* User Footer */}
+      <div className="p-3 border-t border-neutral-100 dark:border-neutral-800">
+        <div className={cn(
+          "flex items-center gap-3 rounded-md transition-all",
+          collapsed ? "justify-center" : "px-3 py-2"
+        )}>
+          <div className="h-8 w-8 shrink-0 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-xs font-medium text-black dark:text-white border border-neutral-300 dark:border-neutral-700">
             {user?.email?.charAt(0).toUpperCase() || 'U'}
           </div>
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <span className="truncate text-sm font-semibold">{user?.displayName || 'User'}</span>
-            <span className="truncate text-xs text-muted-foreground">{user?.email || 'Not logged in'}</span>
-          </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={signOut} title="Log out">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="flex flex-1 items-center justify-between min-w-0"
+              >
+                <div className="min-w-0 pr-2">
+                  <p className="text-sm font-medium text-black dark:text-white truncate">{user?.displayName || 'User'}</p>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.aside>
   );
 }
