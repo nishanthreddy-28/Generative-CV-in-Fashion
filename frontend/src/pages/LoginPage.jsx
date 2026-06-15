@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Button } from '../components/ui/Button';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ChevronRight, Shield, Star } from 'lucide-react';
 
-// Inline SVG icons for Google and Apple
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -19,9 +18,41 @@ function GoogleIcon() {
 
 function AppleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-2.11 4.45-3.74 4.25z" fill="#000000"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-2.11 4.45-3.74 4.25z"/>
     </svg>
+  );
+}
+
+function FloatingField({ label, type = 'text', value, onChange, required, children }) {
+  const [focused, setFocused] = useState(false);
+  const lifted = focused || value.length > 0;
+
+  return (
+    <div className="relative">
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        required={required}
+        placeholder=""
+        className={`w-full px-4 pt-6 pb-2.5 bg-ivory border rounded-xl text-sm text-espresso focus:outline-none transition-all duration-200 ${
+          children ? 'pr-12' : ''
+        } ${
+          focused
+            ? 'border-espresso/30 shadow-[0_0_0_3px_rgba(26,20,18,0.04)] bg-white'
+            : 'border-espresso/10 hover:border-espresso/20'
+        }`}
+      />
+      <label className={`absolute left-4 pointer-events-none transition-all duration-200 ${
+        lifted ? 'top-2 text-[10px] text-espresso/40 tracking-widest uppercase' : 'top-4 text-sm text-espresso/35'
+      }`}>
+        {label}
+      </label>
+      {children}
+    </div>
   );
 }
 
@@ -39,151 +70,199 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
       navigate('/dashboard');
-    } catch (error) {
-      let message = 'Login failed. Please check credentials.';
-      if (error.code === 'auth/user-not-found') message = 'No account found with this email.';
-      if (error.code === 'auth/wrong-password') message = 'Incorrect password.';
-      if (error.code === 'auth/invalid-credential') message = 'Invalid email or password.';
-      if (error.code === 'auth/too-many-requests') message = 'Too many attempts. Please try again later.';
-      toast.error(message, {
-        style: { background: '#000', color: '#fff', borderRadius: '0' }
-      });
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) {
+      let msg = 'Invalid email or password.';
+      if (err.code === 'auth/user-not-found')   msg = 'No account found with this email.';
+      if (err.code === 'auth/wrong-password')    msg = 'Incorrect password.';
+      if (err.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
+      toast.error(msg, { style: { background: '#FAF7F2', color: '#1A1412', borderRadius: '14px', border: '1px solid #E8E0D8' } });
+    } finally { setLoading(false); }
   };
 
   const handleGoogle = async () => {
-    try {
-      await signInWithGoogle();
-      navigate('/dashboard');
-    } catch (error) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        toast.error('Google sign-in failed.', {
-          style: { background: '#000', color: '#fff', borderRadius: '0' }
-        });
-      }
+    try { await signInWithGoogle(); navigate('/dashboard'); }
+    catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user')
+        toast.error('Google sign-in failed.', { style: { background: '#FAF7F2', color: '#1A1412', borderRadius: '14px' } });
     }
   };
 
   const handleApple = async () => {
-    try {
-      await signInWithApple();
-      navigate('/dashboard');
-    } catch (error) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        toast.error('Apple sign-in failed.', {
-          style: { background: '#000', color: '#fff', borderRadius: '0' }
-        });
-      }
+    try { await signInWithApple(); navigate('/dashboard'); }
+    catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user')
+        toast.error('Apple sign-in failed.', { style: { background: '#FAF7F2', color: '#1A1412', borderRadius: '14px' } });
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Left Panel — Editorial Image */}
-      <div className="hidden lg:flex lg:w-1/2 bg-neutral-100 items-center justify-center relative overflow-hidden p-12">
-        <img 
-          src="/images/hero_fashion_1.png" 
-          alt="Editorial fashion photography" 
-          className="w-full h-full object-cover absolute inset-0 opacity-80"
-        />
-        <div className="relative z-10 text-center bg-white/80 backdrop-blur-sm p-12 border border-white">
-          <h2 className="text-3xl font-light text-black font-display tracking-tight mb-4">Enter the catalog.</h2>
-          <p className="text-sm text-neutral-600">Access your curated aesthetic and virtual fitting room.</p>
+    <div className="flex min-h-screen bg-cream text-espresso overflow-hidden">
+
+      {/* ── LEFT — Editorial panel ──────────────────────────────── */}
+      <div className="hidden lg:flex lg:w-[52%] relative flex-col">
+        <div className="absolute inset-0">
+          <img
+            src="/images/sunlight_lady.png"
+            alt="Fashion editorial"
+            className="w-full h-full object-cover object-top"
+          />
+          <div className="absolute inset-0 bg-gradient-to-tr from-espresso/60 via-espresso/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-espresso/80 via-transparent to-espresso/30" />
+          <div className="absolute inset-0 grain" />
+        </div>
+
+        <div className="relative z-10 flex flex-col h-full p-10 xl:p-14">
+          <Link to="/" className="font-serif italic text-2xl text-cream hover:text-cream/80 transition-colors w-fit">
+            Drape&amp;Drop
+          </Link>
+
+          <div className="flex-1 flex flex-col justify-end pb-8 max-w-md space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <p className="text-[11px] uppercase tracking-[0.25em] text-cream/50 mb-4">Welcome back</p>
+              <h2 className="font-editorial text-5xl xl:text-6xl font-light text-cream leading-[1.05]">
+                Style is<br />
+                <span className="italic">a language.</span>
+              </h2>
+              <p className="mt-4 text-sm text-cream/55 font-light leading-relaxed">
+                Pick up where you left off — your wardrobe, outfits, and AI stylist are waiting.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="bg-cream/10 backdrop-blur-xl border border-cream/15 rounded-2xl p-5"
+            >
+              <div className="flex gap-0.5 mb-2">
+                {[...Array(5)].map((_, i) => <Star key={i} className="h-3 w-3 fill-wheat text-wheat" />)}
+              </div>
+              <p className="text-cream/75 text-sm font-light leading-relaxed italic">
+                "Returned only 2 items last year — down from 22. The AI actually gets my style."
+              </p>
+              <p className="text-cream/40 text-xs mt-2 font-light">— Aanya S., Mumbai</p>
+            </motion.div>
+          </div>
         </div>
       </div>
 
-      {/* Right Panel — Form */}
-      <div className="flex w-full lg:w-1/2 flex-col items-center justify-center p-8">
-        <div className="w-full max-w-[400px]">
-          <h1 className="text-2xl font-medium text-black mb-2">Sign In</h1>
-          <p className="text-sm text-neutral-500 mb-6">
-            Don't have an account? <Link to="/signup" className="text-black underline underline-offset-4 hover:text-neutral-600 transition-colors">Sign up</Link>
-          </p>
-          
-          {isDemoMode && (
-            <div className="mb-6 p-4 bg-neutral-50 border border-neutral-200 text-xs text-neutral-600 rounded">
-              <span className="font-semibold text-black block mb-1">✨ Demo Mode Active</span>
-              Firebase is in demo mode. Click below to autofill, or submit any credentials to sign in instantly.
-              <button 
+      {/* ── RIGHT — Form panel ──────────────────────────────────── */}
+      <div className="w-full lg:w-[48%] flex flex-col min-h-screen">
+        {/* Mobile hero strip */}
+        <div className="lg:hidden relative h-48 overflow-hidden shrink-0">
+          <img src="/images/sunlight_lady.png" alt="" className="w-full h-full object-cover object-top" />
+          <div className="absolute inset-0 bg-espresso/40" />
+          <Link to="/" className="absolute top-6 left-6 font-serif italic text-xl text-cream">Drape&amp;Drop</Link>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center px-6 sm:px-12 py-12 lg:py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full max-w-[420px]"
+          >
+            <div className="mb-8">
+              <h1 className="font-editorial text-4xl font-light text-espresso tracking-tight">Sign in</h1>
+              <p className="text-sm text-espresso/50 font-light mt-2">
+                New here?{' '}
+                <Link to="/signup" className="text-espresso underline underline-offset-4 decoration-espresso/25 hover:decoration-espresso transition-colors">
+                  Create a free account
+                </Link>
+              </p>
+            </div>
+
+            {isDemoMode && (
+              <div className="mb-6 p-4 bg-ivory border border-espresso/10 rounded-xl text-xs text-espresso/60 space-y-1.5">
+                <span className="font-semibold text-espresso block">Demo Mode</span>
+                <button
+                  onClick={() => { setEmail('sarah.j@drapedrop.ai'); setPassword('demo1234'); }}
+                  className="text-espresso/70 hover:text-espresso underline underline-offset-2 flex items-center gap-0.5 transition-colors"
+                >
+                  Auto-fill credentials <ChevronRight className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={handleGoogle}
                 type="button"
-                onClick={() => {
-                  setEmail('sarah.j@drapedrop.ai');
-                  setPassword('demo1234');
-                }}
-                className="mt-2 text-black underline underline-offset-2 hover:text-neutral-600 font-medium block"
+                className="w-full h-12 flex items-center justify-center gap-3 bg-espresso hover:bg-espresso/90 text-cream text-sm font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5 shadow-editorial"
               >
-                Auto-fill demo credentials
+                <GoogleIcon />
+                Continue with Google
+              </button>
+              <button
+                onClick={handleApple}
+                type="button"
+                className="w-full h-12 flex items-center justify-center gap-3 bg-ivory hover:bg-white border border-espresso/12 text-espresso text-sm font-medium rounded-full transition-all duration-200"
+              >
+                <AppleIcon />
+                Continue with Apple
               </button>
             </div>
-          )}
-          
-          <form onSubmit={handleSubmit} className="space-y-4 mb-6">
-            <div>
-              <label className="block text-xs font-medium text-black uppercase tracking-widest mb-2">Email</label>
-              <input 
-                type="email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                required
-                placeholder="Enter your email"
-                className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 text-sm focus:border-black outline-none transition-all duration-200 placeholder:text-neutral-400" 
-              />
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1 h-px bg-espresso/10" />
+              <span className="text-[11px] text-espresso/35 uppercase tracking-widest">or</span>
+              <div className="flex-1 h-px bg-espresso/10" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-black uppercase tracking-widest mb-2">Password</label>
-              <div className="relative">
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  required
-                  placeholder="Enter your password"
-                  className="w-full px-4 py-3 pr-12 bg-neutral-50 border border-neutral-200 text-sm focus:border-black outline-none transition-all duration-200 placeholder:text-neutral-400" 
-                />
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <FloatingField
+                label="Email address"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+
+              <FloatingField
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              >
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-black transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-espresso/30 hover:text-espresso/60 transition-colors"
+                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
-              </div>
-              <div className="flex justify-end mt-2">
-                <Link to="/forgot-password" className="text-xs text-neutral-500 hover:text-black transition-colors">
+              </FloatingField>
+
+              <div className="flex justify-end pt-1">
+                <Link to="/forgot-password" className="text-xs text-espresso/40 hover:text-espresso/70 transition-colors">
                   Forgot password?
                 </Link>
               </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-full bg-espresso hover:bg-espresso/90 text-cream font-medium text-sm transition-all duration-200 shadow-editorial hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group mt-2"
+              >
+                {loading ? (
+                  <><div className="h-4 w-4 rounded-full border-2 border-cream/20 border-t-cream animate-spin" /> Signing in…</>
+                ) : (
+                  <>Sign in <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-8 flex items-center justify-center gap-1.5 text-[11px] text-espresso/35">
+              <Shield className="h-3 w-3" />
+              <span>Encrypted · SOC 2 · Zero data selling</span>
             </div>
-            <Button type="submit" disabled={loading} className="w-full h-12">
-              {loading ? 'Signing In...' : 'Sign In'}
-            </Button>
-          </form>
-
-          {/* Separator */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-neutral-200" /></div>
-            <div className="relative flex justify-center"><span className="bg-white px-4 text-xs text-neutral-400 uppercase tracking-widest">or</span></div>
-          </div>
-
-          {/* Social Auth Stack */}
-          <div className="space-y-3">
-            <button 
-              onClick={handleGoogle} 
-              className="w-full h-12 flex items-center justify-center gap-3 bg-white border border-neutral-200 text-sm font-medium text-black hover:bg-neutral-50 transition-all duration-200 hover:border-neutral-300"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-            <button 
-              onClick={handleApple} 
-              className="w-full h-12 flex items-center justify-center gap-3 bg-white border border-neutral-200 text-sm font-medium text-black hover:bg-neutral-50 transition-all duration-200 hover:border-neutral-300"
-            >
-              <AppleIcon />
-              Continue with Apple
-            </button>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
