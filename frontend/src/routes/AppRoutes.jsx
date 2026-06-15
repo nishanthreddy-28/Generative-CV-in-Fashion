@@ -44,15 +44,11 @@ export function AppRoutes() {
   return (
     <React.Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public Routes — no Navbar (auth pages have their own layout) */}
+        {/* Public Routes — standalone (each has its own navbar/layout) */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-
-        {/* Public with MainLayout (landing + navbar) */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<LandingPage />} />
-        </Route>
 
         {/* Protected Dashboard Routes */}
         <Route element={<ProtectedRoute />}>
