@@ -6,11 +6,11 @@
 
 @layer base {
   :root {
-    --background: #000000;
+    --background: #0D0D0D;
     --foreground: #FFFFFF;
-    --muted: #111111;
-    --muted-foreground: #888888;
-    --border: #222222;
+    --muted: #161616;
+    --muted-foreground: #B5B5B5;
+    --border: #262626;
   }
 
   body {
