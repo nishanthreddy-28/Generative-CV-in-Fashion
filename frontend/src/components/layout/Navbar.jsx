@@ -40,12 +40,12 @@ export function Navbar({ showNavLinks = false, heroVariant = 'dark' }) {
   const logoClass = onHero ? 'text-white' : 'text-black';
 
   const navBg = scrolled
-    ? 'bg-black/90 backdrop-blur-xl border-white/10'
+    ? 'bg-[#0D0D0D]/70 backdrop-blur-2xl border-white/5'
     : 'bg-transparent border-transparent';
 
   return (
     <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b ${navBg}`}>
-      <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1400px] mx-auto px-8 lg:px-12 h-20 flex items-center justify-between">
         <Link to="/" className={`font-serif italic text-xl transition-colors ${logoClass}`}>
           Drape&Drop
         </Link>
@@ -69,7 +69,7 @@ export function Navbar({ showNavLinks = false, heroVariant = 'dark' }) {
               </button>
               <Link to="/login" className={`${linkClass} hidden sm:block`}>Sign in</Link>
               <Link to="/signup">
-                <Button size="sm" className={`rounded-full px-5 h-9 border-none ${onHero ? 'bg-white text-black hover:bg-neutral-100' : 'bg-black text-white hover:bg-black/90'}`}>
+                <Button size="sm" className={`rounded-full px-7 h-10 border transition-all duration-500 font-medium ${onHero ? 'bg-white border-white text-black hover:bg-transparent hover:text-white' : 'bg-white border-white text-black hover:bg-transparent hover:text-white'}`}>
                   Get started
                 </Button>
               </Link>

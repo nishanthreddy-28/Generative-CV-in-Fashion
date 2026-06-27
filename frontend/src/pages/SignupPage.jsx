@@ -65,13 +65,13 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-white">
       <div className="hidden lg:block relative">
-        <img src="/images/pink_dress_field.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        <div className="absolute bottom-12 left-12 right-12">
-          <p className="font-editorial text-3xl text-white font-light italic leading-tight">
+        <img src="/images/pink_dress_field.png" alt="" className="absolute inset-0 w-full h-full object-cover object-top" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="absolute bottom-16 left-16 right-16">
+          <p className="font-editorial text-4xl text-white font-light italic leading-tight">
             Start looking your best, today.
           </p>
-          <p className="text-white/60 text-sm mt-3 font-light">Free forever. No credit card.</p>
+          <p className="text-white/70 text-sm mt-4 font-light tracking-wide uppercase">Free forever. No credit card.</p>
         </div>
       </div>
 
@@ -82,22 +82,22 @@ export default function SignupPage() {
         </div>
 
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-full max-w-[400px]">
-            <div className="rounded-2xl border border-black/10 bg-white p-8 shadow-card">
-              <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>
-              <p className="text-sm text-neutral-500 mt-1 mb-8">Join Drape&Drop for free</p>
+          <div className="w-full max-w-[360px]">
+            <div>
+              <h1 className="text-3xl font-light tracking-tight mb-2">Create account.</h1>
+              <p className="text-sm text-neutral-500 mb-10">Join Drape&Drop for free</p>
 
               {isDemoMode && (
-                <p className="mb-4 text-xs text-neutral-500 border border-black/10 rounded-xl px-4 py-3">Demo mode — any details will sign you in.</p>
+                <p className="mb-6 text-[10px] uppercase tracking-widest text-neutral-500 border border-black/20 px-4 py-3">Demo mode — any details will sign you in.</p>
               )}
 
-              <div className="space-y-3 mb-6">
+              <div className="space-y-4 mb-8">
                 <button type="button" onClick={() => signInWithGoogle().then(() => navigate('/dashboard')).catch(() => {})}
-                  className="w-full h-11 flex items-center justify-center gap-3 bg-white border border-black/10 rounded-xl text-sm font-medium hover:bg-neutral-50 shadow-card">
+                  className="w-full h-12 flex items-center justify-center gap-3 bg-white border border-black text-[11px] uppercase tracking-widest font-medium hover:bg-neutral-50 transition-colors">
                   <GoogleIcon /> Continue with Google
                 </button>
                 <button type="button" onClick={() => signInWithApple().then(() => navigate('/dashboard')).catch(() => {})}
-                  className="w-full h-11 flex items-center justify-center gap-3 bg-black text-white rounded-xl text-sm font-medium hover:bg-black/90">
+                  className="w-full h-12 flex items-center justify-center gap-3 bg-black text-white text-[11px] uppercase tracking-widest font-medium hover:bg-black/90 transition-colors">
                   <AppleIcon /> Continue with Apple
                 </button>
               </div>
@@ -106,39 +106,41 @@ export default function SignupPage() {
                 <div className="flex-1 h-px bg-black/10" /><span className="text-xs text-neutral-400">or with email</span><div className="flex-1 h-px bg-black/10" />
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Full name</label>
+                  <label className="text-[10px] uppercase tracking-widest font-medium text-neutral-500 mb-2 block">Full name</label>
                   <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
-                    className="w-full h-11 px-4 rounded-xl border border-black/10 text-sm focus:outline-none focus:ring-2 focus:ring-black/10" />
+                    className="w-full h-12 px-4 rounded-none border border-black/20 text-sm focus:outline-none focus:border-black transition-colors bg-transparent" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Email</label>
+                  <label className="text-[10px] uppercase tracking-widest font-medium text-neutral-500 mb-2 block">Email</label>
                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-                    className="w-full h-11 px-4 rounded-xl border border-black/10 text-sm focus:outline-none focus:ring-2 focus:ring-black/10" />
+                    className="w-full h-12 px-4 rounded-none border border-black/20 text-sm focus:outline-none focus:border-black transition-colors bg-transparent" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Password</label>
+                  <label className="text-[10px] uppercase tracking-widest font-medium text-neutral-500 mb-2 block">Password</label>
                   <div className="relative">
                     <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required
-                      className="w-full h-11 px-4 pr-11 rounded-xl border border-black/10 text-sm focus:outline-none focus:ring-2 focus:ring-black/10" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                      className="w-full h-12 px-4 pr-11 rounded-none border border-black/20 text-sm focus:outline-none focus:border-black transition-colors bg-transparent" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-black transition-colors">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
                 {password && (
-                  <div className="p-3 rounded-xl bg-neutral-50 space-y-1.5">
+                  <div className="p-4 bg-neutral-50 space-y-2 border border-black/5">
                     <Req met={reqMin} label="At least 6 characters" />
                     <Req met={reqUpper} label="One uppercase letter" />
                     <Req met={reqNum} label="One number or symbol" />
                   </div>
                 )}
-                <button type="submit" disabled={loading}
-                  className="w-full h-11 bg-black text-white rounded-xl text-sm font-medium hover:bg-black/90 disabled:opacity-50 flex items-center justify-center gap-2">
-                  {loading ? 'Creating…' : <>Create account <ArrowRight className="h-4 w-4" /></>}
-                </button>
-                <p className="text-[11px] text-neutral-400 text-center">By signing up you agree to our Terms and Privacy Policy.</p>
+                <div className="pt-2">
+                  <button type="submit" disabled={loading}
+                    className="w-full h-12 bg-black text-white text-[11px] uppercase tracking-widest font-medium hover:bg-black/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-3">
+                    {loading ? 'Creating…' : <>Create account <ArrowRight className="h-3.5 w-3.5" /></>}
+                  </button>
+                </div>
+                <p className="text-[10px] uppercase tracking-wider text-neutral-400 text-center mt-4">By signing up you agree to our Terms and Privacy Policy.</p>
               </form>
             </div>
           </div>
