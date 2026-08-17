@@ -4,18 +4,16 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Button } from '../ui/Button';
-import { Search, Bell, Settings, LogOut, Sun, Moon } from 'lucide-react';
+import { Menu, X, ChevronDown, Settings, LogOut } from 'lucide-react';
 
-export function Navbar({ showNavLinks = false, heroVariant = 'dark' }) {
+export function Navbar({ showNavLinks = false }) {
   const [scrolled, setScrolled] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
   const isLanding = location.pathname === '/';
-  const isDarkHero = heroVariant === 'dark' && isLanding;
-  const isTransparent = isLanding && !scrolled;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -25,79 +23,165 @@ export function Navbar({ showNavLinks = false, heroVariant = 'dark' }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (showProfileMenu && !e.target.closest('[data-profile-menu]')) setShowProfileMenu(false);
+      if (profileMenuOpen && !e.target.closest('[data-profile-menu]')) {
+        setProfileMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showProfileMenu]);
+  }, [profileMenuOpen]);
 
-  const onHero = isTransparent && isDarkHero;
-
-  const linkClass = onHero
-    ? 'text-sm text-white/70 hover:text-white transition-colors'
-    : 'text-sm text-neutral-500 hover:text-black transition-colors';
-
-  const logoClass = onHero ? 'text-white' : 'text-black';
-
-  const navBg = scrolled
-    ? 'bg-[#0D0D0D]/70 backdrop-blur-2xl border-white/5'
-    : 'bg-transparent border-transparent';
+  const navItems = [
+    { label: 'Features', href: '#features' },
+    { label: 'How it works', href: '#how-it-works' },
+    { label: 'Pricing', href: '#pricing' },
+  ];
 
   return (
-    <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b ${navBg}`}>
-      <div className="max-w-[1400px] mx-auto px-8 lg:px-12 h-20 flex items-center justify-between">
-        <Link to="/" className={`font-serif italic text-xl transition-colors ${logoClass}`}>
-          Drape&Drop
+    <motion.nav 
+      className="fixed top-0 inset-x-0 z-50 transition-all duration-300"
+      animate={{
+        backgroundColor: scrolled ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0)',
+        backdropFilter: scrolled ? 'blur(40px)' : 'blur(0px)',
+      }}
+      style={{
+        borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link 
+          to="/" 
+          className="flex items-center gap-2 font-display font-semibold text-xl text-white hover:text-indigo-400 transition-colors"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center">
+            <span className="text-white font-bold">DD</span>
+          </div>
+          Drape & Drop
         </Link>
 
+        {/* Desktop Navigation */}
         {showNavLinks && !user && isLanding && (
-          <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-            <a href="#features" className={linkClass}>Features</a>
-            <a href="#how-it-works" className={linkClass}>How it works</a>
-            <a href="#pricing" className={linkClass}>Pricing</a>
+          <div className="hidden md:flex items-center gap-12 absolute left-1/2 -translate-x-1/2">
+            {navItems.map((item) => (
+              <a 
+                key={item.label}
+                href={item.href}
+                className="text-sm text-white/60 hover:text-white transition-colors duration-300"
+              >
+                {item.label}
+              </a>
+            ))}
           </div>
         )}
 
-        <div className="flex items-center gap-3 ml-auto">
-          {!user && (
+        {/* Right Actions */}
+        <div className="flex items-center gap-4 ml-auto">
+          {!user ? (
             <>
-              <button className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${onHero ? 'text-white/70 hover:text-white' : 'text-neutral-500 hover:text-black'}`}>
-                <Search className="h-4 w-4" />
-              </button>
-              <button onClick={toggleTheme} className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${onHero ? 'text-white/70 hover:text-white' : 'text-neutral-500 hover:text-black'}`}>
-                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
-              <Link to="/login" className={`${linkClass} hidden sm:block`}>Sign in</Link>
+              <Link to="/login" className="hidden sm:block text-sm text-white/60 hover:text-white transition-colors">
+                Sign in
+              </Link>
               <Link to="/signup">
-                <Button size="sm" className={`rounded-full px-7 h-10 border transition-all duration-500 font-medium ${onHero ? 'bg-white border-white text-black hover:bg-transparent hover:text-white' : 'bg-white border-white text-black hover:bg-transparent hover:text-white'}`}>
+                <Button variant="primary" size="sm">
                   Get started
                 </Button>
               </Link>
             </>
-          )}
-
-          {user && (
+          ) : (
             <div className="relative" data-profile-menu>
-              <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="h-8 w-8 rounded-full bg-white/20 text-white text-xs font-medium border border-white/30">
-                {user.email?.charAt(0).toUpperCase() || 'U'}
-              </button>
+              <motion.button
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                className="flex items-center gap-2 px-4 h-10 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm transition-all"
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-xs font-semibold text-white">
+                  {user.email?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <ChevronDown className="h-4 w-4" />
+              </motion.button>
+
               <AnimatePresence>
-                {showProfileMenu && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                    className="absolute right-0 mt-2 w-48 rounded-xl border border-white/10 bg-neutral-900 p-1 shadow-lg">
-                    <div className="px-3 py-2 border-b border-white/10 mb-1">
-                      <p className="text-sm text-white truncate">{user.displayName || 'User'}</p>
-                      <p className="text-xs text-neutral-400 truncate">{user.email}</p>
+                {profileMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-56 rounded-lg bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg overflow-hidden"
+                  >
+                    <div className="px-4 py-3 border-b border-white/10">
+                      <p className="text-sm font-medium text-white truncate">{user.displayName || 'User'}</p>
+                      <p className="text-xs text-white/60 truncate">{user.email}</p>
                     </div>
-                    <Link to="/dashboard" className="block px-3 py-2 text-sm text-neutral-300 hover:text-white">Dashboard</Link>
-                    <Link to="/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-300 hover:text-white">
-                      <Settings className="h-4 w-4" /> Settings
-                    </Link>
-                    <button onClick={signOut} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-neutral-300 hover:text-white">
-                      <LogOut className="h-4 w-4" /> Sign out
-                    </button>
+                    <div className="py-2">
+                      <Link
+                        to="/dashboard"
+                        className="block px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+                      >
+                        <Settings className="h-4 w-4" />
+                        Settings
+                      </Link>
+                    </div>
+                    <div className="border-t border-white/10 py-2">
+                      <button
+                        onClick={signOut}
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sign out
+                      </button>
+                    </div>
                   </motion.div>
                 )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
+          >
+            {mobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && !user && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t border-white/10 bg-black/50 backdrop-blur-xl"
+          >
+            <div className="px-4 py-4 space-y-3">
+              {navItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
               </AnimatePresence>
             </div>
           )}

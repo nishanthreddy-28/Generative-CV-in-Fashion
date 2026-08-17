@@ -1,27 +1,37 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 
-export function SkeletonLoader({ className, ...props }) {
+export function Skeleton({ className, ...props }) {
   return (
     <div
-      className={cn('shimmer rounded-lg bg-zinc-900', className)}
+      className={cn(
+        'animate-shimmer rounded-lg bg-gradient-to-r from-white/5 via-white/10 to-white/5',
+        'bg-[length:200%_100%]',
+        className
+      )}
       {...props}
     />
   );
 }
 
+export function SkeletonLoader({ className, ...props }) {
+  return (
+    <Skeleton className={cn('rounded-lg', className)} {...props} />
+  );
+}
+
 export function SkeletonCard({ className }) {
   return (
-    <div className={cn('rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-4', className)}>
+    <div className={cn('rounded-lg bg-white/5 border border-white/10 p-6 space-y-4', className)}>
       <div className="flex items-center gap-3">
-        <SkeletonLoader className="h-10 w-10 rounded-xl" />
+        <Skeleton className="h-10 w-10 rounded-lg" />
         <div className="space-y-2 flex-1">
-          <SkeletonLoader className="h-4 w-24" />
-          <SkeletonLoader className="h-3 w-16" />
+          <Skeleton className="h-4 w-24 rounded-md" />
+          <Skeleton className="h-3 w-16 rounded-md" />
         </div>
       </div>
-      <SkeletonLoader className="h-8 w-20" />
-      <SkeletonLoader className="h-3 w-32" />
+      <Skeleton className="h-8 w-20 rounded-md" />
+      <Skeleton className="h-3 w-32 rounded-md" />
     </div>
   );
 }
@@ -29,11 +39,9 @@ export function SkeletonCard({ className }) {
 export function SkeletonWardrobeGrid({ count = 8 }) {
   const heights = ['h-48', 'h-64', 'h-56', 'h-72', 'h-48', 'h-80', 'h-60', 'h-52'];
   return (
-    <div className="masonry-grid">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="masonry-item">
-          <SkeletonLoader className={cn('w-full rounded-2xl', heights[i % heights.length])} />
-        </div>
+        <Skeleton key={i} className={cn('w-full rounded-lg', heights[i % heights.length])} />
       ))}
     </div>
   );
@@ -42,11 +50,24 @@ export function SkeletonWardrobeGrid({ count = 8 }) {
 export function SkeletonChatMessage({ isUser = false }) {
   return (
     <div className={cn('flex gap-3', isUser && 'flex-row-reverse')}>
-      <SkeletonLoader className="h-8 w-8 rounded-full shrink-0" />
+      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
       <div className="space-y-2 flex-1 max-w-xs">
-        <SkeletonLoader className="h-4 w-full rounded-xl" />
-        <SkeletonLoader className="h-4 w-3/4 rounded-xl" />
+        <Skeleton className="h-4 w-full rounded-md" />
+        <Skeleton className="h-4 w-3/4 rounded-md" />
       </div>
+    </div>
+  );
+}
+
+export function SkeletonStatCard({ className }) {
+  return (
+    <div className={cn('rounded-lg bg-white/5 border border-white/10 p-6 space-y-4', className)}>
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-5 rounded-md" />
+        <Skeleton className="h-4 w-12 rounded-md" />
+      </div>
+      <Skeleton className="h-8 w-16 rounded-md" />
+      <Skeleton className="h-3 w-24 rounded-md" />
     </div>
   );
 }
