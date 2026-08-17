@@ -30,7 +30,7 @@ const settingsLinks = [
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
 
-export function Sidebar({ collapsed, setCollapsed }) {
+export function SidebarV2({ collapsed, setCollapsed }) {
   const location = useLocation();
   const { user, signOut } = useAuth();
 

@@ -182,11 +182,6 @@ export function Navbar({ showNavLinks = false }) {
           </motion.div>
         )}
       </AnimatePresence>
-              </AnimatePresence>
-            </div>
-          )}
-        </div>
-      </div>
-    </nav>
+    </motion.nav>
   );
 }
