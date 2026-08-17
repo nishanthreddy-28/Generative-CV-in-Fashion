@@ -2,15 +2,15 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MainLayout } from '../layouts/MainLayout';
-import { DashboardLayout } from '../layouts/DashboardLayout';
+import { DashboardLayout } from '../layouts/DashboardLayoutV2';
 import { ProtectedRoute } from './ProtectedRoute';
 
 // Lazy load all pages
-const LandingPage = React.lazy(() => import('../pages/LandingPage'));
+const LandingPage = React.lazy(() => import('../pages/LandingPageV2'));
 const LoginPage = React.lazy(() => import('../pages/LoginPage'));
 const SignupPage = React.lazy(() => import('../pages/SignupPage'));
 const ForgotPasswordPage = React.lazy(() => import('../pages/ForgotPasswordPage'));
-const DashboardPage = React.lazy(() => import('../pages/DashboardPage'));
+const DashboardPage = React.lazy(() => import('../pages/DashboardPageV2'));
 const ProfilePage = React.lazy(() => import('../pages/ProfilePage'));
 const WardrobePage = React.lazy(() => import('../pages/WardrobePage'));
 const SettingsPage = React.lazy(() => import('../pages/SettingsPage'));
