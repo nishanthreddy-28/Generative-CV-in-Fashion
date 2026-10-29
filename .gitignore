@@ -80,3 +80,6 @@ node_modules/
 .next/
 frontend/node_modules/
 frontend/.next/
+
+# Vite build output
+/frontend/dist/

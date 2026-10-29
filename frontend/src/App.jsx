@@ -1,21 +1,6 @@
-import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { AppRoutes } from './routes/AppRoutes';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Studio, StudioLanding } from './studio/Studio';
 
-function App() {
-  return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-          <Toaster position="bottom-right" />
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
-  );
+export default function App() {
+  return <BrowserRouter><Routes><Route path="/" element={<StudioLanding />} /><Route path="*" element={<Studio />} /></Routes></BrowserRouter>;
 }
-
-export default App;
