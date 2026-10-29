@@ -6,3 +6,7 @@ First frontend-first preview: editorial landing page, studio overview, responsiv
 
 Verification and limitations: [Frontend 00](docs/milestones/frontend-00.md).
 Setup and next milestones: [Frontend plan](docs/FRONTEND_PLAN.md).
+
+## v0.1.0-frontend-auth-preview — 2026-10-29
+
+Local demo registration/sign-in/logout, PBKDF2-derived demo passphrases, onboarding, profile/preferences, active-account route checks, separate demo administrator entry, transactional IndexedDB adapter. Backend authentication is deferred; browser roles are not a security boundary. Build/scoped lint passed; browser registration reached onboarding using synthetic data. Seven domain tests pass. Figma workflow review remains pending.
