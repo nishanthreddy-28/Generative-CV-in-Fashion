@@ -14,3 +14,7 @@ Local demo registration/sign-in/logout, PBKDF2-derived demo passphrases, onboard
 ## v0.2.0-frontend-photos-preview — 2026-10-29
 
 Personal photo upload, decoded dimension/type/size validation, preview/confirmation, local blob storage, gallery/details, replacement and cascading deletion. Native modal focus handling and labeled optional sample image. Browser confirmed sample validation, save, and persistence after reload. Build/lint and seven domain tests passed. Backend privacy enforcement and design review remain deferred.
+
+## v0.3.0-frontend-wardrobe-preview — 2026-10-29
+
+Wardrobe image/metadata creation, detail view, editing, soft deletion, category/color/search filters, sorting and pagination. Shared garment editor and query service. Browser confirmed sample garment creation and reload persistence; ten domain/query tests, build and scoped lint passed. Local demo only; Figma design review pending.

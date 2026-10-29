@@ -1,0 +1,18 @@
+import { useState } from 'react';
+import { AssetImage, Dialog, FileField } from './Media';
+import { useStudio } from '../StudioContext';
+import { CATEGORIES, COLORS } from '../services/domain';
+import { upsertGarment } from '../services/garments';
+export function GarmentEditor({ item, source, onClose }) {
+  const { user, update } = useStudio(); const [file,setFile] = useState(null),[busy,setBusy] = useState(false),[error,setError] = useState('');
+  async function submit(e) {
+    e.preventDefault();const fields=Object.fromEntries(new FormData(e.currentTarget));const assetId=file?crypto.randomUUID():null;setBusy(true);setError('');
+    try { await update(s=>upsertGarment(s,user.id,source,fields,item?.id,assetId),file?[[assetId,file.file]]:[]);onClose(); } catch(e){setError(e.message);}finally{setBusy(false);}
+  }
+  return <Dialog title={(item?.id?'Edit':'Add')+(source==='catalog'?' catalog piece':' wardrobe piece')} onClose={()=>!busy&&onClose()}><form onSubmit={submit}>{item?.assetId&&<AssetImage assetId={item.assetId} alt={item.name} className="editor-thumbnail"/>}<FileField onFile={setFile}/>{item?.id&&<p className="fine">Choose a new image only if you want to replace the current one. Previous sessions retain their original garment image.</p>}<label>Garment name<input name="name" defaultValue={item?.name} required maxLength={100}/></label><div className="form-columns"><label>Category<select name="category" defaultValue={item?.category||'Tops'}>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></label><label>Color<select name="color" defaultValue={item?.color||'Beige'}>{COLORS.map(c=><option key={c}>{c}</option>)}</select></label></div><label>Description<textarea name="description" maxLength={1000} defaultValue={item?.description} placeholder="Fabric, cut, or a personal note…"/></label>{source==='catalog'&&<label>Availability<select name="status" defaultValue={item?.status||'INACTIVE'}><option value="INACTIVE">Inactive — hidden from users</option><option value="ACTIVE">Active — visible to users</option></select></label>}{error&&<p role="alert" className="form-error">{error}</p>}<button className="studio-button" disabled={busy||(!item?.id&&!file)}>{busy?'Saving…':'Save piece locally'}</button></form></Dialog>;
+}
+export function GarmentFilters({ filters, setFilters }) {
+  function set(key,value) {setFilters({...filters,[key]:value,page:1});}
+  return <div className="toolbar"><label className="search">Search pieces<input type="search" value={filters.search} onChange={e=>set('search',e.target.value)} placeholder="Search by name or description"/></label><label>Category<select value={filters.category} onChange={e=>set('category',e.target.value)}><option value="">All categories</option>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></label><label>Color<select value={filters.color} onChange={e=>set('color',e.target.value)}><option value="">All colors</option>{COLORS.map(c=><option key={c}>{c}</option>)}</select></label><label>Sort by<select value={filters.sort} onChange={e=>set('sort',e.target.value)}><option value="newest">Newest first</option><option value="name">Name A–Z</option></select></label>{(filters.search||filters.category||filters.color)&&<button className="text-button" onClick={()=>setFilters({search:'',category:'',color:'',sort:'newest',page:1})}>Clear filters</button>}</div>;
+}
+export function Pagination({ result, onPage }) { return result.pages>1 && <div className="pagination"><button disabled={result.current===1} onClick={()=>onPage(result.current-1)}>Previous</button><span>Page {result.current} of {result.pages}</span><button disabled={result.current===result.pages} onClick={()=>onPage(result.current+1)}>Next</button></div>; }
