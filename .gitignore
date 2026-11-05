@@ -87,3 +87,10 @@ mobile/dist/
 mobile/android/
 mobile/ios/
 !mobile/.env.example
+
+# Python backend
+backend/.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+!backend/.env.example
