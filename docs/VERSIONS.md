@@ -16,3 +16,5 @@ Existing historical tags (preserved unchanged):
 
 Backend checkpoints:
 - backend-v0.1.0-security-foundation-preview: backend package 0.1.0; JWT/user-scoped adapter infrastructure, 28 tests; no business API or live RLS acceptance yet. See backend/checkpoint-001-security-foundation.md.
+
+- v0.4.1-workflow-preview: presentation-only workflow navigator improvements; see versions/0.4.1-workflow-preview.md.

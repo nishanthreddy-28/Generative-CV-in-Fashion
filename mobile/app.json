@@ -2,7 +2,7 @@
   "expo": {
     "name": "Drape & Drop",
     "slug": "drape-drop",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
