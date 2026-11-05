@@ -23,7 +23,15 @@
     },
     "scheme": "drapedrop",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose garment and try-on photos for Drape & Drop.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }
