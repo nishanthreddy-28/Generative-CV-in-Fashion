@@ -1,3 +1,4 @@
+import { useDraft } from "../../hooks/useDraft";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
@@ -29,9 +30,12 @@ export default function NewOutfit() {
     `/wardrobe?limit=24${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
     preview,
   );
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useDraft<Record<string, string>>(
+    "outfit-builder" + ":fields",
+    {},
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [ids, setIds] = useState<string[]>([]);
+  const [ids, setIds] = useDraft<string[]>("outfit-builder:pieces", []);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   async function save() {
@@ -52,6 +56,8 @@ export default function NewOutfit() {
         token: session.accessToken,
         body: { ...values, garmentIds: ids },
       });
+      setValues({});
+      setIds([]);
       router.replace("/outfits");
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Unable to save outfit.");

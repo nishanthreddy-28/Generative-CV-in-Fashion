@@ -6,7 +6,12 @@ import {
   type PropsWithChildren,
 } from "react";
 import { authApi } from "../services/api/resources";
-import { apiRequest, ApiError, type RequestOptions } from "../services/api/client";
+import {
+  apiRequest,
+  ApiError,
+  type RequestOptions,
+} from "../services/api/client";
+import { draftStore } from "./draftStore";
 import type { Session } from "../types/domain";
 type Context = {
   session: Session | null;
@@ -18,7 +23,10 @@ type Context = {
 const SessionContext = createContext<Context | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
-  const expire = useCallback(() => setSession(null), []);
+  const expire = useCallback(() => {
+    draftStore.clear();
+    setSession(null);
+  }, []);
   async function login(email: string, password: string) {
     const value = await authApi.login(email.trim(), password);
     if (
@@ -29,12 +37,23 @@ export function SessionProvider({ children }: PropsWithChildren) {
       throw new Error(
         "The sign-in response is incomplete. Please contact support.",
       );
+    draftStore.clear();
     setSession(value);
   }
-  async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  async function request<T>(
+    path: string,
+    options: RequestOptions = {},
+  ): Promise<T> {
     if (!session) throw new ApiError("Sign in to continue.", 401);
-    try { return await apiRequest<T>(path, { ...options, token: session.accessToken }); }
-    catch (error) { if (error instanceof ApiError && error.status === 401) expire(); throw error; }
+    try {
+      return await apiRequest<T>(path, {
+        ...options,
+        token: session.accessToken,
+      });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) expire();
+      throw error;
+    }
   }
   async function logout() {
     try {
@@ -44,11 +63,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
           token: session.accessToken,
         });
     } finally {
+      draftStore.clear();
       setSession(null);
     }
   }
   return (
-    <SessionContext.Provider value={{ session, login, logout, expire, request }}>
+    <SessionContext.Provider
+      value={{ session, login, logout, expire, request }}
+    >
       {children}
     </SessionContext.Provider>
   );

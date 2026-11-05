@@ -83,7 +83,8 @@ export function PhotoField({
 }
 export function appendPhoto(form: FormData, key: string, photo: Photo) {
   if (Platform.OS === "web") {
-    if (!photo.file) throw new Error("Choose this photo again before uploading.");
+    if (!photo.file)
+      throw new Error("Choose this photo again before uploading.");
     form.append(key, photo.file, photo.name);
   } else
     form.append(key, {

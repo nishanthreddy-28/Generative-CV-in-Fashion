@@ -45,6 +45,8 @@ export function Fields({
             <TextInput
               accessibilityLabel={f.label}
               accessibilityLabelledBy={`${f.key}-label`}
+              accessibilityHint={errors[f.key] || f.hint}
+              maxLength={f.kind === "multiline" ? 2000 : 200}
               value={values[f.key] ?? ""}
               onChangeText={(v) => onChange(f.key, v)}
               editable={!disabled}

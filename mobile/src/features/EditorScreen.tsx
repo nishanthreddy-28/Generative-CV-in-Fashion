@@ -1,3 +1,4 @@
+import { useDraft } from "../hooks/useDraft";
 import { useState } from "react";
 import { Image, Text } from "react-native";
 import { router, type Href } from "expo-router";
@@ -46,7 +47,10 @@ export function EditorScreen({
     preview || create,
     admin,
   );
-  const [draft, setValues] = useState<Record<string, string>>({});
+  const [draft, setValues] = useDraft<Record<string, string>>(
+    path + ":fields",
+    {},
+  );
   const values: Record<string, string> = {
     ...Object.fromEntries(
       fields.map((f) => [
@@ -57,10 +61,10 @@ export function EditorScreen({
     ...draft,
   };
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [image, setImage] = useState<Photo | null>(null);
+  const [image, setImage] = useDraft<Photo | null>(path + ":photo", null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [dirty, setDirty] = useState(false);
+  const [dirty, setDirty] = useDraft(path + ":dirty", false);
   const [confirm, setConfirm] = useState<"delete" | "discard" | null>(null);
   async function save() {
     const issues = validate(fields, values);
@@ -135,7 +139,8 @@ export function EditorScreen({
         <ResourceState {...result} />
         {dirty && (
           <Text style={ui.body}>
-            Unsaved changes · keep this screen open to retain your draft.
+            Unsaved changes · draft retained while navigating. Closing the app
+            or signing out clears it.
           </Text>
         )}
         {!unavailable && (
