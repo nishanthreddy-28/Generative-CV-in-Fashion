@@ -1,4 +1,6 @@
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { Link, type Href } from "expo-router";
+import { colors } from "../theme/tokens";
 import { Screen, RouteLink, Notice, ui } from "../components/Screen";
 const flows = [
   {
@@ -56,21 +58,44 @@ export default function Preview() {
       title="The workflow edit."
       subtitle="Explore the frontend before connecting your account and data."
     >
+      <View style={styles.badgeRow}>
+        <Text style={styles.badge}>PREVIEW MODE</Text>
+        <Text style={styles.version}>v0.4.1 · Workflow review</Text>
+      </View>
       <Notice
-        title="Interface review only"
-        text="These links open empty screens and unsaved forms. Preview never grants account or administrator access, loads personal records, or sends writes to a backend."
+        title="Backend not connected"
+        text="Review screens, navigation and unsaved forms. Real sign-in, saved records and AI results are not connected. Personal and admin preview links do not grant account access or submit changes."
       />
       {flows.map((flow, index) => (
-        <View key={flow.title} style={ui.card}>
+        <View key={flow.title} style={styles.card}>
           <Text style={ui.heading}>{flow.title}</Text>
           {flow.links.map(([label, to]) => (
-            <RouteLink key={to} to={to} preview={index > 0}>
+            <Link
+              key={to}
+              href={(index > 0 ? `${to}?preview=1` : to) as Href}
+              style={styles.action}
+              accessibilityHint={`Open ${label.toLowerCase()}${index > 0 ? " in preview mode" : " form"}`}
+            >
               {label} →
-            </RouteLink>
+            </Link>
           ))}
         </View>
       ))}
+      <View style={styles.checkpoint}>
+        <Text style={ui.heading}>Today’s checkpoint</Text>
+        <Text style={ui.body}>Frontend preview v0.4.1 · Backend security foundation v0.1.0 · Database entity inventory v0.1</Text>
+        <Text style={ui.body}>Review only. Database implementation and live integration are still pending.</Text>
+      </View>
       <RouteLink to="/">Back to introduction</RouteLink>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 12 },
+  badge: { backgroundColor: colors.ink, color: "#fff", paddingHorizontal: 12, paddingVertical: 8, fontSize: 11, fontWeight: "700", letterSpacing: 1 },
+  version: { color: colors.muted, fontSize: 13 },
+  card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 20, gap: 14 },
+  action: { color: colors.ink, borderWidth: 1, borderColor: colors.border, padding: 16, minHeight: 52, fontSize: 15, fontWeight: "500" },
+  checkpoint: { borderTopWidth: 1, borderColor: colors.border, paddingTop: 24, gap: 12 },
+});
