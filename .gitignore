@@ -80,3 +80,10 @@ node_modules/
 .next/
 frontend/node_modules/
 frontend/.next/
+
+# Expo mobile
+mobile/.expo/
+mobile/dist/
+mobile/android/
+mobile/ios/
+!mobile/.env.example
