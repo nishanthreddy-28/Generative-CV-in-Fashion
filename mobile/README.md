@@ -14,19 +14,23 @@ Use a compatible Android development build or emulator. Android SDK is required 
 ```sh
 npm run typecheck
 npm run lint
+npm test
 npm run export:android
 ```
 
 ## Current scope
-Introduction and a clear authentication-unavailable screen. No sign-in, account persistence, personal data, backend, ML, or Play Store release is implemented.
-Copy `.env.example` to `.env` when an API exists. No requests run from these public introduction screens. `src/services/api/client.ts` is the future integration boundary.
+Frontend screens cover account forms, dashboard, personal and body profiles, wardrobe, catalog, outfits, recommendations, try-on, preferences and administration. Open `/preview` to review all flows without a backend. Preview uses no fabricated records and never submits changes.
+
+Real authentication, persistence, email delivery and AI results require backend integration. Google sign-in is an explicit integration placeholder. Sessions are held in memory only. See [workflow checkpoint](../docs/issues/002-frontend-workflows-checkpoint.md) and [API contract](../docs/frontend-api-contract.md).
+
+Copy `.env.example` to `.env` only when a compatible API exists. Public introduction and workflow preview screens do not load private records.
 
 The Android application ID, icons, signing and Play Console configuration must be finalized before a release build. No production identifier is committed yet.
 
 ## Preview the implemented screens in a browser
 ```sh
-npm run web -- --localhost --port 8081
+npm run web -- --localhost --port 8082
 ```
-Open http://localhost:8081 on the development computer. This renders the actual React Native screens through React Native Web; it is not Android device verification. Click **Get started** to inspect the authentication-unavailable screen, then use Back to return.
+Open http://localhost:8082/preview on the development computer. This renders the actual React Native screens through React Native Web; it is not Android device verification. Use the workflow index to inspect account forms, empty collections, draft editors, and integration notices.
 
 The preview server must remain running. This localhost URL is not a publicly hosted deployment.
