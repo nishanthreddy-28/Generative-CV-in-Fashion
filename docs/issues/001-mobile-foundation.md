@@ -39,3 +39,10 @@ Using isolated Node 24.22.2:
 Not verified: Android device interaction, native signed build, authentication, Play Console submission. No release tag created.
 
 The machine has Java 11 and no Android SDK. Local native builds need Android tooling; cloud builds require a future Expo project/account setup. An isolated Node 24 runtime was used; the global Node installation was not changed.
+
+## Preview follow-up
+- Installed SDK-compatible React Native Web and React DOM dependencies.
+- Opened the actual application at http://localhost:8081 in the visible browser.
+- Verified introduction → Get started → authentication-unavailable screen → Back.
+- Figma opened in the chat side panel.
+- Browser preview supplements Android export verification; native device validation remains pending.
