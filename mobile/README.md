@@ -22,3 +22,11 @@ Introduction and a clear authentication-unavailable screen. No sign-in, account 
 Copy `.env.example` to `.env` when an API exists. No requests run from these public introduction screens. `src/services/api/client.ts` is the future integration boundary.
 
 The Android application ID, icons, signing and Play Console configuration must be finalized before a release build. No production identifier is committed yet.
+
+## Preview the implemented screens in a browser
+```sh
+npm run web -- --localhost --port 8081
+```
+Open http://localhost:8081 on the development computer. This renders the actual React Native screens through React Native Web; it is not Android device verification. Click **Get started** to inspect the authentication-unavailable screen, then use Back to return.
+
+The preview server must remain running. This localhost URL is not a publicly hosted deployment.
