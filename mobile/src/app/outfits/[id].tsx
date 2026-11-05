@@ -1,3 +1,4 @@
+import { useDraft } from "../../hooks/useDraft";
 import { useState } from "react";
 import { Image } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -28,7 +29,10 @@ export default function Detail() {
   const { session, request } = useSession();
   const path = `/outfits/${encodeURIComponent(id)}`;
   const result = useResource<Outfit>(path, preview);
-  const [draft, setValues] = useState<Record<string, string>>({});
+  const [draft, setValues] = useDraft<Record<string, string>>(
+    path + ":fields",
+    {},
+  );
   const values: Record<string, string> = {
     name: result.data?.name ?? "",
     occasion: result.data?.occasion ?? "",
@@ -94,7 +98,9 @@ export default function Detail() {
                 View wardrobe piece →
               </RouteLink>
             ))}
-            {Boolean(message) && <Notice title="Outfit status" text={message} />}
+            {Boolean(message) && (
+              <Notice title="Outfit status" text={message} />
+            )}
             <Button
               label="Save outfit details"
               onPress={() => mutate()}

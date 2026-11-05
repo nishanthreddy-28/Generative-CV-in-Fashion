@@ -53,7 +53,7 @@ export function Screen({
         {preview && (
           <Notice
             title="WORKFLOW PREVIEW"
-            text="No account, records, or backend requests. Form entries are unsaved drafts."
+            text="No account, records, or backend requests. Drafts stay in memory while navigating; closing the app clears them."
           />
         )}
         <Text accessibilityRole="header" style={ui.title}>
@@ -200,7 +200,7 @@ export const ui = StyleSheet.create({
     fontSize: 14,
     textDecorationLine: "underline",
     paddingVertical: 12,
-    minHeight: 44,
+    minHeight: 48,
   },
   notice: {
     padding: 20,
@@ -238,7 +238,7 @@ export const ui = StyleSheet.create({
     borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    minHeight: 44,
+    minHeight: 48,
   },
   selected: { borderColor: colors.ink, backgroundColor: "#E5E4DC" },
   image: { width: "100%", aspectRatio: 0.85, backgroundColor: colors.border },

@@ -1,3 +1,4 @@
+import { useDraft } from "../hooks/useDraft";
 import { useState } from "react";
 import { Image, Text, View } from "react-native";
 import {
@@ -36,7 +37,10 @@ const fields: Field[] = [
 export function RecommendationsScreen() {
   const preview = usePreview();
   const { session, expire, request } = useSession();
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useDraft<Record<string, string>>(
+    "recommendations" + ":fields",
+    {},
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [looks, setLooks] = useState<Outfit[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -111,7 +115,9 @@ export function RecommendationsScreen() {
           onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
         />
         <Button label="Find outfits" onPress={generate} loading={busy} />
-        {Boolean(message) && <Notice title="Recommendation status" text={message} />}
+        {Boolean(message) && (
+          <Notice title="Recommendation status" text={message} />
+        )}
         {looks?.length === 0 && (
           <Notice
             title="No outfits found"

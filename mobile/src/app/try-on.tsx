@@ -1,3 +1,4 @@
+import { useDraft } from "../hooks/useDraft";
 import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
@@ -31,12 +32,15 @@ export default function TryOn() {
     `/catalog/${encodeURIComponent(params.garmentId ?? "")}`,
     preview || params.source !== "catalog" || !params.garmentId,
   );
-  const [person, setPerson] = useState<Photo | null>(null);
-  const [ignoreCatalog, setIgnoreCatalog] = useState(false);
-  const [choice, setSelected] = useState<{
+  const [person, setPerson] = useDraft<Photo | null>("try-on:photo", null);
+  const [ignoreCatalog, setIgnoreCatalog] = useDraft(
+    "try-on:ignoreCatalog",
+    false,
+  );
+  const [choice, setSelected] = useDraft<{
     garment: Garment;
     source: "wardrobe" | "catalog";
-  } | null>(null);
+  } | null>("try-on:garment", null);
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [job, setJob] = useState<TryOnJob | null>(null);

@@ -34,3 +34,8 @@ npm run web -- --localhost --port 8082
 Open http://localhost:8082/preview on the development computer. This renders the actual React Native screens through React Native Web; it is not Android device verification. Use the workflow index to inspect account forms, empty collections, draft editors, and integration notices.
 
 The preview server must remain running. This localhost URL is not a publicly hosted deployment.
+
+## Drafts and versions
+Non-password editing drafts are held only in session memory across screen navigation. Closing/reloading the app clears them; sign-in changes and sign-out also clear them. No personal draft is written to a local database. Discard resets a draft explicitly.
+
+Version history is in [the ledger](../docs/VERSIONS.md). Version 0.4.0 is a frontend preview; device, Figma and backend integration checks remain explicit in its release note.

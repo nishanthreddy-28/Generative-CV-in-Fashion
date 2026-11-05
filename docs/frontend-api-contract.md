@@ -1,4 +1,4 @@
-# Proposed frontend API contract
+# Proposed frontend API contract — revision 0.4.0
 
 These are integration assumptions made by the frontend, not implemented or verified backend endpoints. The backend phase must confirm or adapt them before connecting production data.
 

@@ -34,7 +34,11 @@ export const bodyFields: Field[] = [
   })),
   { key: "bodyShape", label: "Body shape (optional)" },
   { key: "skinTone", label: "Skin tone description (optional)" },
-  { key: "undertone", label: "Undertone (optional)", options: ["Warm", "Cool", "Neutral", "Not sure"] },
+  {
+    key: "undertone",
+    label: "Undertone (optional)",
+    options: ["Warm", "Cool", "Neutral", "Not sure"],
+  },
   {
     key: "fit",
     label: "Preferred fit",
