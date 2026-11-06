@@ -94,3 +94,12 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 !backend/.env.example
+
+# Supabase CLI caches and private integration credentials
+/supabase/.temp/
+/supabase/.branches/
+.supabase/
+.pgpass
+.pg_service.conf
+integration-secrets.json
+*.key

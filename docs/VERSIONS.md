@@ -20,3 +20,5 @@ Backend checkpoints:
 - v0.4.1-workflow-preview: presentation-only workflow navigator improvements; see versions/0.4.1-workflow-preview.md.
 
 - backend-v0.2.0-database-foundation: approved backend 0.2.0; six-table foundation migration, profile/settings APIs, 47 backend tests and 35 isolated PostgreSQL tests. Local evidence only; integration flag remains disabled. See backend/checkpoint-002-database-foundation.md.
+
+- backend-v0.2.0-cli-linked-history-pending: CLI 3.0.0 installed, private login and exact development-project link verified; remote migration history blocked at Keychain lookup (exit 44), no history HTTP request or migration application. Backend remains 0.2.0. See backend/checkpoint-003-supabase-cli-linking.md.
