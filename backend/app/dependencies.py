@@ -2,7 +2,7 @@ from typing import Annotated, Protocol
 from fastapi import Depends, Request
 
 from .data_api import UserDataAPI
-from .errors import DependencyUnavailable, Unauthorized
+from .errors import DependencyUnavailable, Forbidden, Unauthorized
 from .security import Principal
 
 
@@ -14,6 +14,27 @@ class UnconfiguredEligibility:
     async def require_active(self, principal: Principal, data: UserDataAPI) -> None:
         # Do not treat a valid JWT as proof an account is active.
         raise DependencyUnavailable()
+
+
+class DatabaseEligibility:
+    async def require_active(self, principal: Principal, data: UserDataAPI) -> None:
+        response = await data.request("POST", "rpc/account_access", body={})
+        if response.status_code == 401:
+            raise Unauthorized()
+        if response.status_code == 403:
+            raise Forbidden()
+        if response.status_code != 200:
+            raise DependencyUnavailable()
+        try:
+            result = response.json()
+            if not isinstance(result, dict) or result.get("userId") != str(principal.user_id):
+                raise DependencyUnavailable()
+            if result.get("active") is False:
+                raise Forbidden()
+            if result.get("active") is not True:
+                raise DependencyUnavailable()
+        except ValueError:
+            raise DependencyUnavailable() from None
 
 
 async def verified_principal(request: Request) -> Principal:

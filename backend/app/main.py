@@ -5,9 +5,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .config import Settings
-from .dependencies import UnconfiguredEligibility
+from .dependencies import DatabaseEligibility, UnconfiguredEligibility
 from .errors import DependencyUnavailable, Forbidden, Unauthorized
 from .security import JWTVerifier
+from .foundation import router as foundation_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -18,10 +19,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.settings = configured
             app.state.transport = transport
             app.state.verifier = JWTVerifier(configured, transport)
-            app.state.eligibility = UnconfiguredEligibility()
+            app.state.eligibility = (DatabaseEligibility() if configured.database_foundation_enabled
+                                     else UnconfiguredEligibility())
             yield
 
-    app = FastAPI(title="Drape & Drop API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Drape & Drop API", version="0.2.0", lifespan=lifespan)
 
     @app.exception_handler(Unauthorized)
     async def unauthorized(request: Request, error: Unauthorized):
@@ -35,7 +37,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def unavailable(request: Request, error: DependencyUnavailable):
         return JSONResponse({"detail": "Security dependency unavailable."}, status_code=503)
 
-    # No business routes are exposed before lifecycle/RLS enforcement is configured.
+    # These routes remain fail-closed until the reviewed database integration is enabled.
+    app.include_router(foundation_router)
     return app
 
 

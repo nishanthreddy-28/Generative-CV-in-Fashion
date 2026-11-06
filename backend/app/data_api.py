@@ -32,6 +32,8 @@ class UserDataAPI:
                 "apikey": self.settings.supabase_publishable_key.get_secret_value(),
                 "Authorization": f"Bearer {self.principal.access_token}",
                 "Accept": "application/json",
+                **({"Accept-Profile" if method == "GET" else "Content-Profile": "api"}
+                   if self.settings.database_foundation_enabled else {}),
             }, params=params, **({"json": body} if body is not None else {}),
             extensions={"timeout": {"connect": 5.0, "read": 10.0, "write": 10.0, "pool": 5.0}},
         )

@@ -2,15 +2,25 @@
 
 ## 1. Scope and evidence
 
-Preliminary logical inventory, November 5, 2026. No entities are deployed by this document. Names and attributes are conceptual, not final tables, types or SQL.
+Preliminary logical inventory created November 5, 2026; resumed and reviewed November 6, 2026 against commit `bb46044`. No entities are deployed by this document. Names and attributes are conceptual, not final tables, types or SQL.
 
-Inspected [API requirements](../api-requirements.md), [approved security architecture](../authentication-and-security.md), [backend setup](../../../backend/README.md), [security checkpoint](../checkpoint-001-security-foundation.md), backend/app security/config/dependencies/data_api/main, mobile/src/types/domain.ts, mobile/src/services/api resources/client, shared form schemas and screens, and original docs/PRD.md, docs/architecture.md and README.md.
+Inspected [API requirements](../api-requirements.md), [approved security architecture](../authentication-and-security.md), [backend setup](../../../backend/README.md), [security checkpoint](../checkpoint-001-security-foundation.md), backend/app security/config/dependencies/data_api/main, mobile/src/types/domain.ts, mobile/src/services/api resources/client, shared form schemas and screens (EditorScreen, CollectionScreen, RecommendationsScreen, outfit builder/detail, settings and try-on), and original docs/PRD.md, docs/architecture.md and README.md.
 
 The original PRD/architecture describe Next.js/Node/server actions; those technology assumptions are superseded by the approved Expo/FastAPI/Supabase baseline. Their wardrobe, outfit and try-on goals remain product context. They do not authorize extra ecommerce, social or avatar entities.
 
 **Existing requirements:** audited frontend operations, Supabase Auth UUID identity, user-scoped RLS, trusted catalog administration and disabled/deleting account denial. **Proposed entities:** persistence boundaries below. **Unresolved:** exact schema, image separation, retention, mixed-source references and lifecycle mechanisms. Backend currently verifies tokens and forwards request-scoped credentials but exposes no business APIs; account eligibility is deliberately unconfigured/fail-closed. No database state was inspected.
 
+### Source references and precedence
+
+- [Frontend domain types](../../../mobile/src/types/domain.ts), [API resources](../../../mobile/src/services/api/resources.ts), [API transport](../../../mobile/src/services/api/client.ts) and [form schemas](../../../mobile/src/features/schema.ts) establish current field/request evidence.
+- [Backend security verifier](../../../backend/app/security.py), [user-scoped adapter](../../../backend/app/data_api.py), [eligibility dependency](../../../backend/app/dependencies.py) and [app setup](../../../backend/app/main.py) establish implementation boundaries, not a database schema.
+- [Original PRD](../../PRD.md), [original architecture](../../architecture.md) and [project README](../../../README.md) provide context; approved security decisions and the current API audit take precedence where older technology descriptions conflict.
+
 ## 2. Entity inventory
+
+### Persistence classification
+
+The 17 entries below are **not 17 approved tables**. Auth identity is external Supabase-managed persistence. Profile, body, preferences, wardrobe, catalog and saved outfits require durable business state; physical grouping remains reviewable. Outfit membership must be represented consistently, with a relational association recommended. Try-on job state must survive the submission request. A recommendation result must remain resolvable for the supported save window, but a separate durable request history is not established. Image associations and consent evidence may be fields on parent records rather than standalone entities. Authoritative lifecycle and administrator permissions are required security concepts; their sources and physical representations remain unresolved.
 
 Each identity below must be stable and server-controlled. User ownership derives from the verified Auth subject, never a client role or submitted owner value.
 
@@ -195,7 +205,7 @@ Each identity below must be stable and server-controlled. User ownership derives
 - Purpose / persistence justification: Existing photoConsent=true input justifies recording consent evidence with submission; does not require a standalone generic consent ledger.
 - Conceptual attributes: Subject, job/input association, consent assertion; server receipt time and policy/version only after policy approved.
 - Primary identity requirement: Job-associated consent fact; separate consent identity optional.
-- Ownership: User-associated evidence, trusted recorded context.
+- Ownership: User-owned evidence associated with its subject; trusted system records receipt/context and controls integrity.
 - Relationships: Current job can hold one submission consent; wider history not specified.
 - Sensitive personal data: Yes: personal processing authorization.
 - Relevant APIs: POST /try-on only.
@@ -231,41 +241,45 @@ All normal database requests use the authenticated JWT context and RLS. Ownershi
 
 The following preserves all 35 method/endpoint combinations from the audit. Mapping is conceptual, not a replacement contract or deployed handler inventory. Auth operations remain recorded even though their direct-Supabase migration requires explicit reconciliation.
 
-- **API 01 — `POST /auth/login`:** Supabase-managed Auth identity/session; no new application credentials entity. /auth/me may project trusted membership/profile, but is declared-only and unused.
-- **API 02 — `POST /auth/signup`:** Supabase-managed Auth identity/session; no new application credentials entity. /auth/me may project trusted membership/profile, but is declared-only and unused.
-- **API 03 — `POST /auth/password-reset`:** Supabase-managed Auth identity/session; no new application credentials entity. /auth/me may project trusted membership/profile, but is declared-only and unused.
-- **API 04 — `POST /auth/password-reset/confirm`:** Supabase-managed Auth identity/session; no new application credentials entity. /auth/me may project trusted membership/profile, but is declared-only and unused.
-- **API 05 — `POST /auth/password`:** Supabase-managed Auth identity/session; no new application credentials entity. /auth/me may project trusted membership/profile, but is declared-only and unused.
-- **API 06 — `POST /auth/logout`:** Supabase-managed Auth identity/session; no new application credentials entity. /auth/me may project trusted membership/profile, but is declared-only and unused.
-- **API 07 — `GET /auth/me`:** Supabase-managed Auth identity/session; no new application credentials entity. /auth/me may project trusted membership/profile, but is declared-only and unused.
+- **API 01 — `POST /auth/login`:** Supabase Auth validates credentials and issues/manages its session. No new application password/session entity. Existing custom contract needs explicit frontend migration.
+- **API 02 — `POST /auth/signup`:** Supabase Auth creates identity/verification state. Profile/body/preferences bootstrap is a separate unresolved application action, not an assumed side effect.
+- **API 03 — `POST /auth/password-reset`:** Supabase Auth manages recovery request state/email; no application recovery-token table is justified.
+- **API 04 — `POST /auth/password-reset/confirm`:** Supabase Auth manages recovery validation/password update; existing raw-token contract must be reconciled explicitly, not silently reimplemented.
+- **API 05 — `POST /auth/password`:** Supabase Auth updates credential state; no application password field. Session-revocation behavior remains a separate decision.
+- **API 06 — `POST /auth/logout`:** Supabase Auth manages session revocation; application drafts/session memory are transient, not database entities.
+- **API 07 — `GET /auth/me`:** Declared-only identity read, currently unused. May project Auth identity and authoritative application permissions; no new persistence is required solely for this call.
 - **API 08 — `DELETE /account`:** Lifecycle state plus owned profile/body/preferences, garments/assets, outfits/items, recommendations, try-on/assets/consent and Auth identity; deletion orchestration spans services.
 - **API 09 — `GET /dashboard`:** Derived counts of owned garments, saved outfits and recommendation results; no separate dashboard entity.
-- **API 10 — `GET /profile`:** User profile.
-- **API 11 — `PATCH /profile`:** User profile.
-- **API 12 — `GET /profile/body`:** Body profile with self-reported appearance.
-- **API 13 — `PATCH /profile/body`:** Body profile with self-reported appearance.
-- **API 14 — `GET /settings`:** User preferences; current API strings/units preserved.
-- **API 15 — `PATCH /settings`:** User preferences; current API strings/units preserved.
-- **API 16 — `GET /wardrobe`:** Owned wardrobe garments/image associations; deletion must resolve dependent outfit/recommendation/job references.
+- **API 10 — `GET /profile`:** Read current user profile.
+- **API 11 — `PATCH /profile`:** Update current user profile using the full form payload; bootstrap/upsert and blank-string clearing semantics remain unresolved.
+- **API 12 — `GET /profile/body`:** Read current body profile/appearance.
+- **API 13 — `PATCH /profile/body`:** Update measurements, units, fit and appearance; resolve null values and unit conversion without changing the recorded payload.
+- **API 14 — `GET /settings`:** Read current user preferences.
+- **API 15 — `PATCH /settings`:** Update units/email-notification preferences; preserve the current string representations in the contract.
+- **API 16 — `GET /wardrobe`:** Read/filter/page owned wardrobe garments and their displayed image references.
 - **API 17 — `GET /catalog`:** Shared catalog garments/image associations; authenticated reads.
-- **API 18 — `GET /outfits`:** Owned saved outfits/items and associated image reference; metadata PATCH does not currently mutate items; DELETE preserves wardrobe garments.
-- **API 19 — `GET /admin/catalog`:** Shared catalog garments and image associations; authoritative membership and lifecycle checks. Detailed admin workflow review deferred.
-- **API 20 — `POST /wardrobe`:** Owned wardrobe garments/image associations; deletion must resolve dependent outfit/recommendation/job references.
-- **API 21 — `GET /wardrobe/{id}`:** Owned wardrobe garments/image associations; deletion must resolve dependent outfit/recommendation/job references.
-- **API 22 — `PATCH /wardrobe/{id}`:** Owned wardrobe garments/image associations; deletion must resolve dependent outfit/recommendation/job references.
-- **API 23 — `DELETE /wardrobe/{id}`:** Owned wardrobe garments/image associations; deletion must resolve dependent outfit/recommendation/job references.
-- **API 24 — `POST /admin/catalog`:** Shared catalog garments and image associations; authoritative membership and lifecycle checks. Detailed admin workflow review deferred.
-- **API 25 — `GET /admin/catalog/{id}`:** Shared catalog garments and image associations; authoritative membership and lifecycle checks. Detailed admin workflow review deferred.
-- **API 26 — `PATCH /admin/catalog/{id}`:** Shared catalog garments and image associations; authoritative membership and lifecycle checks. Detailed admin workflow review deferred.
-- **API 27 — `DELETE /admin/catalog/{id}`:** Shared catalog garments and image associations; authoritative membership and lifecycle checks. Detailed admin workflow review deferred.
+- **API 18 — `GET /outfits`:** Read/filter/page owned saved outfits; optional image references may be returned. No new list-history entity.
+- **API 19 — `GET /admin/catalog`:** Read/filter/page shared catalog garments/images under trusted admin access; no separate admin catalog copy.
+- **API 20 — `POST /wardrobe`:** Create owned wardrobe garment and associate its uploaded image; coordinate database/object cleanup on partial failure.
+- **API 21 — `GET /wardrobe/{id}`:** Read one owned garment and its current image reference.
+- **API 22 — `PATCH /wardrobe/{id}`:** Update owned garment metadata and optionally replace its image association; no replacement image means preserve existing image.
+- **API 23 — `DELETE /wardrobe/{id}`:** Delete owned garment and coordinate its image cleanup; decide restrict/detach/snapshot rules for dependent outfit, recommendation and job references.
+- **API 24 — `POST /admin/catalog`:** Create shared catalog garment and image association through trusted administrator mutation.
+- **API 25 — `GET /admin/catalog/{id}`:** Read one shared catalog garment/image for administrator editing.
+- **API 26 — `PATCH /admin/catalog/{id}`:** Update shared catalog garment metadata and optionally replace its image association; trusted administrator only.
+- **API 27 — `DELETE /admin/catalog/{id}`:** Delete shared catalog garment and coordinate image cleanup; dependent saved/recommended/job reference behavior remains unresolved.
 - **API 28 — `GET /catalog/{id}`:** Shared catalog garments/image associations; authenticated reads.
 - **API 29 — `POST /outfits`:** Saved outfit/items from owned wardrobe IDs OR owned recommendation result. Mixed-source references and duplicate-save semantics unresolved.
-- **API 30 — `GET /outfits/{id}`:** Owned saved outfits/items and associated image reference; metadata PATCH does not currently mutate items; DELETE preserves wardrobe garments.
-- **API 31 — `PATCH /outfits/{id}`:** Owned saved outfits/items and associated image reference; metadata PATCH does not currently mutate items; DELETE preserves wardrobe garments.
-- **API 32 — `DELETE /outfits/{id}`:** Owned saved outfits/items and associated image reference; metadata PATCH does not currently mutate items; DELETE preserves wardrobe garments.
+- **API 30 — `GET /outfits/{id}`:** Read owned saved outfit, item references and optional image reference.
+- **API 31 — `PATCH /outfits/{id}`:** Update owned saved outfit name/occasion/description only. Current PATCH does not edit item membership.
+- **API 32 — `DELETE /outfits/{id}`:** Delete owned saved outfit and its item associations while preserving wardrobe garments; outfit image/provenance cleanup needs review.
 - **API 33 — `POST /recommendations`:** Recommendation request/result identities and authorized profile/body/wardrobe/catalog inputs; synchronous response contract preserved.
-- **API 34 — `POST /try-on`:** Owned try-on job, person/output object references, garment reference, submission consent; system-controlled state.
-- **API 35 — `GET /try-on/{id}`:** Owned try-on job, person/output object references, garment reference, submission consent; system-controlled state.
+- **API 34 — `POST /try-on`:** Create owned try-on job, associate one uploaded person image, an authorized garment reference and submission consent; trusted processing later writes status/output.
+- **API 35 — `GET /try-on/{id}`:** Read owned job status/safe error/output image association; does not create another job or image.
+
+### Image and provenance boundaries
+
+`Outfit.imageUrl` is optional, but manual outfit creation has no image-upload field and there is no outfit-image mutation endpoint. Do not invent an outfit gallery/upload entity from that optional response field. Decide whether saved recommendation imagery reuses an authorized retained asset, copies an asset or omits the field. Independent outfit retention must not unintentionally expose an expired/deleted recommendation or try-on image. Canonical object association and ownership must remain clear even if several responses reuse a delivery URL.
 
 ### Contract/model mismatches requiring review
 
@@ -295,6 +309,7 @@ Outfit garmentIds has no source discriminator although recommendations allow cat
 9. Deletion/restriction/snapshot behavior for referenced wardrobe/catalog garments and expiring recommendations.
 10. Private Storage layout, URL renewal/revocation, product image visibility and sensitive image retention.
 11. API exposure/grants and which transactional operations must be restricted against direct Data API manipulation.
+12. Saved-outfit image provenance and whether referenced assets are copied, shared under the same owner or omitted; no new image-upload API is implied.
 
 ## 8. Proposed next step
 
