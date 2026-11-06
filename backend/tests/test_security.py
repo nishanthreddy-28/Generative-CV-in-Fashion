@@ -143,7 +143,7 @@ def test_dependency_missing_token_and_unconfigured_lifecycle_fail_closed(setting
         assert client.get('/test-protected').status_code == 401
         app.dependency_overrides[verified_principal]=lambda: Principal(uuid4(),int(time.time())+60,'test-token')
         assert client.get('/test-protected').status_code == 503
-        assert client.get('/profile').status_code == 404
+        assert client.get('/profile').status_code == 503
 
 
 async def test_rotated_key_refresh(settings, signing):

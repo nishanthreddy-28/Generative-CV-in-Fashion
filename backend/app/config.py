@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     jwt_algorithms: tuple[str, ...] = ("ES256", "RS256")
     jwt_leeway_seconds: int = Field(default=15, ge=0, le=60)
     jwks_ttl_seconds: int = Field(default=300, ge=1, le=600)
+    database_foundation_enabled: bool = False
 
     @field_validator("supabase_url")
     @classmethod
