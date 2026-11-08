@@ -103,3 +103,11 @@ __pycache__/
 .pg_service.conf
 integration-secrets.json
 *.key
+
+# Native signing credentials and nested generated outputs
+credentials.json
+*.jks
+*.keystore
+*.p12
+mobile/build/
+mobile/coverage/

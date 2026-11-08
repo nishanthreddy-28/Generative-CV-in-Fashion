@@ -23,7 +23,8 @@ Only HTTPS Supabase project origins, publishable keys and configured asymmetric 
 - GET/PATCH `/profile` and GET/PATCH `/settings` (existing API contracts 10/11/14/15). PATCH returns 204. Full-form clearing, input validation and protected-field rejection; no auth contract is changed.
 - Database integration is opt-in and fail-closed by default. When enabled, eligibility is fetched using the same JWT, and its reported subject must match FastAPI's verified subject. Inactive accounts are denied; missing/malformed/dependency data never authorizes access. Database operations independently enforce eligibility so a change after the FastAPI check is still denied.
 - Six private RLS tables, least-privilege execution roles, trusted bootstrap/membership/lifecycle operations, post-Auth tombstone survival and a restrictive Storage eligibility gate. See [migration/setup](../supabase/README.md).
-- No body API until unit semantics are reviewed; no catalog/wardrobe/outfits/recommendations/try-on implementation, full account deletion, frontend Auth migration, privileged backend client or production configuration.
+- The frontend now uses Supabase Auth directly; see [Auth integration](../docs/backend/frontend-supabase-auth-integration.md). FastAPI does not duplicate signup/login/recovery/refresh endpoints.
+- No body API until unit semantics are reviewed; no catalog/wardrobe/outfits/recommendations/try-on implementation, full account deletion, privileged backend client or production configuration.
 
 ## Verification
 
@@ -41,5 +42,7 @@ backend/.venv/bin/python backend/tests/database/run_local.py
 ```
 
 Database tests use test-only minimal Auth/Storage interfaces, real PostgreSQL grants/RLS and separate connections for disable/mutation races. They do not certify Supabase JWT gateway, PostgREST schema exposure, hosted role privileges, Storage HTTP/signing or physical-device workflows. Those remain required before activation/release. Existing Starlette TestClient deprecation warning is unchanged; no production behavior depends on that test transport.
+
+Backend CI runs both the ordinary pytest suite and this dedicated PostgreSQL runner. The ordinary suite's database skips do not replace the dedicated job step. The updated workflow must still pass on the remote runner after a separately approved push.
 
 See [checkpoint 002](../docs/backend/checkpoint-002-database-foundation.md), [security architecture](../docs/backend/authentication-and-security.md) and [35-contract audit](../docs/backend/api-requirements.md).

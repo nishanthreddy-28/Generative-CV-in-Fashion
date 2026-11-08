@@ -63,8 +63,8 @@ export default function Preview() {
         <Text style={styles.version}>v0.4.1 · Workflow review</Text>
       </View>
       <Notice
-        title="Backend not connected"
-        text="Review screens, navigation and unsaved forms. Real sign-in, saved records and AI results are not connected. Personal and admin preview links do not grant account access or submit changes."
+        title="Preview does not load account data"
+        text="Review screens, navigation and unsaved forms. Account forms use Supabase when configured; personal and admin previews do not load records or submit changes. Saved collections and AI results still require backend integration."
       />
       {flows.map((flow, index) => (
         <View key={flow.title} style={styles.card}>
@@ -83,8 +83,8 @@ export default function Preview() {
       ))}
       <View style={styles.checkpoint}>
         <Text style={ui.heading}>Today’s checkpoint</Text>
-        <Text style={ui.body}>Frontend preview v0.4.1 · Backend security foundation v0.1.0 · Database entity inventory v0.1</Text>
-        <Text style={ui.body}>Review only. Database implementation and live integration are still pending.</Text>
+        <Text style={ui.body}>Frontend preview v0.4.1 · Backend foundation v0.2.0 · Supabase Auth integration preview</Text>
+        <Text style={ui.body}>The profile and preferences backend is implemented locally. Hosted database, Storage and Android device verification are still pending.</Text>
       </View>
       <RouteLink to="/">Back to introduction</RouteLink>
     </Screen>
