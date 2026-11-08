@@ -40,7 +40,7 @@ The restrictive `storage.objects` policy adds active-account eligibility to ever
 
 ## Remaining work
 
-- Frontend Supabase Auth migration and real project integration; no frontend changes here.
+- Frontend Supabase Auth source is integrated; hosted Auth/native callbacks and real project integration remain pending. See [Auth setup](../docs/backend/frontend-supabase-auth-integration.md).
 - Body read/write API: table is provisioned empty, but no grants/RPC/routes permit normal measurement access until units, precision and conversion are reviewed. Current proposed types must be reviewed before real body data is accepted.
 - Full deletion cleanup, completion semantics, Auth administrative deletion, tombstone retention and processor cleanup.
 - Catalog/garment/image workflows and mixed-source outfits; the 35-contract inventory is unchanged.

@@ -22,3 +22,10 @@ jobs:
       - run: python -m pip install -r requirements.lock
       - run: python -m pytest -q
       - run: python -m compileall -q app
+      - name: Install disposable PostgreSQL test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql libpq-dev
+          echo "$(pg_config --bindir)" >> "$GITHUB_PATH"
+      - name: Verify migration, grants, RLS and lifecycle isolation
+        run: python tests/database/run_local.py

@@ -5,7 +5,7 @@ Android first, built with Expo SDK 58, React Native, TypeScript and Expo Router.
 Use Node 24 LTS (`.nvmrc`). Node 25 is outside this Expo SDK’s supported range.
 
 ```sh
-npm ci
+npm ci --legacy-peer-deps
 npm start
 ```
 Use a compatible Android development build or emulator. Android SDK is required for local native builds. See https://docs.expo.dev/develop/development-builds/introduction/.
@@ -21,9 +21,9 @@ npm run export:android
 ## Current scope
 Frontend screens cover account forms, dashboard, personal and body profiles, wardrobe, catalog, outfits, recommendations, try-on, preferences and administration. Open `/preview` to review all flows without a backend. Preview uses no fabricated records and never submits changes.
 
-Real authentication, persistence, email delivery and AI results require backend integration. Google sign-in is an explicit integration placeholder. Sessions are held in memory only. See [workflow checkpoint](../docs/issues/002-frontend-workflows-checkpoint.md) and [API contract](../docs/frontend-api-contract.md).
+Supabase email/password Auth source is integrated: signup, confirmation/recovery callbacks, login/logout, refresh and native secure session restoration. Hosted email/callback and device acceptance remain pending. Native sessions use SecureStore; web sessions end on page reload. Google sign-in is unavailable. Business persistence is limited to the locally tested FastAPI profile/preferences foundation, which stays disabled pending hosted verification. Wardrobe/catalog/outfit/job APIs and AI processing are not implemented. See [current workflow status](../docs/WORKFLOW_STATUS.md), [Auth setup](../docs/backend/frontend-supabase-auth-integration.md) and the preserved [35-contract inventory](../docs/backend/api-requirements.md).
 
-Copy `.env.example` to `.env` only when a compatible API exists. Public introduction and workflow preview screens do not load private records.
+Configure `.env` privately using the API origin, Supabase project origin and publishable key template. Never bundle privileged credentials. A reachable API does not supply missing routes or authorize enabling the database flag. Public introduction and workflow preview screens do not load private records.
 
 The Android application ID, icons, signing and Play Console configuration must be finalized before a release build. No production identifier is committed yet.
 
