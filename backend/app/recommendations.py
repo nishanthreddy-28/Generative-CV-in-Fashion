@@ -42,6 +42,7 @@ class Recommendation(BaseModel):
     model_config=ConfigDict(extra='forbid')
     id: UUID
     requestId: UUID
+    savedId: UUID | None = None
     name: Annotated[StrictStr,Field(min_length=1,max_length=250)]
     description: StrictStr
     occasion: Occasion

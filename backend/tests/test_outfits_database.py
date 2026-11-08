@@ -12,7 +12,7 @@ pytestmark=pytest.mark.skipif(not SOCKET,reason='Use disposable tests/database/r
 def garments(a):
     _,one=wardrobe(a,'Shirt');_,two=wardrobe(a,'Trousers','Bottoms')
     _,shared=catalog(a,'Jacket','Outerwear')
-    return grant(a)+one+two+shared+"SELECT set_config('test.wardrobe',(api.list_wardrobe()->'items'->0->>'id'),true);SELECT set_config('test.second',(api.list_wardrobe()->'items'->1->>'id'),true);SELECT set_config('test.catalog',(api.list_catalog()->'items'->0->>'id'),true);"
+    return grant(a)+one+two+shared+"SELECT set_config('test.wardrobe',(api.list_wardrobe(p_category=>'Tops')->'items'->0->>'id'),true);SELECT set_config('test.second',(api.list_wardrobe(p_category=>'Bottoms')->'items'->0->>'id'),true);SELECT set_config('test.catalog',(api.list_catalog()->'items'->0->>'id'),true);"
 
 
 MIXED="jsonb_build_array(jsonb_build_object('source','wardrobe','garmentId',current_setting('test.wardrobe')),jsonb_build_object('source','catalog','garmentId',current_setting('test.catalog')))"

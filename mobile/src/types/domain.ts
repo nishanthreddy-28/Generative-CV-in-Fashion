@@ -30,11 +30,19 @@ export type Outfit = {
 };
 export type Recommendation = Omit<Outfit, "items"> & {
   requestId: string;
+  savedId?: string | null;
   items: (OutfitItem & { name: string; category: string; color: string })[];
   score: number;
   reasons: string[];
   engineVersion: "rules-v1";
   generatedAt: string;
+};
+export type SavedRecommendation = {
+  id: string;
+  recommendationId: string;
+  savedAt: string;
+  available: boolean;
+  recommendation: Recommendation | null;
 };
 export type Profile = {
   name: string;
