@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, field_validator, model_validator
@@ -58,6 +58,10 @@ class OutfitCreate(BaseModel):
             if self.garmentIds is not None else None)
 
 
+class StoredOutfitItem(OutfitItem):
+    id: UUID
+
+
 class OutfitRead(BaseModel):
     model_config = ConfigDict(extra='forbid')
     id: UUID
@@ -65,7 +69,7 @@ class OutfitRead(BaseModel):
     description: Annotated[StrictStr, Field(max_length=2000)]
     occasion: Annotated[StrictStr, Field(max_length=200)]
     garmentIds: list[UUID]
-    items: Annotated[list[OutfitItem], Field(min_length=2, max_length=100)]
+    items: Annotated[list[StoredOutfitItem], Field(min_length=2, max_length=100)]
 
     @model_validator(mode='after')
     def consistent_projection(self):
@@ -144,3 +148,54 @@ async def list_outfits(data: Data, limit: Annotated[int, Query(ge=1, le=100)] = 
         return OutfitPage(items=[record(item) for item in result['items']], nextCursor=token)
     except (ValueError, TypeError, KeyError, OverflowError):
         raise DependencyUnavailable() from None
+
+
+class OutfitPatch(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    name: Annotated[StrictStr, Field(min_length=1,max_length=200)] | None = None
+    description: Annotated[StrictStr, Field(max_length=2000)] | None = None
+    occasion: Annotated[StrictStr, Field(max_length=200)] | None = None
+
+    @field_validator('*',mode='before')
+    @classmethod
+    def valid_text(cls,value,info):
+        if not isinstance(value,str) or '\x00' in value or (info.field_name=='name' and not value.strip()):
+            raise ValueError('Invalid outfit fields.')
+        return value.strip() if info.field_name=='name' else value
+
+
+class OutfitReplacement(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    items: Annotated[list[OutfitItem],Field(min_length=2,max_length=100)]
+
+    @model_validator(mode='after')
+    def unique_items(self):
+        if len({(item.source,item.garmentId) for item in self.items})!=len(self.items):
+            raise ValueError('Duplicate outfit item.')
+        return self
+
+
+@router.patch('/outfits/{outfit_id}',status_code=204)
+async def patch_outfit(outfit_id:UUID,body:OutfitPatch,data:Data):
+    await rpc(data,'update_outfit',{'p_id':str(outfit_id),'p_changes':body.model_dump(exclude_unset=True)},missing_detail='Outfit not found.')
+    return Response(status_code=204)
+
+
+async def change_items(data,outfit_id,operation,items=None,item_id=None):
+    return record(await rpc(data,'manage_outfit_items',{'p_id':str(outfit_id),'p_operation':operation,
+        'p_items':items,'p_item_id':str(item_id) if item_id else None},missing_detail='Outfit, item or garment unavailable.'))
+
+
+@router.put('/outfits/{outfit_id}/items',response_model=OutfitRead)
+async def replace_items(outfit_id:UUID,body:OutfitReplacement,data:Data):
+    return await change_items(data,outfit_id,'replace',[item.model_dump(mode='json') for item in body.items])
+
+
+@router.post('/outfits/{outfit_id}/items',response_model=OutfitRead,status_code=201)
+async def add_item(outfit_id:UUID,body:OutfitItem,data:Data):
+    return await change_items(data,outfit_id,'add',[body.model_dump(mode='json')])
+
+
+@router.delete('/outfits/{outfit_id}/items/{item_id}',response_model=OutfitRead)
+async def remove_item(outfit_id:UUID,item_id:UUID,data:Data):
+    return await change_items(data,outfit_id,'remove',item_id=item_id)

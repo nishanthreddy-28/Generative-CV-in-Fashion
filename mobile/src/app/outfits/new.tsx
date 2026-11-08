@@ -1,22 +1,22 @@
 import { useDraft } from "../../hooks/useDraft";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { router } from "expo-router";
 import {
   Screen,
   Gate,
   Notice,
-  ResourceState,
   RouteLink,
   usePreview,
   ui,
 } from "../../components/Screen";
 import { Fields } from "../../components/Fields";
 import { Button } from "../../components/Button";
-import { useResource } from "../../hooks/useResource";
+import { OutfitItemSelector } from "../../features/OutfitItemSelector";
+import { itemError, itemReferences } from "../../features/outfitItems";
 import { useSession } from "../../features/session";
 import { validate, type Field } from "../../features/validation";
-import type { Garment, Page } from "../../types/domain";
+import type { OutfitItem } from "../../types/domain";
 const fields: Field[] = [
   { key: "name", label: "Outfit name", required: true },
   { key: "occasion", label: "Occasion" },
@@ -25,23 +25,17 @@ const fields: Field[] = [
 export default function NewOutfit() {
   const preview = usePreview();
   const { session, request } = useSession();
-  const [cursor, setCursor] = useState("");
-  const result = useResource<Page<Garment>>(
-    `/wardrobe?limit=24${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
-    preview,
-  );
   const [values, setValues] = useDraft<Record<string, string>>(
     "outfit-builder" + ":fields",
     {},
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [ids, setIds] = useDraft<string[]>("outfit-builder:pieces", []);
+  const [items, setItems] = useDraft<OutfitItem[]>("outfit-builder:typed-pieces", []);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   async function save() {
     const issues = validate(fields, values);
-    if (ids.length < 2)
-      issues.garments = "Select at least two wardrobe pieces.";
+    if (itemError(items)) issues.garments = itemError(items);
     setErrors(issues);
     if (Object.keys(issues).length) return;
     if (preview) {
@@ -53,10 +47,10 @@ export default function NewOutfit() {
     try {
       await request("/outfits", {
         method: "POST",
-        body: { ...values, garmentIds: ids },
+        body: { ...values, items: itemReferences(items) },
       });
       setValues({});
-      setIds([]);
+      setItems([]);
       router.replace("/outfits");
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Unable to save outfit.");
@@ -74,50 +68,7 @@ export default function NewOutfit() {
           disabled={busy}
           onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
         />
-        <Text style={ui.heading}>
-          Choose your pieces · {ids.length} selected
-        </Text>
-        <ResourceState {...result} />
-        {(result.data?.items ?? []).map((g) => (
-          <Pressable
-            key={g.id}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: ids.includes(g.id) }}
-            onPress={() =>
-              setIds((s) =>
-                s.includes(g.id) ? s.filter((id) => id !== g.id) : [...s, g.id],
-              )
-            }
-            disabled={busy}
-            style={[ui.chip, ids.includes(g.id) && ui.selected]}
-          >
-            <Text>
-              {g.name} · {g.category}
-            </Text>
-          </Pressable>
-        ))}
-        {!result.loading && !result.error && !result.data?.items.length && (
-          <Notice
-            title="No pieces available"
-            text="Add wardrobe garments before building an outfit. Preview does not supply sample garments."
-          />
-        )}
-        {Boolean(result.data?.nextCursor) && (
-          <Button
-            label="Next page of garments"
-            variant="secondary"
-            onPress={() => setCursor(result.data!.nextCursor!)}
-            disabled={busy}
-          />
-        )}
-        {Boolean(cursor) && (
-          <Button
-            label="First page of garments"
-            variant="secondary"
-            onPress={() => setCursor("")}
-            disabled={busy}
-          />
-        )}
+        <OutfitItemSelector items={items} onChange={setItems} preview={preview} disabled={busy} />
         <View>
           {Boolean(errors.garments) && (
             <Text accessibilityRole="alert" style={ui.error}>

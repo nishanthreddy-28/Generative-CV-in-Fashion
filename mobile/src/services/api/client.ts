@@ -9,7 +9,7 @@ export class ApiError extends Error {
 export const isApiConfigured = () =>
   Boolean(process.env.EXPO_PUBLIC_API_URL?.trim());
 export type RequestOptions = {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
   token?: string;
   signal?: AbortSignal;

@@ -30,8 +30,25 @@ def outfits_client():
             if any(item['garmentId'] not in [wardrobe,catalog] for item in body['p_items']):return httpx.Response(404,json={'code':'P0002'})
             ident=str(uuid4())
             row={'id':ident,'name':body['p_name'],'occasion':body['p_occasion'],'description':body['p_description'],
-                 'garmentIds':[item['garmentId'] for item in body['p_items'] if item['source']=='wardrobe'],'items':body['p_items']}
+                 'garmentIds':[item['garmentId'] for item in body['p_items'] if item['source']=='wardrobe'],'items':[dict(item,id=str(uuid4())) for item in body['p_items']]}
             records[ident]=row
+            return httpx.Response(200,json=row)
+        if operation in ('update_outfit','manage_outfit_items'):
+            row=records.get(body['p_id'])
+            if not row:return httpx.Response(404,json={'code':'P0002'})
+            if operation=='update_outfit':
+                row.update(body['p_changes']);return httpx.Response(204)
+            refs=[{k:v for k,v in item.items() if k!='id'} for item in row['items']]
+            if body['p_operation']=='replace':refs=body['p_items']
+            elif body['p_operation']=='add':refs+=body['p_items']
+            else:
+                if not any(i['id']==body['p_item_id'] for i in row['items']):return httpx.Response(404,json={'code':'P0002'})
+                refs=[{k:v for k,v in i.items() if k!='id'} for i in row['items'] if i['id']!=body['p_item_id']]
+            if len(refs)<2 or len({(i['source'],i['garmentId']) for i in refs})!=len(refs):return httpx.Response(400,json={'code':'22023'})
+            if any(item['garmentId'] not in [wardrobe,catalog] for item in refs):return httpx.Response(404,json={'code':'P0002'})
+            previous={(i['source'],i['garmentId']):i['id'] for i in row['items']}
+            row['items']=[dict(i,id=previous.get((i['source'],i['garmentId']),str(uuid4()))) for i in refs]
+            row['garmentIds']=[i['garmentId'] for i in refs if i['source']=='wardrobe']
             return httpx.Response(200,json=row)
         if operation=='read_outfit':
             row=records.get(body['p_id'])
@@ -152,7 +169,7 @@ def test_flag_keeps_outfits_closed_and_edit_delete_not_implemented():
     with TestClient(app) as client:
         assert client.get('/outfits').status_code==503
         assert client.post('/outfits',json={'name':'Look','garmentIds':[str(uuid4()),str(uuid4())]}).status_code==503
-        assert client.patch('/outfits/'+str(uuid4()),json={}).status_code==405
+        assert client.patch('/outfits/'+str(uuid4()),json={}).status_code==503
         assert client.delete('/outfits/'+str(uuid4())).status_code==405
 
 
@@ -161,3 +178,65 @@ def test_referenced_wardrobe_deletion_returns_conflict(outfits_client):
     faults['delete_wardrobe']=httpx.Response(409,json={'code':'23503','message':'sensitive reference details'})
     result=client.delete('/wardrobe/'+str(uuid4()))
     assert result.status_code==409 and 'sensitive reference details' not in result.text
+
+
+def test_metadata_edit_does_not_change_item_identity(outfits_client):
+    client,w,c,*_=outfits_client
+    before=client.post('/outfits',json=mixed(w,c)).json();path='/outfits/'+before['id']
+    assert client.patch(path,json={'name':' New name ','description':''}).status_code==204
+    after=client.get(path).json()
+    assert after['name']=='New name' and after['description']=='' and after['occasion']=='Weekend'
+    assert after['items']==before['items']
+
+
+def test_item_add_replace_remove_and_failure_retains_original(outfits_client):
+    client,w,c,*_=outfits_client
+    before=client.post('/outfits',json=mixed(w,c)).json();path='/outfits/'+before['id']+'/items'
+    added=client.post(path,json={'source':'wardrobe','garmentId':c})
+    assert added.status_code==201,added.text
+    row=added.json();assert len(row['items'])==3 and row['items'][:2]==before['items']
+    assert client.delete(path+'/'+row['items'][2]['id']).json()['items']==before['items']
+    assert client.delete(path+'/'+before['items'][0]['id']).status_code==422
+    assert client.post(path,json={'source':'wardrobe','garmentId':w}).status_code==422
+    assert client.delete(path+'/'+str(uuid4())).status_code==404
+    assert client.put(path,json={'items':[{'source':'wardrobe','garmentId':w},{'source':'catalog','garmentId':str(uuid4())}]}).status_code==404
+    assert client.get('/outfits/'+before['id']).json()['items']==before['items']
+    replaced=client.put(path,json={'items':[{'source':'catalog','garmentId':c},{'source':'wardrobe','garmentId':w}]}).json()
+    assert replaced['items']==list(reversed(before['items']))
+
+
+@pytest.mark.parametrize('method,suffix,body',[('PATCH','',{'owner_id':str(uuid4())}),('PATCH','',{'name':None}),
+ ('PATCH','',{'name':' '}),('PATCH','',{'items':[]}),('PATCH','',{'occasion':'x'*201}),
+ ('PUT','/items',{'items':[]}),('PUT','/items',{'items':None}),
+ ('PUT','/items',{'items':[{'source':'wardrobe','garmentId':str(uuid4())}]*2}),
+ ('POST','/items',{'source':'wrong','garmentId':str(uuid4())}),
+ ('POST','/items',{'source':'catalog','garmentId':'bad'}),('POST','/items',{'source':'catalog','garmentId':str(uuid4()),'owner_id':str(uuid4())})])
+def test_invalid_edit_payloads_never_write(outfits_client,method,suffix,body):
+    client,_,_,calls,*_=outfits_client
+    assert client.request(method,'/outfits/'+str(uuid4())+suffix,json=body).status_code==422
+    assert not any(r.url.path.endswith(('update_outfit','manage_outfit_items')) for r in calls)
+
+
+@pytest.mark.parametrize('method,suffix,body',[('PATCH','',{}),('PUT','/items',{'items':[{'source':'catalog','garmentId':str(uuid4())},{'source':'wardrobe','garmentId':str(uuid4())}]}),
+ ('POST','/items',{'source':'catalog','garmentId':str(uuid4())}),('DELETE','/items/'+str(uuid4()),None)])
+def test_edit_requests_without_auth_do_not_reach_upstream(outfits_client,method,suffix,body):
+    client,_,_,calls,_,app,_=outfits_client;app.dependency_overrides.clear()
+    assert client.request(method,'/outfits/'+str(uuid4())+(suffix or ''),json=body).status_code==401
+    assert calls==[]
+
+
+@pytest.mark.parametrize('method,suffix,body',[('PATCH','',{}),('PUT','/items',{'items':[{'source':'catalog','garmentId':str(uuid4())},{'source':'wardrobe','garmentId':str(uuid4())}]}),
+ ('POST','/items',{'source':'catalog','garmentId':str(uuid4())}),('DELETE','/items/'+str(uuid4()),None)])
+def test_missing_or_hidden_outfits_on_all_edit_routes(outfits_client,method,suffix,body):
+    client,*_=outfits_client
+    assert client.request(method,'/outfits/'+str(uuid4())+suffix,json=body).status_code==404
+
+
+@pytest.mark.parametrize('status,expected',[(401,401),(403,403),(500,503)])
+def test_edit_dependency_errors_are_safe(outfits_client,status,expected):
+    client,w,c,_,faults,*_=outfits_client
+    before=client.post('/outfits',json=mixed(w,c)).json()
+    for operation,method,suffix,body in [('update_outfit','PATCH','',{'name':'Changed'}),('manage_outfit_items','PUT','/items',{'items':mixed(w,c)['items']})]:
+        faults[operation]=httpx.Response(status,json={'message':'sensitive upstream fields'})
+        result=client.request(method,'/outfits/'+before['id']+suffix,json=body)
+        assert result.status_code==expected and 'sensitive upstream fields' not in result.text

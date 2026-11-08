@@ -1,12 +1,11 @@
 import { useDraft } from "../../hooks/useDraft";
 import { useState } from "react";
-import { Image } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { Image, Text } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import {
   Screen,
   Gate,
   Notice,
-  Confirm,
   ResourceState,
   RouteLink,
   usePreview,
@@ -17,7 +16,9 @@ import { Button } from "../../components/Button";
 import { useResource } from "../../hooks/useResource";
 import { useSession } from "../../features/session";
 import { validate, type Field } from "../../features/validation";
-import type { Outfit } from "../../types/domain";
+import type { Outfit, OutfitItem } from "../../types/domain";
+import { OutfitItemSelector } from "../../features/OutfitItemSelector";
+import { itemError, itemReferences } from "../../features/outfitItems";
 const fields: Field[] = [
   { key: "name", label: "Outfit name", required: true },
   { key: "occasion", label: "Occasion" },
@@ -42,35 +43,43 @@ export default function Detail() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [confirm, setConfirm] = useState(false);
-  async function mutate(remove = false) {
-    const issues = remove ? {} : validate(fields, values);
+  const [itemDraft, setItemDraft] = useDraft<OutfitItem[] | null>(path + ":typed-items", null);
+  const items = itemDraft ?? result.data?.items ?? [];
+  async function mutate() {
+    const issues = validate(fields, values);
     setErrors(issues);
     if (Object.keys(issues).length) return;
     if (preview) {
       setMessage("Preview only. No outfit has been changed.");
-      setConfirm(false);
       return;
     }
     if (!session) return;
     setBusy(true);
     try {
-      await request(path, {
-        method: remove ? "DELETE" : "PATCH",
-        ...(remove ? {} : { body: values }),
-      });
-      if (remove) router.replace("/outfits");
-      else {
-        setMessage("Outfit saved.");
-        setValues({});
-        result.retry();
-      }
+      await request(path, { method: "PATCH", body: values });
+      setMessage("Outfit details saved. Any unsaved item selection is retained.");
+      setValues({});
+      result.retry();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Unable to update outfit.");
     } finally {
       setBusy(false);
-      setConfirm(false);
     }
+  }
+  async function saveItems() {
+    const error = itemError(items);
+    if (error) { setMessage(error); return; }
+    if (preview) { setMessage("Preview only. No outfit items have been saved."); return; }
+    if (!session || !result.data) return;
+    setBusy(true);
+    try {
+      await request(path + "/items", { method: "PUT", body: { items: itemReferences(items) } });
+      setItemDraft(null);
+      setMessage("Outfit pieces saved.");
+      result.retry();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save pieces. Your selection is retained.");
+    } finally { setBusy(false); }
   }
   return (
     <Screen title="The outfit edit.">
@@ -92,38 +101,23 @@ export default function Detail() {
               disabled={busy}
               onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
             />
-            {result.data?.garmentIds.map((g) => (
-              <RouteLink key={g} to={`/wardrobe/${encodeURIComponent(g)}`}>
-                View wardrobe piece →
-              </RouteLink>
-            ))}
+            <OutfitItemSelector items={items} onChange={setItemDraft} preview={preview} disabled={busy} />
+            {itemDraft !== null && <Text style={ui.body}>Unsaved item changes · save the selection to apply them.</Text>}
+            <Button label="Save outfit pieces" onPress={saveItems} loading={busy} disabled={!preview && !result.data} />
+            <Button label="Discard item changes" variant="secondary" disabled={busy || itemDraft === null} onPress={() => setItemDraft(null)} />
             {Boolean(message) && (
               <Notice title="Outfit status" text={message} />
             )}
             <Button
               label="Save outfit details"
-              onPress={() => mutate()}
+              onPress={mutate}
               loading={busy}
-            />
-            <Button
-              label="Delete outfit"
-              variant="danger"
-              onPress={() => setConfirm(true)}
-              disabled={busy}
             />
           </>
         )}
         <RouteLink to="/outfits" preview={preview}>
           Back to saved outfits
         </RouteLink>
-        <Confirm
-          visible={confirm}
-          title="Delete this outfit?"
-          text="Your wardrobe garments will remain in your collection."
-          busy={busy}
-          onCancel={() => setConfirm(false)}
-          onConfirm={() => mutate(true)}
-        />
       </Gate>
     </Screen>
   );
