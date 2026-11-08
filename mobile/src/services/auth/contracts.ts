@@ -93,3 +93,11 @@ export function catalogRole(value: unknown, userId: string): "user" | "admin" {
   const access = value as Record<string, unknown>;
   return access.userId === userId && access.isCatalogAdmin === true ? "admin" : "user";
 }
+
+export async function reauthenticate(
+  auth: Pick<Auth, "signInWithPassword">, email: string, password: string, expectedUser: string,
+) {
+  const session = await signIn(auth,email,password);
+  if(session.user.id!==expectedUser)throw new Error("Account changed during confirmation. Sign out and retry.");
+  return session;
+}
