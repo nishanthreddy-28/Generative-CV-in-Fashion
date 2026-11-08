@@ -16,7 +16,6 @@ import {
 import { PhotoField, appendPhoto, type Photo } from "../components/PhotoField";
 import { useResource } from "../hooks/useResource";
 import { useSession } from "./session";
-import { ApiError } from "../services/api/client";
 import { type Field, validate, payloadFor } from "./validation";
 type Props = {
   title: string;
@@ -41,7 +40,7 @@ export function EditorScreen({
   allowDelete = false,
 }: Props) {
   const preview = usePreview();
-  const { session, expire, request } = useSession();
+  const { session, request } = useSession();
   const result = useResource<Record<string, unknown>>(
     path,
     preview || create,
@@ -91,7 +90,6 @@ export function EditorScreen({
       }
       await request(path, {
         method: create ? "POST" : "PATCH",
-        token: session.accessToken,
         body,
       });
       setDirty(false);
@@ -101,7 +99,6 @@ export function EditorScreen({
       if (afterSave) router.replace(afterSave as Href);
       else result.retry();
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) expire();
       setMessage(
         e instanceof Error
           ? e.message
@@ -120,7 +117,7 @@ export function EditorScreen({
     if (!session) return;
     setBusy(true);
     try {
-      await request(path, { method: "DELETE", token: session.accessToken });
+      await request(path, { method: "DELETE" });
       router.replace((afterSave ?? "/wardrobe") as Href);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Unable to delete.");

@@ -57,7 +57,6 @@ export default function Detail() {
     try {
       await request(path, {
         method: remove ? "DELETE" : "PATCH",
-        token: session.accessToken,
         ...(remove ? {} : { body: values }),
       });
       if (remove) router.replace("/outfits");

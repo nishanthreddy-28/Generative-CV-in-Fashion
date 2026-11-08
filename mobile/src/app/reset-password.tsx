@@ -4,7 +4,8 @@ import { Screen, Notice, RouteLink } from "../components/Screen";
 import { Fields } from "../components/Fields";
 import { Button } from "../components/Button";
 import { validate, type Field } from "../features/validation";
-import { apiRequest } from "../services/api/client";
+import { authError, emailLinkHash, verifyEmailLink } from "../services/auth/contracts";
+import { createEmailLinkAuth, supabase } from "../services/auth/supabase";
 const fields: Field[] = [
   { key: "password", label: "New password", kind: "password", required: true },
   {
@@ -15,7 +16,27 @@ const fields: Field[] = [
   },
 ];
 export default function ResetPassword() {
-  const { token } = useLocalSearchParams<{ token?: string }>();
+  const { token_hash } = useLocalSearchParams();
+  const hash = emailLinkHash(token_hash);
+  const [recovery, setRecovery] = useState<{
+    hash: string;
+    auth: ReturnType<typeof createEmailLinkAuth>;
+  } | null>(null);
+  const verified = recovery !== null && recovery.hash === hash;
+  async function verify() {
+    if (!hash || busy) return;
+    setBusy(true);
+    try {
+      const auth = createEmailLinkAuth();
+      await verifyEmailLink(auth, hash, "recovery");
+      setRecovery({ hash, auth });
+      setMessage("");
+    } catch {
+      setMessage("This recovery link is invalid or expired. Request a new link.");
+    } finally {
+      setBusy(false);
+    }
+  }
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -27,18 +48,13 @@ export default function ResetPassword() {
       issues.confirm = "Passwords must match.";
     setErrors(issues);
     if (Object.keys(issues).length) return;
-    if (!token) {
-      setMessage(
-        "Open the reset link sent to your email before setting a new password.",
-      );
-      return;
-    }
+    if (!verified || busy) return;
     setBusy(true);
     try {
-      await apiRequest("/auth/password-reset/confirm", {
-        method: "POST",
-        body: { token, password: values.password },
-      });
+      const { error } = await recovery.auth.updateUser({ password: values.password });
+      if (error) throw new Error(authError(error.code));
+      await recovery.auth.signOut({ scope: "local" }).catch(() => undefined);
+      setRecovery(null);
       setDone(true);
       setValues({});
       setMessage("Your password was reset. You can sign in now.");
@@ -57,7 +73,14 @@ export default function ResetPassword() {
       title="Set a new password."
       subtitle="Use the reset link from your account email."
     >
-      {!done && (
+      {!done && !verified && (supabase && hash ? (
+        <Button label="Verify recovery link" loading={busy} onPress={verify} />
+      ) : (
+        <Notice title="Recovery unavailable" text={supabase
+          ? "Open the reset link sent to your email."
+          : "Supabase sign-in is not configured."} />
+      ))}
+      {!done && verified && (
         <>
           <Fields
             fields={fields}

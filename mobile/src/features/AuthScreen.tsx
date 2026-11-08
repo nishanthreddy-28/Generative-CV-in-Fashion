@@ -6,15 +6,15 @@ import { Button } from "../components/Button";
 import { Fields } from "../components/Fields";
 import { type Field, validate } from "./validation";
 import { useSession } from "./session";
-import { authApi } from "../services/api/resources";
-import { isApiConfigured } from "../services/api/client";
+import { emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
+import { authError, signupMessage } from "../services/auth/contracts";
 export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
-  const { login, session } = useSession();
+  const { login, signup, session, ready } = useSession();
   const fields: Field[] = [
     ...(mode === "signup"
       ? [{ key: "name", label: "Name", required: true }]
@@ -55,19 +55,17 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
         await login(values.email, values.password);
         router.replace("/dashboard");
       } else {
-        if (mode === "signup")
-          await authApi.signup(
-            values.name.trim(),
-            values.email.trim(),
-            values.password,
-          );
-        else await authApi.reset(values.email.trim());
+        const auth = requireAuth();
+        if (mode === "signup") {
+          setMessage(signupMessage(await signup(values.name.trim(), values.email.trim(), values.password)));
+        } else {
+          const { error } = await auth.resetPasswordForEmail(values.email.trim(), {
+            redirectTo: emailRedirect("reset-password"),
+          });
+          if (error && error.code !== "user_not_found") throw new Error(authError(error.code));
+          setMessage("If an account exists for this address, you will receive password reset instructions.");
+        }
         setSuccess(true);
-        setMessage(
-          mode === "signup"
-            ? "Your request was accepted. Check your email for next steps before signing in."
-            : "If an account exists for this address, you will receive password reset instructions.",
-        );
         setValues({});
       }
     } catch (e) {
@@ -96,10 +94,10 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
       {session && (
         <RouteLink to="/dashboard">Continue to your dashboard</RouteLink>
       )}
-      {!isApiConfigured() && (
+      {!supabase && (
         <Notice
           title="Account service not connected"
-          text="You can review and validate these forms. Sign-in and account creation require the backend; no demo account will be created."
+          text="You can review and validate these forms. Sign-in and account creation require Supabase configuration; no demo account will be created."
         />
       )}
       <Fields
@@ -127,6 +125,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
               : "Send reset instructions"
         }
         loading={busy}
+        disabled={!ready || !supabase}
         onPress={submit}
       />
       {mode !== "reset" && (
@@ -138,13 +137,12 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
             onPress={() => {
               setSuccess(false);
               setMessage(
-                "Google sign-in requires the authentication integration in the next backend phase. No account has been created.",
+                "Google sign-in is not available yet.",
               );
             }}
           />
           <Text style={ui.body}>
-            Google account connection will be enabled with authentication
-            integration.
+            Email and password are available for this milestone.
           </Text>
         </View>
       )}

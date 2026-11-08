@@ -75,7 +75,6 @@ export default function TryOn() {
       form.append("photoConsent", "true");
       const value = await request<TryOnJob>("/try-on", {
         method: "POST",
-        token: session.accessToken,
         body: form,
       });
       setJob(value);
@@ -94,7 +93,6 @@ export default function TryOn() {
     try {
       setJob(
         await request<TryOnJob>(`/try-on/${encodeURIComponent(job.id)}`, {
-          token: session.accessToken,
         }),
       );
     } catch (e) {

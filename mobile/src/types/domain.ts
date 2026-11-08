@@ -4,7 +4,7 @@ export type User = {
   name?: string;
   role: "user" | "admin";
 };
-export type Session = { user: User; accessToken: string };
+export type Session = { user: User };
 export type Garment = {
   id: string;
   name: string;

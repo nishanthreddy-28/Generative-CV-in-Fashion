@@ -13,6 +13,7 @@ import { Link, type Href, useLocalSearchParams } from "expo-router";
 import { Button } from "./Button";
 import { colors } from "../theme/tokens";
 import { useSession } from "../features/session";
+import { protectedScreenState } from "../services/auth/contracts";
 export function usePreview() {
   const p = useLocalSearchParams<{ preview?: string }>();
   return p.preview === "1";
@@ -70,8 +71,11 @@ export function Gate({
   admin = false,
   children,
 }: PropsWithChildren<{ preview: boolean; admin?: boolean }>) {
-  const { session } = useSession();
-  if (!preview && !session)
+  const { session, ready } = useSession();
+  const access = protectedScreenState(preview, ready, session?.user.role, admin);
+  if (access === "restoring")
+    return <ActivityIndicator accessibilityLabel="Restoring session" />;
+  if (access === "signed-out")
     return (
       <Notice
         title="Sign in to continue"
@@ -81,7 +85,7 @@ export function Gate({
         <RouteLink to="/preview">Review frontend workflows</RouteLink>
       </Notice>
     );
-  if (!preview && admin && session?.user.role !== "admin")
+  if (access === "forbidden")
     return (
       <Notice
         title="Administrator access required"
