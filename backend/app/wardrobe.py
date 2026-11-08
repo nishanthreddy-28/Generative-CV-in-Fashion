@@ -133,7 +133,7 @@ def normalize_image(content: bytes) -> bytes:
         raise HTTPException(415,'The image could not be decoded safely.') from None
 
 
-async def fields_and_image(request: Request, create: bool):
+async def fields_and_image(request: Request, create: bool, *, models=None):
     # Authenticate first (Data dependency), then bound actual bytes, including chunked requests.
     raw=bytearray()
     async for chunk in request.stream():
@@ -164,7 +164,7 @@ async def fields_and_image(request: Request, create: bool):
                     if not isinstance(upload,UploadFile): raise HTTPException(422,'Invalid garment image.')
                     photo=await upload.read(MAX_IMAGE+1)
         else: raise HTTPException(415,'Use multipart metadata and an image for creation.')
-        model=(GarmentCreate if create else GarmentPatch).model_validate(values)
+        model=(models[0 if create else 1] if models else GarmentCreate if create else GarmentPatch).model_validate(values)
     except StarletteHTTPException as error:
         if error.status_code == 400:
             raise HTTPException(422,'Invalid garment multipart form.') from None

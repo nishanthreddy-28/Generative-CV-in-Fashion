@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClient } from "@supabase/supabase-js";
-import { currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
+import { catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
 import { secureSessionStorage } from "../src/services/auth/storage.ts";
 import { apiRequest } from "../src/services/api/client.ts";
 
@@ -157,4 +157,14 @@ test("protected screens stay closed during restoration and after logout", () => 
   assert.equal(protectedScreenState(false, true, undefined, false), "signed-out");
   assert.equal(protectedScreenState(false, true, "user", true), "forbidden");
   assert.equal(protectedScreenState(true, false, undefined, true), "open");
+});
+
+
+test("catalog access is derived from a subject-bound backend projection, not editable metadata", () => {
+  assert.equal(catalogRole({userId:"user-a",isCatalogAdmin:true},"user-a"),"admin");
+  for (const value of [null,{}, {userId:"user-b",isCatalogAdmin:true},
+    {userId:"user-a",isCatalogAdmin:"true"}, {userId:"user-a",user_metadata:{role:"admin"}},
+    {userId:"user-a",role:"admin"}, {userId:"user-a",isCatalogAdmin:false}]) {
+    assert.equal(catalogRole(value,"user-a"),"user");
+  }
 });

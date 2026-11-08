@@ -5,6 +5,7 @@ export type Field = {
   kind?: "email" | "password" | "number" | "multiline";
   min?: number;
   max?: number;
+  decimals?: number;
   options?: string[];
   hint?: string;
 };
@@ -35,6 +36,9 @@ export function validate(fields: Field[], values: Record<string, string>) {
         errors[f.key] =
           `Enter a number${f.min !== undefined ? ` from ${f.min}` : ""}${f.max !== undefined ? ` to ${f.max}` : ""}.`;
     }
+    if (f.kind === "number" && f.decimals !== undefined && Number.isFinite(Number(value)) &&
+        Number(Number(value).toFixed(f.decimals)) !== Number(value))
+      errors[f.key] = `Use at most ${f.decimals} decimal places.`;
     if (f.options && !f.options.includes(value))
       errors[f.key] = "Choose an available option.";
   }

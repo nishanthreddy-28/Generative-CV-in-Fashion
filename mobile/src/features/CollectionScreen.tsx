@@ -138,14 +138,20 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
             {Boolean(item.imageUrl) && kind === "wardrobe" && (
               <WardrobeImage id={item.id} label={item.name} preview={preview} />
             )}
-            {Boolean(item.imageUrl) && kind !== "wardrobe" && (
+            {Boolean(item.imageUrl) && kind === "outfits" && (
               <Image
                 source={{ uri: item.imageUrl }}
                 accessibilityLabel={item.name}
                 style={ui.image}
               />
             )}
+            {Boolean(item.imageUrl) && (kind === "catalog" || kind === "admin") && (
+              <WardrobeImage id={item.id} label={item.name} preview={preview}
+                source={kind === "admin" ? "admin/catalog" : "catalog"} />
+            )}
             <Text style={ui.heading}>{item.name}</Text>
+            {kind === "admin" && "active" in item && item.active === false &&
+              <Text style={ui.body}>Inactive · hidden from the catalog</Text>}
             {"category" in item && (
               <Text style={ui.body}>
                 {[item.category, item.color, item.brand]

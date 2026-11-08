@@ -1,4 +1,4 @@
-import { Image, Text } from "react-native";
+import { Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import {
   Screen,
@@ -9,6 +9,7 @@ import {
   usePreview,
   ui,
 } from "../../components/Screen";
+import { WardrobeImage } from "../../components/WardrobeImage";
 import { useResource } from "../../hooks/useResource";
 import type { Garment } from "../../types/domain";
 export default function Detail() {
@@ -31,11 +32,7 @@ export default function Detail() {
         {result.data && (
           <>
             {Boolean(result.data.imageUrl) && (
-              <Image
-                source={{ uri: result.data.imageUrl }}
-                accessibilityLabel={result.data.name}
-                style={ui.image}
-              />
+              <WardrobeImage id={result.data.id} label={result.data.name} preview={preview} source="catalog" />
             )}
             <Text style={ui.heading}>{result.data.category}</Text>
             <Text style={ui.body}>
