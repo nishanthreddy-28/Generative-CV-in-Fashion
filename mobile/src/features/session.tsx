@@ -5,7 +5,7 @@ import {
 import { AppState } from "react-native";
 import type { Session as AuthSession } from "@supabase/supabase-js";
 import { apiRequest, ApiError, type RequestOptions } from "../services/api/client";
-import { currentAccessToken, register, signIn } from "../services/auth/contracts";
+import { catalogRole, currentAccessToken, register, signIn } from "../services/auth/contracts";
 import { clearPersistedSession, emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
 import { draftStore } from "./draftStore";
 import type { Session } from "../types/domain";
@@ -26,8 +26,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [ready, setReady] = useState(!supabase);
   const identity = useRef<{ id: string } | null>(null);
   const signedOut = useRef(false);
+  const [permissionRevision, setPermissionRevision] = useState(0);
 
   const applySession = useCallback((next: AuthSession | null) => {
+    setPermissionRevision((value) => value + 1);
     const user = next?.user;
     const id = signedOut.current ? undefined : user?.id;
     if (identity.current?.id !== id) {
@@ -54,7 +56,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
       if (event === "INITIAL_SESSION") setReady(true);
     });
     function updateRefresh(state: string) {
-      if (state === "active" && !signedOut.current) void auth.startAutoRefresh();
+      if (state === "active" && !signedOut.current) {
+        setPermissionRevision((value) => value + 1);
+        void auth.startAutoRefresh();
+      }
       else void auth.stopAutoRefresh();
     }
     updateRefresh(AppState.currentState ?? "unknown");
@@ -119,6 +124,23 @@ export function SessionProvider({ children }: PropsWithChildren) {
     if (identity.current !== caller) throw new ApiError("Account changed during the request.", 401);
     return result;
   }, []);
+
+  useEffect(() => {
+    const userId = session?.user.id;
+    if (!userId) return;
+    const controller = new AbortController();
+    // Failure is fail-closed for UI access; no role is read from Auth metadata.
+    void request<unknown>("/admin/catalog/access", { signal: controller.signal })
+      .then((access) => {
+        if (!controller.signal.aborted) setSession((current) => current?.user.id === userId
+          ? { user: { ...current.user, role: catalogRole(access, userId) } } : current);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSession((current) => current?.user.id === userId
+          ? { user: { ...current.user, role: "user" } } : current);
+      });
+    return () => controller.abort();
+  }, [session?.user.id, permissionRevision, request]);
 
   return (
     <SessionContext.Provider value={{ session, ready, login, signup, logout, request }}>

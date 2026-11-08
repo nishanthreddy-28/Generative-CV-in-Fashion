@@ -56,7 +56,7 @@ export const garmentFields: Field[] = [
 ];
 export const catalogFields: Field[] = [
   ...garmentFields,
-  { key: "price", label: "Price (INR)", kind: "number", min: 0, max: 1000000 },
+  { key: "price", label: "Price (INR)", kind: "number", min: 0, max: 1000000, decimals: 2 },
 ];
 export const preferenceFields: Field[] = [
   { key: "units", label: "Measurement units", options: ["cm", "in"] },

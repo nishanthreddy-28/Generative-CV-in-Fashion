@@ -1,6 +1,6 @@
 import { useDraft } from "../hooks/useDraft";
 import { useState } from "react";
-import { Image, Text } from "react-native";
+import { Text } from "react-native";
 import { router, type Href } from "expo-router";
 import { Fields } from "../components/Fields";
 import { Button } from "../components/Button";
@@ -143,16 +143,12 @@ export function EditorScreen({
         )}
         {!unavailable && (
           <>
-            {photo && typeof result.data?.imageUrl === "string" && path.startsWith("/wardrobe/") && typeof result.data.id === "string" && (
-              <WardrobeImage id={result.data.id} label="Current garment photo" preview={preview} />
+            {photo && typeof result.data?.imageUrl === "string" && typeof result.data.id === "string" && (
+              <WardrobeImage id={result.data.id} label="Current garment photo" preview={preview}
+                source={admin ? "admin/catalog" : "wardrobe"} />
             )}
-            {photo && typeof result.data?.imageUrl === "string" && !path.startsWith("/wardrobe/") && (
-              <Image
-                source={{ uri: result.data.imageUrl }}
-                accessibilityLabel="Current garment photo"
-                style={ui.image}
-              />
-            )}
+            {admin && result.data?.active === false &&
+              <Notice title="Inactive catalog item" text="Hidden from the catalog. Its record and image are retained." />}
             <Fields
               fields={fields}
               values={values}
@@ -199,7 +195,7 @@ export function EditorScreen({
             />
             {allowDelete && (
               <Button
-                label="Delete garment"
+                label={admin ? "Deactivate catalog item" : "Delete garment"}
                 variant="danger"
                 disabled={busy}
                 onPress={() => setConfirm("delete")}
@@ -211,12 +207,12 @@ export function EditorScreen({
           visible={confirm !== null}
           title={
             confirm === "delete"
-              ? "Delete this garment?"
+              ? admin ? "Deactivate this catalog item?" : "Delete this garment?"
               : "Discard unsaved changes?"
           }
           text={
             confirm === "delete"
-              ? "This removes the selected garment from your collection."
+              ? admin ? "This hides the item from catalog browsing and retains its record and image." : "This removes the selected garment from your collection."
               : "This clears edits on this screen and restores the last loaded details."
           }
           busy={busy}

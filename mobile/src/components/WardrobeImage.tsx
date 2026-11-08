@@ -5,10 +5,10 @@ import { ResourceState, ui } from "./Screen";
 
 // Browser <img> requests cannot attach the API Bearer header. Fetch the bytes with
 // the same current-user request helper on both platforms; never use public URLs.
-export function WardrobeImage({ id, label, preview = false }: {
-  id: string; label: string; preview?: boolean;
+export function WardrobeImage({ id, label, preview = false, source = "wardrobe" }: {
+  id: string; label: string; preview?: boolean; source?: "wardrobe" | "catalog" | "admin/catalog";
 }) {
-  const result = useResource<Blob>(`/wardrobe/${encodeURIComponent(id)}/image`, preview, false, "image");
+  const result = useResource<Blob>(`/${source}/${encodeURIComponent(id)}/image`, preview, source === "admin/catalog", "image");
   const [image, setImage] = useState<{ blob: Blob; uri: string } | null>(null);
   const [failed, setFailed] = useState<Blob | null>(null);
   useEffect(() => {

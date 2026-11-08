@@ -86,3 +86,10 @@ export function protectedScreenState(
   if (admin && role !== "admin") return "forbidden";
   return "open";
 }
+
+// Display permission only. Every admin API operation independently checks membership.
+export function catalogRole(value: unknown, userId: string): "user" | "admin" {
+  if (!value || typeof value !== "object") return "user";
+  const access = value as Record<string, unknown>;
+  return access.userId === userId && access.isCatalogAdmin === true ? "admin" : "user";
+}

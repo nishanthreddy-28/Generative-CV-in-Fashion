@@ -15,7 +15,8 @@ export type Garment = {
   notes?: string;
   size?: string;
   material?: string;
-  price?: number;
+  price?: number | null;
+  active?: boolean;
 };
 export type Outfit = {
   id: string;

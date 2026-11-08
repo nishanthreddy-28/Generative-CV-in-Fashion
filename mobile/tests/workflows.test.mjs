@@ -206,3 +206,60 @@ test("private wardrobe images are fetched with bearer auth and validated as imag
   globalThis.fetch = async () => Response.json({ wrong: "content" });
   await assert.rejects(apiRequest("/wardrobe/record/image", { responseType: "image", token: "current-token" }), /unexpected image/);
 });
+
+
+test("catalog price validation preserves blank as null and rejects invalid currency precision", () => {
+  const fields = [{key:"price",label:"Price (INR)",kind:"number",min:0,max:1000000,decimals:2}];
+  for (const price of ["-1","1000001","1.001","Infinity","no"])
+    assert.ok(validate(fields,{price}).price);
+  for (const price of ["","0","12.50","1000000"])
+    assert.deepEqual(validate(fields,{price}),{});
+  assert.deepEqual(payloadFor(fields,{price:""}),{price:null});
+  assert.deepEqual(payloadFor(fields,{price:"12.50"}),{price:12.5});
+});
+
+test("admin catalog create/edit/deactivate use multipart and latest authenticated requests", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  const methods=[];
+  globalThis.fetch=async (url,options) => {
+    methods.push(options.method);
+    assert.equal(options.headers.Authorization,"Bearer admin-current");
+    assert.ok(url.startsWith("https://service.example.invalid/admin/catalog"));
+    if(options.method==="POST" || options.method==="PATCH") {
+      assert.ok(options.body instanceof FormData);
+      assert.equal(options.headers["Content-Type"],undefined);
+      const metadata=JSON.parse(options.body.get("metadata"));
+      assert.equal(metadata.price,12.5);
+      assert.equal(metadata.active,undefined);
+      assert.equal(metadata.role,undefined);
+    }
+    return options.method==="POST" ? Response.json({id:"piece",active:true},{status:201}) : new Response(null,{status:204});
+  };
+  const form=new FormData();form.append("metadata",JSON.stringify({name:"Piece",category:"Tops",price:12.5}));
+  form.append("image",new Blob([new Uint8Array([255,216,255])],{type:"image/jpeg"}),"piece.jpg");
+  assert.equal((await apiRequest("/admin/catalog",{method:"POST",body:form,token:"admin-current"})).id,"piece");
+  await apiRequest("/admin/catalog/piece",{method:"PATCH",body:form,token:"admin-current"});
+  await apiRequest("/admin/catalog/piece",{method:"DELETE",token:"admin-current"});
+  assert.deepEqual(methods,["POST","PATCH","DELETE"]);
+});
+
+test("admin catalog failures surface errors rather than fabricated success", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  for(const status of [401,403,404,422,503]) {
+    globalThis.fetch=async () => Response.json({detail:"Access unavailable"},{status});
+    await assert.rejects(apiRequest("/admin/catalog/piece",{method:"DELETE",token:"current"}),
+      (error) => error instanceof ApiError && error.status===status);
+  }
+});
+
+test("catalog and admin images require authenticated byte retrieval", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  for(const path of ["/catalog/piece/image","/admin/catalog/piece/image"]) {
+    globalThis.fetch=async (url,options) => {
+      assert.ok(url.endsWith(path));
+      assert.equal(options.headers.Authorization,"Bearer latest");
+      return new Response(new Uint8Array([255,216,255]),{headers:{"Content-Type":"image/jpeg"}});
+    };
+    assert.ok(await apiRequest(path,{responseType:"image",token:"latest"}) instanceof Blob);
+  }
+});
