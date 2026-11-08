@@ -138,3 +138,71 @@ test("drafts survive subscribers remounting, stay separated, and clear on accoun
   assert.deepEqual(store.get("preview:profile", {}), {});
   assert.equal(changes, 1);
 });
+
+test("body editor serializes real field names, measurements and explicit clearing", async () => {
+  const { bodyFields } = await import("../src/features/schema.ts");
+  const fields = { units: "cm", height: "175.1234", chest: "", waist: "80", hips: "", inseam: "",
+    bodyShape: " Description ", skinTone: " Tone ", undertone: "Neutral", fit: "Relaxed" };
+  assert.deepEqual(validate(bodyFields, fields), {});
+  assert.deepEqual(payloadFor(bodyFields, fields), {
+    units: "cm", height: 175.1234, chest: null, waist: 80, hips: null, inseam: null,
+    bodyShape: "Description", skinTone: "Tone", undertone: "Neutral", fit: "Relaxed",
+  });
+  assert.ok(validate(bodyFields, { ...fields, units: "" }).units);
+});
+
+test("wardrobe metadata validates the actual category enum and preserves explicit clearing", async () => {
+  const { garmentFields } = await import("../src/features/schema.ts");
+  const values = { name: "  Shirt ", category: "Tops", color: "Blue", brand: "", size: "M", material: "Cotton", notes: "" };
+  assert.deepEqual(validate(garmentFields, values), {});
+  assert.ok(validate(garmentFields, { ...values, category: "Fake" }).category);
+  assert.ok(validate(garmentFields, { ...values, name: " " }).name);
+  assert.deepEqual(payloadFor(garmentFields, values), { ...values, name: "Shirt" });
+});
+
+test("wardrobe collection and detail retain real API records and cursor responses", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  const record = { id: "record", name: "Shirt", category: "Tops", imageUrl: "/wardrobe/record/image" };
+  globalThis.fetch = async (url, options) => {
+    assert.equal(options.headers.Authorization, "Bearer current-token");
+    assert.equal(url, "https://service.example.invalid/wardrobe?search=Shirt&category=Tops&sort=name&limit=24");
+    return Response.json({ items: [record], nextCursor: "opaque-cursor" });
+  };
+  const page = await apiRequest("/wardrobe?search=Shirt&category=Tops&sort=name&limit=24", { token: "current-token" });
+  assert.deepEqual(page, { items: [record], nextCursor: "opaque-cursor" });
+});
+
+test("wardrobe partial metadata PATCH and no-content deletion use current identity", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  const form = new FormData();
+  form.append("metadata", JSON.stringify({ notes: "Changed" }));
+  const seen = [];
+  globalThis.fetch = async (url, options) => {
+    seen.push(options.method);
+    assert.equal(url, "https://service.example.invalid/wardrobe/record");
+    assert.equal(options.headers.Authorization, "Bearer current-token");
+    if (options.method === "PATCH") {
+      assert.equal(options.body, form);
+      assert.equal(options.headers["Content-Type"], undefined);
+      assert.deepEqual(JSON.parse(form.get("metadata")), { notes: "Changed" });
+    }
+    return new Response(null, { status: 204 });
+  };
+  assert.equal(await apiRequest("/wardrobe/record", { method: "PATCH", body: form, token: "current-token" }), undefined);
+  assert.equal(await apiRequest("/wardrobe/record", { method: "DELETE", token: "current-token" }), undefined);
+  assert.deepEqual(seen, ["PATCH", "DELETE"]);
+});
+
+test("private wardrobe images are fetched with bearer auth and validated as image bytes", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, "https://service.example.invalid/wardrobe/record/image");
+    assert.equal(options.headers.Authorization, "Bearer current-token");
+    return new Response(new Uint8Array([255,216,255]), { headers: { "Content-Type": "image/jpeg" } });
+  };
+  const blob = await apiRequest("/wardrobe/record/image", { responseType: "image", token: "current-token" });
+  assert.ok(blob instanceof Blob);
+  assert.equal(blob.size, 3);
+  globalThis.fetch = async () => Response.json({ wrong: "content" });
+  await assert.rejects(apiRequest("/wardrobe/record/image", { responseType: "image", token: "current-token" }), /unexpected image/);
+});

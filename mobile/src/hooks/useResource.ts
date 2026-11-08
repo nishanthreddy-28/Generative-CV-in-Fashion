@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "../features/session";
-export function useResource<T>(path: string, preview: boolean, admin = false) {
+export function useResource<T>(path: string, preview: boolean, admin = false, responseType?: "image") {
   const { session, request } = useSession();
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{
@@ -11,11 +11,11 @@ export function useResource<T>(path: string, preview: boolean, admin = false) {
   const retry = useCallback(() => setRevision((n) => n + 1), []);
   const userId = session?.user.id;
   const skip = preview || !userId || (admin && session?.user.role !== "admin");
-  const key = JSON.stringify([path, userId, revision]);
+  const key = JSON.stringify([path, userId, revision, responseType]);
   useEffect(() => {
     if (skip) return;
     const controller = new AbortController();
-    request<T>(path, { signal: controller.signal })
+    request<T>(path, { signal: controller.signal, responseType })
       .then((data) => {
         if (!controller.signal.aborted) setState({ key, data, error: "" });
       })
@@ -31,7 +31,7 @@ export function useResource<T>(path: string, preview: boolean, admin = false) {
         });
       });
     return () => controller.abort();
-  }, [path, key, skip, request]);
+  }, [path, key, skip, request, responseType]);
   return {
     data: !skip && state.key === key ? state.data : null,
     error: !skip && state.key === key ? state.error : "",
