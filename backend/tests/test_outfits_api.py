@@ -53,7 +53,7 @@ def outfits_client():
         if operation=='read_outfit':
             row=records.get(body['p_id'])
             return httpx.Response(200,json=row) if row else httpx.Response(404,json={'code':'P0002'})
-        if operation=='list_outfits':return httpx.Response(200,json={'items':list(records.values()),'nextCursor':None})
+        if operation=='query_outfits':return httpx.Response(200,json={'items':list(records.values()),'nextCursor':None})
         raise AssertionError(operation)
     with TestClient(app) as client:
         app.state.transport=httpx.AsyncClient(transport=httpx.MockTransport(receive))
@@ -135,7 +135,7 @@ def test_dependency_errors_do_not_leak_or_elevate(outfits_client,status,code,exp
     assert all(r.headers['authorization']=='Bearer outfits-owner-token' for r in calls)
 
 
-@pytest.mark.parametrize('query',['search=shirt','category=Tops','sort=name','limit=0','limit=101','cursor=bad'])
+@pytest.mark.parametrize('query',['source=other','category=Invalid','sort=invalid','limit=0','limit=101','cursor=bad'])
 def test_deferred_filtering_and_invalid_queries_rejected(outfits_client,query):
     client,*_=outfits_client
     assert client.get('/outfits?'+query).status_code==422
@@ -144,7 +144,7 @@ def test_deferred_filtering_and_invalid_queries_rejected(outfits_client,query):
 def test_opaque_cursor_is_owner_bound_and_position_validated(outfits_client):
     client,_,_,calls,faults,_,principal=outfits_client
     position={'id':str(uuid4()),'createdAt':'2026-11-08T08:00:00+00:00'}
-    faults['list_outfits']=httpx.Response(200,json={'items':[],'nextCursor':position})
+    faults['query_outfits']=httpx.Response(200,json={'items':[],'nextCursor':position})
     response=client.get('/outfits?limit=1');assert response.status_code==200
     cursor=response.json()['nextCursor']
     assert client.get('/outfits?cursor='+cursor).status_code==200
@@ -159,7 +159,7 @@ def test_malformed_upstream_is_not_a_successful_outfit(outfits_client):
     client,wardrobe,catalog,_,faults,*_=outfits_client
     faults['create_outfit']=httpx.Response(200,json={'id':str(uuid4()),'name':'Missing items'})
     assert client.post('/outfits',json=mixed(wardrobe,catalog)).status_code==503
-    faults['list_outfits']=httpx.Response(200,json={'items':[],'nextCursor':{'id':5}})
+    faults['query_outfits']=httpx.Response(200,json={'items':[],'nextCursor':{'id':5}})
     assert client.get('/outfits').status_code==503
 
 
@@ -240,3 +240,44 @@ def test_edit_dependency_errors_are_safe(outfits_client,status,expected):
         faults[operation]=httpx.Response(status,json={'message':'sensitive upstream fields'})
         result=client.request(method,'/outfits/'+before['id']+suffix,json=body)
         assert result.status_code==expected and 'sensitive upstream fields' not in result.text
+
+
+def test_filter_forwarding_canonical_dates_and_cursor_context(outfits_client):
+    client,_,_,calls,faults,*_=outfits_client
+    position={'id':str(uuid4()),'createdAt':'2026-11-08T08:00:00+00:00','name':'Alpha'}
+    faults['query_outfits']=httpx.Response(200,json={'items':[],'nextCursor':position})
+    query='search=Alpha&source=catalog&category=Outerwear&sort=name&limit=1&created_from=2026-11-01T00:00:00Z&created_before=2026-11-09T00:00:00Z'
+    response=client.get('/outfits?'+query);assert response.status_code==200,response.text
+    token=response.json()['nextCursor']
+    sent=json.loads(calls[-1].content)
+    assert sent=={'p_limit':1,'p_cursor':None,'p_search':'Alpha','p_source':'catalog','p_category':'Outerwear','p_sort':'name',
+                  'p_created_from':'2026-11-01T00:00:00+00:00','p_created_before':'2026-11-09T00:00:00+00:00'}
+    assert client.get('/outfits?'+query+'&cursor='+token).status_code==200
+    assert json.loads(calls[-1].content)['p_cursor']==position
+    for changed in ['search=Beta','source=wardrobe','category=Tops','sort=newest','created_before=2026-11-10T00:00:00Z']:
+        key,value=changed.split('=',1)
+        params=dict(pair.split('=',1) for pair in query.split('&'));params[key]=value;params['cursor']=token
+        assert client.get('/outfits',params=params).status_code==422
+
+
+@pytest.mark.parametrize('query',['search='+'x'*201,'source=invalid','category=Invalid','sort=invalid',
+ 'created_from=invalid','created_from=9999-12-31T23:59:59-14:00','created_from=2026-11-01','created_from=2026-11-01T00:00:00',
+ 'created_from=2026-11-09T00:00:00Z&created_before=2026-11-08T00:00:00Z',
+ 'created_from=2026-11-08T00:00:00Z&created_before=2026-11-08T00:00:00Z'])
+def test_invalid_filtered_queries_never_reach_read_rpc(outfits_client,query):
+    client,_,_,calls,*_=outfits_client
+    assert client.get('/outfits?'+query).status_code==422
+    assert not any(r.url.path.endswith('query_outfits') for r in calls)
+
+
+def test_timezone_equivalent_filters_allow_same_cursor(outfits_client):
+    client,_,_,_,faults,*_=outfits_client
+    faults['query_outfits']=httpx.Response(200,json={'items':[],'nextCursor':{'id':str(uuid4()),'createdAt':'2026-11-08T00:00:00Z'}})
+    token=client.get('/outfits?created_from=2026-11-01T00:00:00Z').json()['nextCursor']
+    assert client.get('/outfits',params={'created_from':'2026-11-01T05:30:00+05:30','cursor':token}).status_code==200
+
+
+def test_malformed_name_cursor_projection_is_dependency_error(outfits_client):
+    client,_,_,_,faults,*_=outfits_client
+    faults['query_outfits']=httpx.Response(200,json={'items':[],'nextCursor':{'id':str(uuid4()),'createdAt':'2026-11-08T00:00:00Z'}})
+    assert client.get('/outfits?sort=name').status_code==503

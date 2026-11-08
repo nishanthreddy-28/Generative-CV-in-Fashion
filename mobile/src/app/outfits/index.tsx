@@ -1,10 +1,2 @@
-import { CollectionScreen } from "../../features/CollectionScreen";
-export default function Outfits() {
-  return (
-    <CollectionScreen
-      kind="outfits"
-      title="Your saved looks."
-      subtitle="Outfits worth coming back to."
-    />
-  );
-}
+import { OutfitCollectionScreen } from "../../features/OutfitCollectionScreen";
+export default OutfitCollectionScreen;
