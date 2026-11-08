@@ -75,7 +75,19 @@ export type Dashboard = {
 export type TryOnJob = {
   id: string;
   status: "queued" | "processing" | "completed" | "failed";
-  imageUrl?: string;
-  error?: string;
+  garmentId: string;
+  source: "wardrobe" | "catalog";
+  createdAt: string;
+  updatedAt: string;
+  finishedAt: string | null;
+  consentVersion: "photo-consent-v1";
+  consentAt: string;
+  failureCode: "CANCELLED" | "WORKER_FAILED" | "INPUT_EXPIRED" | null;
+  error: string | null;
+  workerAvailable: false;
+  workerMessage: string;
+  canCancel: boolean;
+  inputAvailable: boolean;
+  inputUrl: string;
 };
 export type Page<T> = { items: T[]; nextCursor?: string | null };
