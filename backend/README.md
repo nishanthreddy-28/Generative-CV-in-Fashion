@@ -29,7 +29,8 @@ Only HTTPS Supabase project origins, publishable keys and configured asymmetric 
 - Catalog browsing and trusted administrator create/edit/deactivate, private image upload/retrieval and frontend access projection are implemented locally. See [catalog management](../docs/backend/admin-catalog-management.md). No hosted migration or security acceptance is claimed.
 - Owner-only manual outfit creation/list/detail and typed wardrobe/catalog item relationships are implemented locally. See [outfit foundation](../docs/backend/outfit-creation-foundation.md). Metadata edits, atomic item replacement/add/removal and mixed-source creation/editing screens are implemented locally; see [outfit editing](../docs/backend/outfit-editing.md). Outfit search, source/category/date filters, stable cursor pagination and a state-preserving list are implemented locally; see [outfit filtering](../docs/backend/outfit-filtering.md). Saved recommendation bookmarks, provenance, availability checks and cursor pagination are implemented locally; see [saved recommendations](../docs/backend/saved-recommendations.md).
 - Deterministic rules-v1 recommendation generation and recent owned history are implemented locally; see [recommendations](../docs/backend/recommendation-generation.md). No external AI/ML is used. Saving generated results as owner-scoped bookmarks is implemented locally; converting a recommendation into a saved outfit remains out of scope.
-- No try-on implementation, full account deletion, privileged backend client or production configuration.
+- Try-on job submission/status/history/cancellation and private input-photo infrastructure are implemented locally, with no inference worker or generated outputs; see [try-on job infrastructure](../docs/backend/tryon-job-infrastructure.md).
+- No try-on inference, full account deletion, privileged backend client or production configuration.
 
 ## Verification
 
