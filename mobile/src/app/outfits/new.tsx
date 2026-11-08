@@ -53,7 +53,6 @@ export default function NewOutfit() {
     try {
       await request("/outfits", {
         method: "POST",
-        token: session.accessToken,
         body: { ...values, garmentIds: ids },
       });
       setValues({});

@@ -13,7 +13,6 @@ import { Button } from "../components/Button";
 import { Fields } from "../components/Fields";
 import { validate, type Field } from "./validation";
 import { useSession } from "./session";
-import { ApiError } from "../services/api/client";
 import type { Outfit, Page } from "../types/domain";
 const fields: Field[] = [
   {
@@ -36,7 +35,7 @@ const fields: Field[] = [
 ];
 export function RecommendationsScreen() {
   const preview = usePreview();
-  const { session, expire, request } = useSession();
+  const { session, request } = useSession();
   const [values, setValues] = useDraft<Record<string, string>>(
     "recommendations" + ":fields",
     {},
@@ -65,7 +64,6 @@ export function RecommendationsScreen() {
     try {
       const result = await request<Page<Outfit>>("/recommendations", {
         method: "POST",
-        token: session.accessToken,
         body: {
           occasion: values.occasion,
           preferences: values.preferences ?? "",
@@ -74,7 +72,6 @@ export function RecommendationsScreen() {
       });
       setLooks(result.items);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) expire();
       setMessage(
         e instanceof Error ? e.message : "Unable to create recommendations.",
       );
@@ -89,7 +86,6 @@ export function RecommendationsScreen() {
     try {
       await request("/outfits", {
         method: "POST",
-        token: session.accessToken,
         body: { recommendationId: look.id },
       });
       setSaved((s) => [...s, look.id]);

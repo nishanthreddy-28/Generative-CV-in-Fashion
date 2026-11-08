@@ -36,7 +36,7 @@ const passwordFields: Field[] = [
 ];
 export default function Settings() {
   const preview = usePreview();
-  const { session, logout, expire, request } = useSession();
+  const { session, logout, request } = useSession();
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deletion, setDeletion] = useState<Record<string, string>>({});
@@ -51,28 +51,7 @@ export default function Settings() {
       issues.newPassword = "Choose a different password.";
     setErrors(issues);
     if (Object.keys(issues).length) return;
-    if (preview) {
-      setMessage("Preview validation passed. No password was changed.");
-      return;
-    }
-    if (!session) return;
-    setBusy(true);
-    try {
-      await request("/auth/password", {
-        method: "POST",
-        token: session.accessToken,
-        body: {
-          currentPassword: values.currentPassword,
-          newPassword: values.newPassword,
-        },
-      });
-      setValues({});
-      setMessage("Password updated. Sign in again on your next session.");
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Unable to change password.");
-    } finally {
-      setBusy(false);
-    }
+    setMessage("Preview validation passed. No password was changed.");
   }
   async function confirmed() {
     if (preview) {
@@ -90,10 +69,9 @@ export default function Settings() {
       } else if (session) {
         await request("/account", {
           method: "DELETE",
-          token: session.accessToken,
           body: { confirmation: "DELETE" },
         });
-        expire();
+        await logout();
         router.replace("/");
       }
     } catch (e) {
@@ -120,14 +98,14 @@ export default function Settings() {
         </RouteLink>
         <View style={ui.card}>
           <Text style={ui.heading}>Change password</Text>
-          <Fields
+          {preview && <Fields
             fields={passwordFields}
             values={values}
             errors={errors}
             disabled={busy}
             onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
-          />
-          <Button label="Update password" onPress={password} loading={busy} />
+          />}
+          {preview && <Button label="Update password" onPress={password} loading={busy} />}
           <RouteLink to="/forgot-password">
             Request a password reset instead
           </RouteLink>
@@ -140,9 +118,7 @@ export default function Settings() {
             controls will be finalized before release.
           </Text>
           <Text style={ui.body}>
-            Sign-in tokens are currently held in memory only. Restarting the app
-            requires signing in again; persistent secure sessions belong to
-            authentication integration.
+            Sessions are stored securely on mobile. Web sessions end when you reload the page.
           </Text>
           <Button
             label="Sign out"
