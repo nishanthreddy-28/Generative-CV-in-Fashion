@@ -32,7 +32,7 @@ router = APIRouter()
 Data = Annotated[UserDataAPI, Depends(active_user_data)]
 
 
-async def rpc(data: UserDataAPI, operation: str, body: dict, *, missing_detail: str | None = None) -> object:
+async def rpc(data: UserDataAPI, operation: str, body: dict, *, missing_detail: str | None = None, conflict_detail: str | None = None) -> object:
     response = await data.request("POST", f"rpc/{operation}", body=body)
     if response.status_code == 401:
         raise Unauthorized()
@@ -45,6 +45,8 @@ async def rpc(data: UserDataAPI, operation: str, body: dict, *, missing_detail: 
             code = None
         if missing_detail and code == "P0002":
             raise HTTPException(404, missing_detail)
+        if conflict_detail and code == "DD001":
+            raise HTTPException(409, conflict_detail)
         if code == "23503":
             raise HTTPException(409, "Record is referenced by another record.")
         if response.status_code == 400 and code in ("22023", "22001", "23514"):

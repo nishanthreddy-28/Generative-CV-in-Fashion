@@ -1,5 +1,6 @@
 import { useDraft } from "../hooks/useDraft";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { Text, View } from "react-native";
 import { Screen, Gate, Notice, RouteLink, ResourceState, usePreview, ui } from "../components/Screen";
 import { Button } from "../components/Button";
@@ -9,13 +10,16 @@ import { validate, type Field } from "./validation";
 import { useSession } from "./session";
 import { itemRoute } from "./outfitItems";
 import { recommendationResults } from "./recommendationResults";
+import { createMutationGate, saveRecommendation, savedStatus } from "./savedRecommendationActions";
 import type { Recommendation, Page } from "../types/domain";
 const fields: Field[] = [
   { key:"occasion",label:"Occasion",required:true,options:["Everyday","Work","Evening","Weekend","Special occasion"] },
   { key:"preferences",label:"What are you in the mood for?",kind:"multiline",hint:"List colours, materials or brands you like. Preference words are matched literally; exclusions are not interpreted." },
   { key:"wardrobeOnly",label:"Pieces to include",required:true,options:["My wardrobe only","Wardrobe and catalog"] },
 ];
-function Looks({items,preview}:{items:Recommendation[];preview:boolean}) {
+export function RecommendationLooks({items,preview,onSave,saved,saving}: {
+  items:Recommendation[];preview:boolean;onSave?:(look:Recommendation)=>void;saved?:Record<string,string|null>;saving?:string;
+}) {
   return <>{items.map(look=><View key={look.id} style={ui.card}>
     <Text style={ui.heading}>{look.name}</Text>
     <Text style={ui.body}>Rule score: {look.score}/100 · {look.occasion}</Text>
@@ -25,6 +29,8 @@ function Looks({items,preview}:{items:Recommendation[];preview:boolean}) {
     </View>)}
     <Text style={ui.label}>Why these pieces</Text>
     {look.reasons.map(reason=><Text key={reason} style={ui.body}>• {reason}</Text>)}
+    {onSave && <Button label={savedStatus(look.id,look.savedId,saved ?? {}) ? "Saved" : "Save recommendation"}
+      disabled={Boolean(savedStatus(look.id,look.savedId,saved ?? {}) || saving)} loading={saving===look.id} onPress={()=>onSave(look)} />}
   </View>)}</>;
 }
 export function RecommendationsScreen() {
@@ -33,7 +39,23 @@ export function RecommendationsScreen() {
   const [errors,setErrors]=useState<Record<string,string>>({});
   const [generated,setGenerated]=useState<{owner:string;items:Recommendation[]}|null>(null);
   const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+  const [saved,setSaved]=useDraft<Record<string,string|null>>("recommendations:saved-state",{});
+  const [saving,setSaving]=useState("");const gate=useRef(createMutationGate());
   const history=useResource<Page<Recommendation>>("/recommendations?limit=10",preview);
+  const refreshHistory=history.retry;
+  useFocusEffect(useCallback(()=>{refreshHistory();},[refreshHistory]));
+  useEffect(()=>{
+    if(!history.data)return;
+    let items:Recommendation[];
+    try{items=recommendationResults(history.data);}catch{return;}
+    setSaved(current=>{
+      const next={...current};
+      for(const look of items) {
+        next[look.id]=look.savedId ?? null;
+      }
+      return next;
+    });
+  },[history.data,setSaved]);
   const looks=generated?.owner===session?.user.id ? generated?.items : null;
   let recent:Recommendation[]=[];let historyError="";
   if(history.data) {
@@ -55,6 +77,19 @@ export function RecommendationsScreen() {
     } catch(e){setMessage(e instanceof Error ? e.message : "Unable to generate recommendations.");}
     finally{setBusy(false);}
   }
+  async function save(look:Recommendation) {
+    if(preview){setMessage("Preview only. No recommendation has been saved.");return;}
+    if(!session)return;
+    await gate.current.run(async()=>{
+      setSaving(look.id);setMessage("");
+      try {
+        const value=await saveRecommendation(request,look.id);
+        setSaved(current=>({...current,[look.id]:value.id}));
+        setMessage("Recommendation saved.");history.retry();
+      }catch(e){setMessage(e instanceof Error ? e.message : "Unable to save recommendation.");}
+      finally{setSaving("");}
+    });
+  }
   return <Screen title="Find your next look." subtitle="Explainable combinations from your actual pieces.">
     <Gate preview={preview}>
       <Fields fields={fields} values={values} errors={errors} disabled={busy} onChange={(key,value)=>setValues(current=>({...current,[key]:value}))} />
@@ -62,12 +97,13 @@ export function RecommendationsScreen() {
       <Button label="Find outfits" onPress={generate} loading={busy} />
       {Boolean(message) && <Notice title="Recommendation status" text={message} />}
       {looks?.length===0 && <Notice title="No outfits found" text="Add a top and bottoms, or a dress and shoes. You can also include the shared catalog." />}
-      {looks && <Looks items={looks} preview={preview} />}
+      {looks && <RecommendationLooks items={looks} preview={preview} onSave={save} saved={saved} saving={saving} />}
       <Button label="Refresh recent recommendations" variant="secondary" disabled={busy || history.loading} onPress={history.retry} />
       <Text style={ui.heading}>Recent recommendations</Text>
       <ResourceState loading={history.loading} error={history.error || historyError} retry={history.retry} />
       {!history.loading && !history.error && !historyError && !recent.length && <Notice title="No recent recommendations" text="Generate a look to start your history. Unavailable pieces are omitted from history results." />}
-      <Looks items={recent} preview={preview} />
+      <RecommendationLooks items={recent} preview={preview} onSave={save} saved={saved} saving={saving} />
+      <RouteLink to="/recommendations/saved" preview={preview}>View saved recommendations →</RouteLink>
       <RouteLink to="/outfits/new" preview={preview}>Build an outfit →</RouteLink>
       <RouteLink to="/outfits" preview={preview}>View saved outfits →</RouteLink>
       <RouteLink to="/wardrobe/add" preview={preview}>Add a wardrobe piece →</RouteLink>
