@@ -29,7 +29,7 @@ def main():
                 subprocess.run(['psql','-X','-q','-v','ON_ERROR_STOP=1','-h',temporary,'-d','postgres','-f',str(path)],check=True)
             environment = {**os.environ,'DD_TEST_PG_SOCKET':temporary}
             return subprocess.call([sys.executable,'-m','pytest','-q','tests/test_foundation_database.py',
-                                    'tests/test_body_profile_database.py','tests/test_wardrobe_database.py','tests/test_catalog_database.py','tests/test_outfits_database.py','tests/test_outfit_editing_database.py'],cwd=ROOT/'backend',env=environment)
+                                    'tests/test_body_profile_database.py','tests/test_wardrobe_database.py','tests/test_catalog_database.py','tests/test_outfits_database.py','tests/test_outfit_editing_database.py','tests/test_outfit_filtering_database.py'],cwd=ROOT/'backend',env=environment)
         finally:
             if started:
                 subprocess.run(['pg_ctl','-D',data,'-m','immediate','-w','stop'],check=True,stdout=subprocess.DEVNULL)

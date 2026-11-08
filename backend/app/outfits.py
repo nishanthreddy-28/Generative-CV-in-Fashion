@@ -1,7 +1,7 @@
 """Atomic, current-user manual outfit creation and retrieval; no privileged fallback."""
 import base64
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, f
 
 from .errors import DependencyUnavailable
 from .foundation import Data, rpc
+from .wardrobe import Category
 
 
 class OutfitItem(BaseModel):
@@ -117,36 +118,50 @@ async def read_outfit(outfit_id: UUID, data: Data):
     return record(await rpc(data, 'read_outfit', {'p_id':str(outfit_id)}, missing_detail='Outfit not found.'))
 
 
-def cursor_position(value):
-    if not isinstance(value,dict) or set(value) != {'id','createdAt'}:
-        raise ValueError()
+def cursor_position(value, sort='newest'):
+    keys={'id','createdAt'} | ({'name'} if sort=='name' else set())
+    if not isinstance(value,dict) or set(value)!=keys: raise ValueError()
     if not isinstance(value['id'],str) or not isinstance(value['createdAt'],str): raise ValueError()
     UUID(value['id'])
     if datetime.fromisoformat(value['createdAt']).tzinfo is None: raise ValueError()
+    if sort=='name' and (not isinstance(value['name'],str) or len(value['name'])>200 or '\x00' in value['name']): raise ValueError()
     return value
+
+
+def instant(value):
+    if value is None: return None
+    if value.tzinfo is None or value.utcoffset() is None: raise HTTPException(422,'Creation dates require a timezone.')
+    try: return value.astimezone(timezone.utc).isoformat()
+    except (ValueError,OverflowError): raise HTTPException(422,'Creation date is outside the supported range.') from None
 
 
 @router.get('/outfits', response_model=OutfitPage)
 async def list_outfits(data: Data, limit: Annotated[int, Query(ge=1, le=100)] = 24,
     cursor: Annotated[str | None, Query(max_length=4000)] = None,
-    search: Literal[''] = '', category: Literal[''] = '', sort: Literal['newest'] = 'newest'):
-    # Empty filter defaults match the current collection. Filtering/name sorting are deferred.
-    position = None
+    search: Annotated[str,Query(max_length=200)] = '', category: Category | Literal[''] = '',
+    source: Literal['','wardrobe','catalog'] = '', sort: Literal['newest','name'] = 'newest',
+    created_from: datetime | None = None, created_before: datetime | None = None):
+    if '\x00' in search: raise HTTPException(422,'Invalid outfit search.')
+    start,end=instant(created_from),instant(created_before)
+    if start is not None and end is not None and created_from>=created_before:
+        raise HTTPException(422,'Creation date range must have an increasing end.')
+    filters={'search':search.strip(),'category':category,'source':source,'sort':sort,'created_from':start,'created_before':end}
+    position=None
     if cursor:
         try:
-            value = json.loads(base64.b64decode(cursor, altchars=b'-_', validate=True))
-            if not isinstance(value,dict) or set(value) != {'owner','position'} or value['owner'] != str(data.principal.user_id):
+            value=json.loads(base64.b64decode(cursor,altchars=b'-_',validate=True))
+            if not isinstance(value,dict) or set(value)!={'version','owner','filters','position'} or value['version']!=2 or value['owner']!=str(data.principal.user_id) or value['filters']!=filters:
                 raise ValueError()
-            position = cursor_position(value['position'])
-        except (ValueError, TypeError, KeyError, OverflowError):
-            raise HTTPException(422, 'Invalid outfit cursor.') from None
-    result = await rpc(data, 'list_outfits', {'p_limit':limit, 'p_cursor':position})
+            position=cursor_position(value['position'],sort)
+        except (ValueError,TypeError,KeyError,OverflowError,RecursionError):
+            raise HTTPException(422,'Invalid outfit cursor or changed filters.') from None
+    result=await rpc(data,'query_outfits',{'p_limit':limit,'p_cursor':position,**{'p_'+key:value for key,value in filters.items()}})
     try:
-        if not isinstance(result,dict) or set(result) != {'items','nextCursor'}: raise ValueError()
-        next_position = cursor_position(result['nextCursor']) if result['nextCursor'] is not None else None
-        token = base64.urlsafe_b64encode(json.dumps({'owner':str(data.principal.user_id),'position':next_position}).encode()).decode() if next_position else None
-        return OutfitPage(items=[record(item) for item in result['items']], nextCursor=token)
-    except (ValueError, TypeError, KeyError, OverflowError):
+        if not isinstance(result,dict) or set(result)!={'items','nextCursor'} or not isinstance(result['items'],list) or len(result['items'])>limit: raise ValueError()
+        next_position=cursor_position(result['nextCursor'],sort) if result['nextCursor'] is not None else None
+        token=base64.urlsafe_b64encode(json.dumps({'version':2,'owner':str(data.principal.user_id),'filters':filters,'position':next_position}).encode()).decode() if next_position else None
+        return OutfitPage(items=[record(item) for item in result['items']],nextCursor=token)
+    except (ValueError,TypeError,KeyError,OverflowError):
         raise DependencyUnavailable() from None
 
 
