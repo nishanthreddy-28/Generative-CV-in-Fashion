@@ -32,7 +32,7 @@ router = APIRouter()
 Data = Annotated[UserDataAPI, Depends(active_user_data)]
 
 
-async def rpc(data: UserDataAPI, operation: str, body: dict) -> object:
+async def rpc(data: UserDataAPI, operation: str, body: dict, *, missing_detail: str | None = None) -> object:
     response = await data.request("POST", f"rpc/{operation}", body=body)
     if response.status_code == 401:
         raise Unauthorized()
@@ -43,6 +43,8 @@ async def rpc(data: UserDataAPI, operation: str, body: dict) -> object:
             code = response.json().get("code")
         except (ValueError, AttributeError):
             code = None
+        if missing_detail and code == "P0002":
+            raise HTTPException(404, missing_detail)
         if response.status_code == 400 and code in ("22023", "22001", "23514"):
             raise HTTPException(422, "Invalid fields.")
         raise DependencyUnavailable()

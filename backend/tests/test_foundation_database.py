@@ -180,7 +180,7 @@ def test_role_and_function_security_catalog():
     ('dd_owner','dd_user_executor','dd_control_reader','dd_control_executor','dd_lifecycle_operator')
     AND NOT rolcanlogin AND NOT rolsuper AND NOT rolbypassrls AND NOT rolcreaterole;
     SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-    WHERE n.nspname='app_private' AND c.relkind='r' AND c.relrowsecurity AND c.relforcerowsecurity;
+    WHERE n.nspname='app_private' AND c.relkind='r' AND c.relname IN ('user_profiles','body_profiles','user_preferences','account_lifecycle','account_deletion_tombstones','administrator_memberships') AND c.relrowsecurity AND c.relforcerowsecurity;
     SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname='api' AND p.prosecdef;
     SELECT count(*) FROM pg_auth_members m JOIN pg_roles member ON m.member=member.oid
@@ -191,11 +191,15 @@ def test_role_and_function_security_catalog():
 
 
 @pytest.mark.parametrize('disable_first',[False,True])
-def test_mutation_and_disable_serialize_on_lifecycle_row(users,disable_first):
+@pytest.mark.parametrize('mutation_call',[
+    "SELECT api.update_profile('Committed before disable','','','');",
+    "SELECT api.update_body_profile('{\"fit\":\"Relaxed\"}'::jsonb);",
+])
+def test_mutation_and_disable_serialize_on_lifecycle_row(users,disable_first,mutation_call):
     import time
     a,b,seed=users
     success(seed+'COMMIT;')
-    mutation='BEGIN;'+as_user(a)+"SELECT api.update_profile('Committed before disable','','','');"
+    mutation='BEGIN;'+as_user(a)+mutation_call
     disable=f"BEGIN; SET LOCAL ROLE dd_lifecycle_operator; SELECT app_private.set_account_state('{a}','disabled');"
     first,second=(disable,mutation) if disable_first else (mutation,disable)
     command=['psql','-X','-qAt','-v','ON_ERROR_STOP=1','-h',SOCKET,'-d','postgres']

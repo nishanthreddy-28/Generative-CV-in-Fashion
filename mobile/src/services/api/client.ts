@@ -13,6 +13,7 @@ export type RequestOptions = {
   body?: unknown;
   token?: string;
   signal?: AbortSignal;
+  responseType?: "image";
 };
 export async function apiRequest<T>(
   path: string,
@@ -67,6 +68,11 @@ export async function apiRequest<T>(
     }
     if (response.status === 204) return undefined as T;
     const contentType = response.headers.get("content-type") ?? "";
+    if (options.responseType === "image") {
+      if (contentType.split(";", 1)[0] !== "image/jpeg")
+        throw new ApiError("The service returned an unexpected image.");
+      return (await response.blob()) as T;
+    }
     if (!contentType.includes("application/json"))
       throw new ApiError("The service returned an unexpected response.");
     return (await response.json()) as T;

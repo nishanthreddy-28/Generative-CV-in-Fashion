@@ -10,6 +10,7 @@ import {
   ui,
 } from "../components/Screen";
 import { Button } from "../components/Button";
+import { WardrobeImage } from "../components/WardrobeImage";
 import { useResource } from "../hooks/useResource";
 import { categories } from "./schema";
 import type { Garment, Outfit, Page } from "../types/domain";
@@ -134,7 +135,10 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
         )}
         {list.map((item) => (
           <View key={item.id} style={ui.card}>
-            {Boolean(item.imageUrl) && (
+            {Boolean(item.imageUrl) && kind === "wardrobe" && (
+              <WardrobeImage id={item.id} label={item.name} preview={preview} />
+            )}
+            {Boolean(item.imageUrl) && kind !== "wardrobe" && (
               <Image
                 source={{ uri: item.imageUrl }}
                 accessibilityLabel={item.name}

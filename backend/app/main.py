@@ -9,6 +9,8 @@ from .dependencies import DatabaseEligibility, UnconfiguredEligibility
 from .errors import DependencyUnavailable, Forbidden, Unauthorized
 from .security import JWTVerifier
 from .foundation import router as foundation_router
+from .body_profile import router as body_router
+from .wardrobe import router as wardrobe_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -39,6 +41,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # These routes remain fail-closed until the reviewed database integration is enabled.
     app.include_router(foundation_router)
+    app.include_router(body_router)
+    app.include_router(wardrobe_router)
     return app
 
 

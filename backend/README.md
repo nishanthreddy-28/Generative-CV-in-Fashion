@@ -24,7 +24,9 @@ Only HTTPS Supabase project origins, publishable keys and configured asymmetric 
 - Database integration is opt-in and fail-closed by default. When enabled, eligibility is fetched using the same JWT, and its reported subject must match FastAPI's verified subject. Inactive accounts are denied; missing/malformed/dependency data never authorizes access. Database operations independently enforce eligibility so a change after the FastAPI check is still denied.
 - Six private RLS tables, least-privilege execution roles, trusted bootstrap/membership/lifecycle operations, post-Auth tombstone survival and a restrictive Storage eligibility gate. See [migration/setup](../supabase/README.md).
 - The frontend now uses Supabase Auth directly; see [Auth integration](../docs/backend/frontend-supabase-auth-integration.md). FastAPI does not duplicate signup/login/recovery/refresh endpoints.
-- No body API until unit semantics are reviewed; no catalog/wardrobe/outfits/recommendations/try-on implementation, full account deletion, privileged backend client or production configuration.
+- GET/PATCH `/profile/body` are implemented locally with a new additive migration, current numeric bounds, precision protection and atomic partial updates. Existing body editor wiring is reused. Hosted deployment is pending; the flag remains false. See [body API](../docs/backend/body-profile-api.md).
+- Wardrobe list/detail/create/partial-update/delete and authenticated image retrieval are implemented locally with an additive migration; hosted Storage/RLS acceptance remains pending. See [wardrobe API](../docs/backend/wardrobe-api.md).
+- No catalog/outfits/recommendations/try-on implementation, full account deletion, privileged backend client or production configuration.
 
 ## Verification
 

@@ -32,13 +32,16 @@ export type Profile = {
   bio?: string;
 };
 export type BodyProfile = {
-  height?: number;
-  chest?: number;
-  waist?: number;
-  hips?: number;
-  inseam?: number;
+  height?: number | null;
+  chest?: number | null;
+  waist?: number | null;
+  hips?: number | null;
+  inseam?: number | null;
   units?: string;
   fit?: string;
+  bodyShape?: string;
+  skinTone?: string;
+  undertone?: string;
 };
 export type Preferences = {
   units?: string;

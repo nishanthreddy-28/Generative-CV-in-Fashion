@@ -4,6 +4,7 @@ import { Image, Text } from "react-native";
 import { router, type Href } from "expo-router";
 import { Fields } from "../components/Fields";
 import { Button } from "../components/Button";
+import { WardrobeImage } from "../components/WardrobeImage";
 import {
   Confirm,
   Gate,
@@ -142,7 +143,10 @@ export function EditorScreen({
         )}
         {!unavailable && (
           <>
-            {photo && typeof result.data?.imageUrl === "string" && (
+            {photo && typeof result.data?.imageUrl === "string" && path.startsWith("/wardrobe/") && typeof result.data.id === "string" && (
+              <WardrobeImage id={result.data.id} label="Current garment photo" preview={preview} />
+            )}
+            {photo && typeof result.data?.imageUrl === "string" && !path.startsWith("/wardrobe/") && (
               <Image
                 source={{ uri: result.data.imageUrl }}
                 accessibilityLabel="Current garment photo"

@@ -10,7 +10,8 @@ CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
 $$;
 GRANT USAGE ON SCHEMA auth TO authenticated;
 GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
-CREATE TABLE storage.objects (id uuid PRIMARY KEY, owner_id uuid NOT NULL);
+CREATE TABLE storage.buckets (id text PRIMARY KEY,name text NOT NULL,public boolean NOT NULL DEFAULT false,file_size_limit bigint,allowed_mime_types text[]);
+CREATE TABLE storage.objects (id uuid PRIMARY KEY, owner_id uuid NOT NULL,bucket_id text DEFAULT 'foundation-test',name text,metadata jsonb);
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 -- A permissive owner rule is test-only: proves the migration's restrictive gate wins.
 CREATE POLICY test_owner ON storage.objects TO authenticated

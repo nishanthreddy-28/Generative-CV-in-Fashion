@@ -123,5 +123,6 @@ def test_routes_are_closed_without_configuration():
     with TestClient(app) as browser:
         assert browser.get('/profile').status_code==503
         assert browser.get('/settings').status_code==503
-        assert browser.get('/profile/body').status_code==404
+        assert browser.get('/profile/body').status_code==503
+        assert browser.patch('/profile/body',json={'fit':'Regular'}).status_code==503
         assert browser.request('DELETE','/account',json={'confirmation':'DELETE'}).status_code==404
