@@ -28,7 +28,8 @@ Only HTTPS Supabase project origins, publishable keys and configured asymmetric 
 - Wardrobe list/detail/create/partial-update/delete and authenticated image retrieval are implemented locally with an additive migration; hosted Storage/RLS acceptance remains pending. See [wardrobe API](../docs/backend/wardrobe-api.md).
 - Catalog browsing and trusted administrator create/edit/deactivate, private image upload/retrieval and frontend access projection are implemented locally. See [catalog management](../docs/backend/admin-catalog-management.md). No hosted migration or security acceptance is claimed.
 - Owner-only manual outfit creation/list/detail and typed wardrobe/catalog item relationships are implemented locally. See [outfit foundation](../docs/backend/outfit-creation-foundation.md). Metadata edits, atomic item replacement/add/removal and mixed-source creation/editing screens are implemented locally; see [outfit editing](../docs/backend/outfit-editing.md). Outfit search, source/category/date filters, stable cursor pagination and a state-preserving list are implemented locally; see [outfit filtering](../docs/backend/outfit-filtering.md). Recommendation saves remain out of scope.
-- No recommendations/try-on implementation, full account deletion, privileged backend client or production configuration.
+- Deterministic rules-v1 recommendation generation and recent owned history are implemented locally; see [recommendations](../docs/backend/recommendation-generation.md). No external AI/ML is used. Recommendation-to-saved conversion remains out of scope.
+- No try-on implementation, full account deletion, privileged backend client or production configuration.
 
 ## Verification
 

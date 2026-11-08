@@ -28,6 +28,14 @@ export type Outfit = {
   items?: OutfitItem[];
   occasion?: string;
 };
+export type Recommendation = Omit<Outfit, "items"> & {
+  requestId: string;
+  items: (OutfitItem & { name: string; category: string; color: string })[];
+  score: number;
+  reasons: string[];
+  engineVersion: "rules-v1";
+  generatedAt: string;
+};
 export type Profile = {
   name: string;
   style?: string;
