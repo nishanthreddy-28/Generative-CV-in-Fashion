@@ -18,12 +18,14 @@ export type Garment = {
   price?: number | null;
   active?: boolean;
 };
+export type OutfitItem = { id?: string; source: "wardrobe" | "catalog"; garmentId: string };
 export type Outfit = {
   id: string;
   name: string;
   description?: string;
   imageUrl?: string;
   garmentIds: string[];
+  items?: OutfitItem[];
   occasion?: string;
 };
 export type Profile = {

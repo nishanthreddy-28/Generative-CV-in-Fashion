@@ -27,7 +27,7 @@ Only HTTPS Supabase project origins, publishable keys and configured asymmetric 
 - GET/PATCH `/profile/body` are implemented locally with a new additive migration, current numeric bounds, precision protection and atomic partial updates. Existing body editor wiring is reused. Hosted deployment is pending; the flag remains false. See [body API](../docs/backend/body-profile-api.md).
 - Wardrobe list/detail/create/partial-update/delete and authenticated image retrieval are implemented locally with an additive migration; hosted Storage/RLS acceptance remains pending. See [wardrobe API](../docs/backend/wardrobe-api.md).
 - Catalog browsing and trusted administrator create/edit/deactivate, private image upload/retrieval and frontend access projection are implemented locally. See [catalog management](../docs/backend/admin-catalog-management.md). No hosted migration or security acceptance is claimed.
-- Owner-only manual outfit creation/list/detail and typed wardrobe/catalog item relationships are implemented locally. See [outfit foundation](../docs/backend/outfit-creation-foundation.md). Outfit editing, filtering, recommendation saves and mixed-source frontend integration remain out of scope.
+- Owner-only manual outfit creation/list/detail and typed wardrobe/catalog item relationships are implemented locally. See [outfit foundation](../docs/backend/outfit-creation-foundation.md). Metadata edits, atomic item replacement/add/removal and mixed-source creation/editing screens are implemented locally; see [outfit editing](../docs/backend/outfit-editing.md). Outfit filtering and recommendation saves remain out of scope.
 - No recommendations/try-on implementation, full account deletion, privileged backend client or production configuration.
 
 ## Verification
