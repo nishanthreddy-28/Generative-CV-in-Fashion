@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClient } from "@supabase/supabase-js";
-import { catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
+import { reauthenticate, catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
 import { secureSessionStorage } from "../src/services/auth/storage.ts";
 import { apiRequest } from "../src/services/api/client.ts";
 
@@ -167,4 +167,11 @@ test("catalog access is derived from a subject-bound backend projection, not edi
     {userId:"user-a",role:"admin"}, {userId:"user-a",isCatalogAdmin:false}]) {
     assert.equal(catalogRole(value,"user-a"),"user");
   }
+});
+
+
+test("sensitive account confirmation reauthenticates the same identity", async()=>{
+ const auth={signInWithPassword:async()=>({data:{session:{user:{id:"user-a"},access_token:"fresh"}},error:null})};
+ assert.equal((await reauthenticate(auth,"a@example.invalid","secret-test","user-a")).access_token,"fresh");
+ await assert.rejects(reauthenticate(auth,"a@example.invalid","secret-test","user-b"),/Account changed/);
 });

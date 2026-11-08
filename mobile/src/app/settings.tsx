@@ -13,6 +13,8 @@ import {
 import { Fields } from "../components/Fields";
 import { Button } from "../components/Button";
 import { useSession } from "../features/session";
+import { requireAuth } from "../services/auth/supabase";
+import { reauthenticate, authError } from "../services/auth/contracts";
 import { validate, type Field } from "../features/validation";
 const passwordFields: Field[] = [
   {
@@ -51,7 +53,15 @@ export default function Settings() {
       issues.newPassword = "Choose a different password.";
     setErrors(issues);
     if (Object.keys(issues).length) return;
-    setMessage("Preview validation passed. No password was changed.");
+    if(preview){setMessage("Preview validation passed. No password was changed.");return;}
+    if(!session)return;setBusy(true);
+    try {
+      const auth=requireAuth();await reauthenticate(auth,session.user.email,values.currentPassword,session.user.id);
+      const {error}=await auth.updateUser({password:values.newPassword});
+      if(error)throw new Error(authError(error.code));
+      setValues({});setMessage("Password updated. Other sessions may require sign-in again.");
+    }catch(e){setMessage(e instanceof Error ? e.message : "Unable to change password.");}
+    finally{setBusy(false);}
   }
   async function confirmed() {
     if (preview) {
@@ -67,12 +77,14 @@ export default function Settings() {
         await logout();
         router.replace("/login");
       } else if (session) {
+        if(!deletion.password)throw new Error("Enter your current password to confirm deletion.");
+        await reauthenticate(requireAuth(),session.user.email,deletion.password,session.user.id);
         await request("/account", {
           method: "DELETE",
           body: { confirmation: "DELETE" },
         });
-        await logout();
-        router.replace("/");
+        setDeletion({});setMessage("Deletion accepted. Your private data is inaccessible; trusted cleanup is pending.");
+        router.replace("/account-deletion");
       }
     } catch (e) {
       setMessage(
@@ -98,14 +110,14 @@ export default function Settings() {
         </RouteLink>
         <View style={ui.card}>
           <Text style={ui.heading}>Change password</Text>
-          {preview && <Fields
+          {<Fields
             fields={passwordFields}
             values={values}
             errors={errors}
             disabled={busy}
             onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
           />}
-          {preview && <Button label="Update password" onPress={password} loading={busy} />}
+          {<Button label="Update password" onPress={password} loading={busy} />}
           <RouteLink to="/forgot-password">
             Request a password reset instead
           </RouteLink>
@@ -134,16 +146,16 @@ export default function Settings() {
             data. Type DELETE to enable confirmation.
           </Text>
           <Fields
-            fields={[{ key: "confirmation", label: "Deletion confirmation" }]}
+            fields={[{ key: "confirmation", label: "Deletion confirmation" },{key:"password",label:"Current password for deletion",kind:"password"}]}
             values={deletion}
             errors={{}}
-            onChange={(k, v) => setDeletion({ [k]: v })}
+            onChange={(k, v) => setDeletion(current=>({...current,[k]:v}))}
             disabled={busy}
           />
           <Button
             label="Delete my account"
             variant="danger"
-            disabled={deletion.confirmation !== "DELETE" || busy}
+            disabled={deletion.confirmation !== "DELETE" || !deletion.password || busy}
             onPress={() => setConfirm("delete")}
           />
         </View>
