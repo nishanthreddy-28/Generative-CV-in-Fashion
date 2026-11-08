@@ -12,6 +12,7 @@ from .foundation import router as foundation_router
 from .body_profile import router as body_router
 from .wardrobe import router as wardrobe_router
 from .catalog import router as catalog_router
+from .outfits import router as outfits_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -45,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(body_router)
     app.include_router(wardrobe_router)
     app.include_router(catalog_router)
+    app.include_router(outfits_router)
     return app
 
 

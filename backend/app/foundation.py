@@ -45,6 +45,8 @@ async def rpc(data: UserDataAPI, operation: str, body: dict, *, missing_detail: 
             code = None
         if missing_detail and code == "P0002":
             raise HTTPException(404, missing_detail)
+        if code == "23503":
+            raise HTTPException(409, "Record is referenced by another record.")
         if response.status_code == 400 and code in ("22023", "22001", "23514"):
             raise HTTPException(422, "Invalid fields.")
         raise DependencyUnavailable()
