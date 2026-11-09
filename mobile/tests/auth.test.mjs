@@ -219,3 +219,26 @@ test("real SDK PKCE redirect exchange restores only the verifier and returns a f
  assert.equal(accountRequestAllowed(false,path),true);
  }
  });
+
+test("Apple and Google use the same bound PKCE callback and reject failed provider responses",async()=>{
+ const {beginSocialOAuth}=await import('../src/services/auth/contracts.ts');
+ for(const provider of ['google','apple']){
+  let submitted;
+  const target=await beginSocialOAuth({signInWithOAuth:async value=>{
+   submitted=value;
+   return {data:{url:'https://project.supabase.co/auth/v1/authorize?provider='+provider,flowId:'provider-flow-123'},error:null};
+  }},provider,'https://fashion.example/oauth-callback');
+  assert.equal(submitted.provider,provider);
+  assert.equal(submitted.options.skipBrowserRedirect,true);
+  assert.equal(new URL(target.searchParams.get('redirect_to')).searchParams.get('sb_flow_id'),'provider-flow-123');
+ }
+ await assert.rejects(beginSocialOAuth({signInWithOAuth:async()=>({data:{url:null},error:{}})},'apple','https://fashion.example/oauth-callback'));
+});
+
+test("provider controls require strict server availability and explicit rollout",async()=>{
+ const {providerAvailability}=await import('../src/services/auth/providerAvailability.ts');
+ assert.deepEqual(providerAvailability({external:{google:true,apple:true}},{google:true,apple:false}),{google:true,apple:false});
+ for(const response of [null,{}, {external:{google:'true',apple:1}},{external:false}])
+  assert.deepEqual(providerAvailability(response,{google:true,apple:true}),{google:false,apple:false});
+ assert.deepEqual(providerAvailability({external:{google:false,apple:false}},{google:true,apple:true}),{google:false,apple:false});
+});

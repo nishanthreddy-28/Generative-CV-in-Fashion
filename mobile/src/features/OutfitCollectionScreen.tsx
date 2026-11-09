@@ -1,3 +1,5 @@
+import {Link} from "expo-router";
+import { colors, typography } from "../theme/tokens";
 import { useCallback, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useFocusEffect } from "expo-router";
@@ -42,13 +44,13 @@ export function OutfitCollectionScreen() {
   const choice=(field:"source"|"category"|"sort",values:[string,string][]) => <View style={ui.row}>{values.map(([value,label])=>
     <Pressable key={value} accessibilityRole="radio" accessibilityLabel={`${field}: ${label}`} accessibilityState={{checked:draft[field]===value}}
       style={[ui.chip,draft[field]===value && ui.selected]} onPress={()=>setDraft(current=>({...current,[field]:value}))}>
-      <Text>{label}</Text>
+      <Text style={ui.chipLabel}>{label}</Text>
     </Pressable>)}</View>;
-  return <Screen title="Your saved looks." subtitle="Outfits worth coming back to.">
+  return <Screen title="Saved outfits" subtitle="Create, edit, and revisit your outfits.">
     <Gate preview={preview}>
-      <RouteLink to="/outfits/new" preview={preview}>Create an outfit →</RouteLink>
+      <Link href="/outfits/new" style={ui.primaryLink}>+ Create outfit</Link>
       <Text style={ui.label}>Search outfit names</Text>
-      <TextInput accessibilityLabel="Search outfits" placeholder="Search by outfit name" style={ui.input} value={draft.search} maxLength={200}
+      <TextInput accessibilityLabel="Search outfits" placeholderTextColor={colors.muted} placeholder="Search by outfit name" style={ui.input} value={draft.search} maxLength={200}
         onChangeText={search=>setDraft(current=>({...current,search}))} />
       <Button label={filtersOpen ? "Hide filters" : "Filter & sort"} variant="secondary" onPress={()=>setFiltersOpen(value=>!value)}/>
       {filtersOpen && <View style={ui.card}>
@@ -60,10 +62,10 @@ export function OutfitCollectionScreen() {
       <Text style={ui.label}>Order</Text>
       {choice("sort",[["newest","Newest"],["name","Name A–Z"]])}
       <Text style={ui.label}>Created from · UTC date</Text>
-      <TextInput accessibilityLabel="Created from" placeholder="YYYY-MM-DD" style={ui.input} value={draft.from}
+      <TextInput accessibilityLabel="Created from" placeholderTextColor={colors.muted} placeholder="YYYY-MM-DD" style={ui.input} value={draft.from}
         onChangeText={from=>setDraft(current=>({...current,from}))} />
       <Text style={ui.label}>Created through · UTC date</Text>
-      <TextInput accessibilityLabel="Created through" placeholder="YYYY-MM-DD" style={ui.input} value={draft.through}
+      <TextInput accessibilityLabel="Created through" placeholderTextColor={colors.muted} placeholder="YYYY-MM-DD" style={ui.input} value={draft.through}
         onChangeText={through=>setDraft(current=>({...current,through}))} />
       </View>}
       <Button label="Apply search & filters" variant="secondary" onPress={()=>{if(apply(draft))setFiltersOpen(false);}} />
@@ -74,15 +76,15 @@ export function OutfitCollectionScreen() {
       {!loading && !error && (!visible || !visible.items.length) && <Notice title="No matching outfits"
         text={preview ? "Preview contains no example outfits." : "Create an outfit or adjust the filters."} />}
       {(visible?.items ?? []).map(item=><View key={item.id} style={ui.card}>
-        <Text style={ui.heading}>{item.name}</Text>
-        <Text style={ui.body}>{item.items?.length ?? item.garmentIds.length} pieces{item.occasion ? ` · ${item.occasion}` : ""}</Text>
+        <Text style={typography.eyebrow}>{(item.occasion || "SAVED LOOK").toUpperCase()}</Text>
+        <Text style={[typography.editorial,{fontSize:24,lineHeight:30}]}>{item.name}</Text>
+        <Text style={ui.body}>{item.items?.length ?? item.garmentIds.length} pieces</Text>
         {Boolean(item.description) && <Text style={ui.body}>{item.description}</Text>}
         <RouteLink to={`/outfits/${encodeURIComponent(item.id)}`} preview={preview}>View and edit outfit →</RouteLink>
       </View>)}
       {visible?.nextCursor && <Button label="Load more outfits" variant="secondary" disabled={loading || Boolean(error)} onPress={()=>setPages(n=>n+1)} />}
       {visible && !visible.nextCursor && !loading && !error && visible.items.length>0 && <Text style={ui.body}>You’ve reached the end of your outfits.</Text>}
       {pages>1 && <Button label="Back to first page" variant="secondary" disabled={loading} onPress={()=>setPages(1)} />}
-      <RouteLink to="/dashboard" preview={preview}>Back to your dashboard</RouteLink>
     </Gate>
   </Screen>;
 }

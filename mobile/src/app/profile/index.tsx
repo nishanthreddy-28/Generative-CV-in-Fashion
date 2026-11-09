@@ -3,8 +3,8 @@ import { profileFields } from "../../features/schema";
 export default function Profile() {
   return (
     <EditorScreen
-      title="Your profile."
-      subtitle="The details that make your style personal."
+      title="Profile"
+      subtitle="Manage your name and style details."
       path="/profile"
       fields={profileFields}
     />

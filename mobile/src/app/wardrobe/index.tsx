@@ -3,8 +3,8 @@ export default function Wardrobe() {
   return (
     <CollectionScreen
       kind="wardrobe"
-      title="Your wardrobe."
-      subtitle="All your pieces. A clearer point of view."
+      title="Wardrobe"
+      subtitle="Keep the pieces you own in one place."
     />
   );
 }

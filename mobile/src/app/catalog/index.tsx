@@ -3,8 +3,8 @@ export default function Catalog() {
   return (
     <CollectionScreen
       kind="catalog"
-      title="Find your next piece."
-      subtitle="Explore pieces that could complement what you already own."
+      title="Catalog"
+      subtitle="Browse pieces to pair with your wardrobe."
     />
   );
 }

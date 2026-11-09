@@ -57,3 +57,7 @@ export function payloadFor(fields: Field[], values: Record<string, string>) {
     ]),
   );
 }
+
+export function patchPayload(fields: Field[], values: Record<string,string>, changed: Record<string,string>) {
+  return payloadFor(fields.filter(field=>Object.prototype.hasOwnProperty.call(changed,field.key)),values);
+}

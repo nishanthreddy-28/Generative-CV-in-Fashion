@@ -1,6 +1,6 @@
 import { useDraft } from "../hooks/useDraft";
-import { useState } from "react";
-import { Text } from "react-native";
+import { useState, type ReactNode } from "react";
+import { Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import { Fields } from "../components/Fields";
 import { Button } from "../components/Button";
@@ -17,7 +17,7 @@ import {
 import { PhotoField, appendPhoto, type Photo } from "../components/PhotoField";
 import { useResource } from "../hooks/useResource";
 import { useSession } from "./session";
-import { type Field, validate, payloadFor } from "./validation";
+import { type Field, validate, payloadFor, patchPayload } from "./validation";
 type Props = {
   title: string;
   subtitle?: string;
@@ -28,6 +28,7 @@ type Props = {
   admin?: boolean;
   afterSave?: string;
   allowDelete?: boolean;
+  wardrobeEntry?: ReactNode;
 };
 export function EditorScreen({
   title,
@@ -39,6 +40,7 @@ export function EditorScreen({
   admin = false,
   afterSave,
   allowDelete = false,
+  wardrobeEntry,
 }: Props) {
   const preview = usePreview();
   const { session, request } = useSession();
@@ -81,7 +83,7 @@ export function EditorScreen({
     if (!session) return;
     setBusy(true);
     try {
-      const payload = payloadFor(fields, values);
+      const payload = create ? payloadFor(fields, values) : patchPayload(fields, values, draft);
       let body: unknown = payload;
       if (photo) {
         const form = new FormData();
@@ -131,6 +133,16 @@ export function EditorScreen({
     !preview &&
     !create &&
     (result.loading || Boolean(result.error) || !result.data);
+  const photoSection = photo && <>
+    <PhotoField
+      label={create ? "Garment photo *" : "Replace garment photo (optional)"}
+      value={image}
+      onChange={(value) => {setImage(value);setDirty(true);}}
+      disabled={busy}
+      camera={!!wardrobeEntry}
+    />
+    {!!errors.photo && <Text accessibilityRole="alert" style={ui.error}>{errors.photo}</Text>}
+  </>;
   return (
     <Screen title={title} subtitle={subtitle}>
       <Gate preview={preview} admin={admin}>
@@ -149,6 +161,11 @@ export function EditorScreen({
             )}
             {admin && result.data?.active === false &&
               <Notice title="Inactive catalog item" text="Hidden from the catalog. Its record and image are retained." />}
+            {wardrobeEntry}
+            {wardrobeEntry && photoSection}
+            {(!wardrobeEntry || image) && <>
+            <View style={ui.card}>
+            <Text style={ui.heading}>{photo ? "Piece details" : "Your details"}</Text>
             <Fields
               fields={fields}
               values={values}
@@ -161,32 +178,15 @@ export function EditorScreen({
                 setMessage("");
               }}
             />
-            {photo && (
-              <PhotoField
-                label={
-                  create
-                    ? "Garment photo *"
-                    : "Replace garment photo (optional)"
-                }
-                value={image}
-                onChange={(p) => {
-                  setImage(p);
-                  setDirty(true);
-                }}
-                disabled={busy}
-              />
-            )}
-            {Boolean(errors.photo) && (
-              <Text accessibilityRole="alert" style={ui.error}>
-                {errors.photo}
-              </Text>
-            )}
+            </View>
+            {!wardrobeEntry && photoSection}
             {Boolean(message) && <Notice title="Form status" text={message} />}
             <Button
-              label={create ? "Add garment" : "Save changes"}
+              label={wardrobeEntry ? "Save item" : create ? "Add garment" : "Save changes"}
               onPress={save}
               loading={busy}
             />
+            </>}
             <Button
               label="Discard changes"
               variant="secondary"
@@ -223,16 +223,7 @@ export function EditorScreen({
               void remove();
               return;
             }
-            setValues(
-              Object.fromEntries(
-                fields.map((f) => [
-                  f.key,
-                  result.data?.[f.key] == null
-                    ? ""
-                    : String(result.data[f.key]),
-                ]),
-              ),
-            );
+            setValues({});
             setImage(null);
             setErrors({});
             setMessage("");

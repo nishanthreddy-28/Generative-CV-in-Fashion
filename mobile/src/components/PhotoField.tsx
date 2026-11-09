@@ -1,3 +1,4 @@
+import { colors } from "../theme/tokens";
 import {FramedImage} from "./FramedImage";
 import { useState } from "react";
 import { Platform, Text, View } from "react-native";
@@ -10,20 +11,30 @@ export function PhotoField({
   value,
   onChange,
   disabled = false,
+  camera = false,
 }: {
   label: string;
   value: Photo | null;
   onChange: (photo: Photo | null) => void;
   disabled?: boolean;
+  camera?: boolean;
 }) {
   const [error, setError] = useState("");
   const [picking,setPicking]=useState(false);
-  async function pick() {
+  async function pick(source: "library" | "camera") {
     if(picking || disabled)return;
     setPicking(true);
     setError("");
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
+      if (source === "camera") {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          setError("Camera access is off. Allow it in device settings or upload a photo.");
+          return;
+        }
+      }
+      const launch = source === "camera" ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync;
+      const result = await launch({
         mediaTypes: ["images"],
         quality: 0.85,
         allowsMultipleSelection: false,
@@ -52,7 +63,7 @@ export function PhotoField({
   return (
     <View style={{ gap: 12 }}>
       <Text style={ui.label}>{label}</Text>
-      {!value && <View style={{aspectRatio:1.5,borderWidth:1,borderStyle:"dashed",borderColor:"#C7C8C0",backgroundColor:"#EFEEE9",alignItems:"center",justifyContent:"center",padding:20,gap:8}}><Text style={ui.heading}>One piece. A clearer picture.</Text><Text style={ui.body}>Choose a clear photo from your library.</Text></View>}
+      {!value && <View style={{aspectRatio:1.5,borderWidth:1,borderStyle:"dashed",borderColor:colors.inputBorder,backgroundColor:colors.surface,alignItems:"center",justifyContent:"center",padding:20,gap:8}}><Text style={ui.heading}>One piece. A clearer picture.</Text><Text style={ui.body}>Choose a clear photo of one piece.</Text></View>}
       {value && (
         <FramedImage
           label={label}
@@ -62,12 +73,15 @@ export function PhotoField({
         />
       )}
       <Button
-        label={value ? "Replace photo" : "Choose photo"}
-        onPress={pick}
+        label={value ? "Replace photo" : camera ? "Upload photo" : "Choose photo"}
+        onPress={() => void pick("library")}
         loading={picking}
         disabled={disabled || picking}
         variant="secondary"
       />
+      {camera && Platform.OS !== "web" && (
+        <Button label="Take photo" variant="secondary" onPress={() => void pick("camera")} disabled={disabled || picking} />
+      )}
       {value && (
         <Button
           label="Remove selected photo"

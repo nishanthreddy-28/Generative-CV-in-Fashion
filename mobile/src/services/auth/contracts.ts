@@ -1,10 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export function publicAuthConfig(url?: string, key?: string) {
+export function publicAuthConfig(url?: string, key?: string, localPreview = false) {
   if (!url || !key || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(key)) return null;
   try {
     const endpoint = new URL(url);
-    if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password ||
+    if (localPreview && endpoint.origin !== "http://127.0.0.1:54321") return null;
+    if ((!localPreview && endpoint.protocol !== "https:") || endpoint.username || endpoint.password ||
         endpoint.pathname !== "/" || endpoint.search || endpoint.hash) return null;
     return { url: endpoint.origin, key };
   } catch {
@@ -105,16 +106,18 @@ export async function exchangeOAuth(
   auth: Pick<Auth, "exchangeCodeForSession">, code: string, flowId?: string,
 ) {
   if (!code || code.length > 2048 || (!flowId || !/^[a-zA-Z0-9_-]{8,64}$/.test(flowId)))
-    throw new Error("Invalid sign-in callback. Start Google sign-in again.");
+    throw new Error("Invalid sign-in callback. Start sign-in again.");
   const { data, error } = await auth.exchangeCodeForSession(code, { flowId });
-  if (error || !data.session) throw new Error("Sign-in link is invalid or expired. Start Google sign-in again.");
+  if (error || !data.session) throw new Error("Sign-in link is invalid or expired. Start sign-in again.");
   return data.session;
 }
 
-export async function beginGoogleOAuth(auth: Pick<Auth,"signInWithOAuth">, redirectTo: string) {
-  const {data,error}=await auth.signInWithOAuth({provider:"google",options:{redirectTo,skipBrowserRedirect:true}});
+export type SocialProvider = "google" | "apple";
+
+export async function beginSocialOAuth(auth: Pick<Auth,"signInWithOAuth">, provider: SocialProvider, redirectTo: string) {
+  const {data,error}=await auth.signInWithOAuth({provider,options:{redirectTo,skipBrowserRedirect:true}});
   if(error || !data.url || !data.flowId || !/^[a-zA-Z0-9_-]{8,64}$/.test(data.flowId))
-    throw new Error("Google sign-in is unavailable. Verify provider and redirect configuration.");
+    throw new Error("Social sign-in is unavailable. Check provider and callback configuration.");
   // Installed SDK returns per-flow verifier identity; bind it to this callback only.
   const callback=new URL(redirectTo);
   callback.searchParams.set("sb_flow_id",data.flowId);
@@ -122,6 +125,9 @@ export async function beginGoogleOAuth(auth: Pick<Auth,"signInWithOAuth">, redir
   target.searchParams.set("redirect_to",callback.toString());
   return target;
 }
+
+export const beginGoogleOAuth = (auth: Pick<Auth,"signInWithOAuth">, redirectTo: string) =>
+  beginSocialOAuth(auth, "google", redirectTo);
 
 export function accountRequestAllowed(deleting: boolean, path: string, method = "GET") {
   return !deleting || (path === "/account/deletion" && method === "GET");

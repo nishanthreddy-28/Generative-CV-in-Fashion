@@ -30,6 +30,8 @@ export function RouteLink({
     </Link>
   );
 }
+const destinationMarks = {"/dashboard":"⌂","/wardrobe":"▤","/catalog":"◇","/outfits":"▱","/settings":"◎"} as const;
+
 export function Screen({
   title,
   subtitle,
@@ -40,7 +42,8 @@ export function Screen({
   const {width}=useWindowDimensions();
   const showNavigation=!!session && !accountDeleting;
   const active=activeDestination(path);
-  const accountForm = !session && ["/login", "/signup", "/forgot-password", "/reset-password"].includes(path);
+  const accountForm = !session && ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-registration", "/auth-confirm"].includes(path);
+  const section = accountForm ? "MEMBER ACCESS" : showNavigation ? active?.slice(1).toUpperCase() ?? "ATELIER" : undefined;
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}} edges={["top","bottom"]}>
     <KeyboardAvoidingView
@@ -54,17 +57,20 @@ export function Screen({
         <View style={ui.top}>
           <Link href={session ? "/dashboard" : "/"} style={ui.brand} accessibilityLabel="Drape and Drop home">DRAPE &amp; DROP</Link>
           {!session && <RouteLink to={path==="/login" ? "/signup" : "/login"}>{path==="/login" ? "Join us" : "Sign in"}</RouteLink>}
-          {showNavigation && <RouteLink to="/settings">Your account</RouteLink>}
+          {showNavigation && <Link href="/settings" style={ui.link}>Your account</Link>}
         </View>
-        <Text accessibilityRole="header" style={ui.title}>
-          {title}
-        </Text>
-        {Boolean(subtitle) && <Text style={ui.body}>{subtitle}</Text>}
+        <View style={ui.intro}>
+          {section && <Text style={typography.eyebrow}>{section}</Text>}
+          <Text accessibilityRole="header" style={ui.title}>{title}</Text>
+          {!!subtitle && <Text style={ui.body}>{subtitle}</Text>}
+        </View>
         {children}
       </ScrollView>
       {showNavigation && <View style={ui.navigation} accessibilityLabel="Main navigation">
-        {appDestinations.map(item=><Link key={item.path} href={item.path} accessibilityState={{selected:active===item.path}}
-          style={[ui.navItem,active===item.path && ui.navActive]}>{item.label}</Link>)}
+        {appDestinations.map(item=><Link key={item.path} href={item.path} accessibilityLabel={item.label}
+          accessibilityState={{selected:active===item.path}} style={[ui.navItem,active===item.path && ui.navActive]}>
+          <Text style={ui.navMark}>{destinationMarks[item.path]}</Text>{"\n"}{item.label}
+        </Link>)}
       </View>}
     </KeyboardAvoidingView>
     </SafeAreaView>
@@ -121,14 +127,14 @@ export function ResourceState({
   retry: () => void;
 }) {
   return loading ? (
-    <View accessibilityLabel="Loading your data" accessibilityState={{busy:true}} style={{gap:12}}>
+    <View accessibilityLabel="Loading your data" accessibilityState={{busy:true}} style={ui.card}>
       <View style={ui.row}><ActivityIndicator color={colors.ink}/><Text style={ui.body}>Getting your collection ready…</Text></View>
       <View accessible={false} importantForAccessibility="no-hide-descendants" style={{gap:10}}>
         <View style={[ui.skeleton,{height:18,width:"62%"}]}/><View style={[ui.skeleton,{height:12,width:"92%"}]}/><View style={[ui.skeleton,{height:12,width:"78%"}]}/>
       </View>
     </View>
   ) : error ? (
-    <Notice title="We couldn’t load this" text={error} tone="error">
+    <Notice title="Couldn’t load this page" text={error} tone="error">
       <Button label="Try again" onPress={retry} variant="secondary" />
     </Notice>
   ) : null;
@@ -183,17 +189,19 @@ export function Confirm({
 export const ui = StyleSheet.create({
   skeleton: {backgroundColor:colors.border,borderRadius:4},
   navigation: {flexDirection:"row",backgroundColor:colors.surface,borderTopWidth:1,borderColor:colors.border,paddingHorizontal:8,paddingBottom:12,paddingTop:8,width:"100%",maxWidth:660,alignSelf:"center"},
-  navItem: {flex:1,textAlign:"center",fontSize:12,fontWeight:"600",color:colors.muted,paddingVertical:16,minHeight:48,borderBottomWidth:2,borderBottomColor:"transparent"},
-  navActive: {color:colors.ink,borderBottomColor:colors.ink},
+  navItem: {flex:1,textAlign:"center",fontSize:11,fontWeight:"600",lineHeight:19,color:colors.muted,paddingVertical:6,minHeight:48,borderBottomWidth:2,borderBottomColor:"transparent"},
+  navActive: {color:colors.ink,borderBottomColor:colors.accent},
+  navMark: {color:colors.accent,fontSize:17},
+  intro: {gap:8,paddingVertical:4},
   screen: {
     padding: 24,
     paddingBottom: 32,
-    gap: 22,
+    gap: 17,
     maxWidth: 660,
     width: "100%",
     alignSelf: "center",
   },
-  accountScreen: { maxWidth: 480 },
+  accountScreen: { maxWidth: 440 },
   narrowScreen: { paddingHorizontal: 18 },
   top: {
     flexDirection: "row",
@@ -202,25 +210,27 @@ export const ui = StyleSheet.create({
     gap: 12,
     borderBottomWidth: 1,
     borderColor: colors.border,
-    paddingBottom: 20,
+    paddingBottom: 9,
   },
-  brand: { fontSize: 13, letterSpacing: 2, color: colors.ink },
+  brand: { fontSize: 13, fontWeight:"700", letterSpacing: 2.4, color: colors.ink },
   title: {
     ...typography.editorial,
-    fontSize: 38,
-    lineHeight: 44,
+    fontSize: 36,
+    lineHeight: 42,
   },
   heading: { fontSize: 17, fontWeight: "600", color: colors.ink },
   body: { fontSize: 15, lineHeight: 24, color: colors.muted },
+  primaryLink: {backgroundColor:colors.accent,color:colors.onAccent,textAlign:"center",padding:14,minHeight:48,fontWeight:"600",borderRadius:4},
   link: {
     color: colors.ink,
     fontSize: 14,
     textDecorationLine: "underline",
+    textDecorationColor: colors.accent,
     paddingVertical: 12,
     minHeight: 48,
   },
   notice: {
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
     gap: 12,
@@ -238,7 +248,7 @@ export const ui = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor:colors.surface,
     borderRadius:6,
-    padding:20,
+    padding:16,
     gap: 12,
   },
   error: { color: colors.error, fontSize: 14, lineHeight: 22 },
@@ -246,30 +256,33 @@ export const ui = StyleSheet.create({
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
-    minHeight: 52,
+    borderColor: colors.inputBorder,
+    minHeight: 50,
     padding: 14,
     borderRadius:4,
     color: colors.ink,
     fontSize: 16,
   },
-  field: { gap: 8 },
+  field: { gap: 7 },
+  inputFocused: { borderColor: colors.accent },
+  inputInvalid: { borderColor: colors.error },
+  chipLabel: {color: colors.ink,fontSize: 13},
   chip: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius:4,
+    borderRadius:20,
     paddingHorizontal: 14,
     paddingVertical: 12,
     minHeight: 48,
   },
-  selected: { borderColor: colors.sage, backgroundColor: "#E7EBE4" },
+  selected: { borderColor: colors.accent, backgroundColor: colors.selected },
   image: { width: "100%", aspectRatio: 0.85, backgroundColor: colors.border },
   overlay: {
     flex: 1,
     width: "100%",
     alignSelf: "center",
     ...(Platform.OS === "web" ? {maxWidth: 480} : {}),
-    backgroundColor: "#0009",
+    backgroundColor: colors.scrim,
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
@@ -277,7 +290,10 @@ export const ui = StyleSheet.create({
   dialog: {
     width: "100%",
     maxWidth: 460,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
+    borderWidth:1,
+    borderColor:colors.border,
+    borderRadius:8,
     padding: 24,
     gap: 20,
   },

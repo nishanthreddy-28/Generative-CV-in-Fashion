@@ -10,6 +10,7 @@ import { secureSessionStorage } from "./storage";
 const config = publicAuthConfig(
   process.env.EXPO_PUBLIC_SUPABASE_URL?.trim(),
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim(),
+  __DEV__ && process.env.EXPO_PUBLIC_LOCAL_PREVIEW === "true",
 );
 const native = Platform.OS !== "web";
 // Supply the primitives the SDK needs for S256 on Expo runtimes without WebCrypto.

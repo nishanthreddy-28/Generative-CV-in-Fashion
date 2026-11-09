@@ -14,8 +14,8 @@ export default function OAuthCallback(){
   }catch(e){setMessage(e instanceof Error ? e.message : "Unable to complete sign-in.");}
   finally{setBusy(false);}
  }
- return <Screen title="Complete Google sign-in.">
-  {error || !code ? <Notice title="Sign-in unavailable" text="Start sign-in again from the login screen."/> : <Button label="Complete sign-in" loading={busy} onPress={complete}/>}
+ return <Screen title="Complete sign-in">
+  {error || typeof code !== "string" || !code || code.length > 2048 || typeof sb_flow_id !== "string" ? <Notice title={error === "access_denied" ? "Sign-in cancelled" : "Sign-in unavailable"} text="Return to sign-in and try again."/> : <Button label="Complete sign-in" loading={busy} onPress={complete}/>}
   {Boolean(message) && <Notice title="Sign-in status" text={message}/>}
   <RouteLink to="/login">Back to login</RouteLink>
  </Screen>;
