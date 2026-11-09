@@ -39,3 +39,5 @@ The preview server must remain running. This localhost URL is not a publicly hos
 Non-password editing drafts are held only in session memory across screen navigation. Closing/reloading the app clears them; sign-in changes and sign-out also clear them. No personal draft is written to a local database. Discard resets a draft explicitly.
 
 Version history is in [the ledger](../docs/VERSIONS.md). Version 0.4.0 is a frontend preview; device, Figma and backend integration checks remain explicit in its release note.
+
+For the hosted visual review, use the [Vercel Production site](https://drape-drop-eta.vercel.app/). Its optional service-status button checks the public FastAPI liveness endpoint without sending account information. The current Render Free instance can take about a minute to wake after idle. See the [deployment runbook](../docs/frontend/vercel-deployment.md) for configuration and verification.
