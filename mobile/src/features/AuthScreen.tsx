@@ -6,11 +6,12 @@ import { router } from "expo-router";
 import { Screen, RouteLink, Notice, ui } from "../components/Screen";
 import { Button } from "../components/Button";
 import { colors, typography } from "../theme/tokens";
+import { passwordChecks, passwordIssue } from "../services/auth/passwordPolicy";
 import { Fields } from "../components/Fields";
 import { type Field, validate } from "./validation";
 import { useSession } from "./session";
 import { emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
-import { beginGoogleOAuth, authError, signupMessage } from "../services/auth/contracts";
+import { beginGoogleOAuth, authError } from "../services/auth/contracts";
 const googleEnabled=process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -18,13 +19,10 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
-  const { login, signup, session, ready } = useSession();
+  const { login, session, ready } = useSession();
   const { width, fontScale } = useWindowDimensions();
   const split = mode !== "reset" && width >= 860 && fontScale <= 1.2;
   const fields: Field[] = [
-    ...(mode === "signup"
-      ? [{ key: "name", label: "Name", required: true }]
-      : []),
     { key: "email", label: "Email", required: true, kind: "email" },
     ...(mode !== "reset"
       ? [
@@ -51,12 +49,20 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   ];
   async function submit() {
     const issues = validate(fields, values);
+    if (mode === "signup") {
+      const issue = passwordIssue(values.password ?? "", values.email);
+      if (issue) issues.password = issue;
+    }
     if (mode === "signup" && values.password !== values.confirm)
       issues.confirm = "Passwords must match.";
     setErrors(issues);
     setMessage("");
     setSuccess(false);
     if (Object.keys(issues).length) return;
+    if (mode === "signup") {
+      setMessage("Registration is unavailable while email verification is being configured.");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "login") {
@@ -64,15 +70,11 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
         router.replace("/dashboard");
       } else {
         const auth = requireAuth();
-        if (mode === "signup") {
-          setMessage(signupMessage(await signup(values.name.trim(), values.email.trim(), values.password)));
-        } else {
-          const { error } = await auth.resetPasswordForEmail(values.email.trim(), {
-            redirectTo: emailRedirect("reset-password"),
-          });
-          if (error && error.code !== "user_not_found") throw new Error(authError(error.code));
-          setMessage("If an account exists for this address, you will receive password reset instructions.");
-        }
+        const { error } = await auth.resetPasswordForEmail(values.email.trim(), {
+          redirectTo: emailRedirect("reset-password"),
+        });
+        if (error && error.code !== "user_not_found") throw new Error(authError(error.code));
+        setMessage("If an account exists for this address, you will receive password reset instructions.");
         setSuccess(true);
         setValues({});
       }
@@ -150,6 +152,23 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
               setMessage("");
             }}
           />
+          {mode === "signup" && (
+            <View style={{ gap: 8 }} accessibilityLiveRegion="polite">
+              <Text style={ui.label}>
+                Password strength · {passwordChecks(values.password ?? "", values.email).every(check => check.passed) ? "Requirements met" : "Needs attention"}
+              </Text>
+              {passwordChecks(values.password ?? "", values.email).map(check => (
+                <Text key={check.label} style={check.passed ? ui.body : ui.error}>
+                  {check.passed ? "✓" : "○"} {check.label}
+                </Text>
+              ))}
+              {!!values.confirm && <Text style={values.confirm === values.password ? ui.body : ui.error}>
+                {values.confirm === values.password ? "Passwords match." : "Passwords must match."}
+              </Text>}
+              <Notice title="Registration is being prepared"
+                text="Email verification setup is pending. Please return when registration opens." />
+            </View>
+          )}
           {Boolean(message) && (
             <Text accessibilityRole="alert" style={success ? ui.body : ui.error}>
               {message}
@@ -164,7 +183,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
                   : "Send reset instructions"
             }
             loading={busy}
-            disabled={!ready || !supabase}
+            disabled={!ready || !supabase || mode === "signup"}
             onPress={submit}
           />
           {mode !== "reset" && googleEnabled && (
