@@ -37,16 +37,16 @@ GRANT UPDATE(name,category,color,brand,size,material,notes,image_id,updated_at) 
 GRANT SELECT,INSERT ON app_private.wardrobe_images TO dd_user_executor;
 GRANT UPDATE(state) ON app_private.wardrobe_images TO dd_user_executor;
 CREATE POLICY own_active ON app_private.wardrobe_images TO dd_user_executor
- USING(owner_id=(SELECT auth.uid()) AND (SELECT app_private.current_account_active()))
- WITH CHECK(owner_id=(SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING(owner_id=(SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()))
+ WITH CHECK(owner_id=(SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY own_active ON app_private.wardrobe_garments TO dd_user_executor
- USING(owner_id=(SELECT auth.uid()) AND (SELECT app_private.current_account_active()))
- WITH CHECK(owner_id=(SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING(owner_id=(SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()))
+ WITH CHECK(owner_id=(SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 GRANT CREATE ON SCHEMA app_private TO dd_user_executor;
 GRANT USAGE ON SCHEMA storage TO dd_user_executor;
 GRANT SELECT ON storage.objects TO dd_user_executor;
 CREATE POLICY wardrobe_executor_objects ON storage.objects FOR SELECT TO dd_user_executor
- USING(bucket_id='wardrobe-images' AND owner_id::text=auth.uid()::text AND app_private.current_account_active());
+ USING(bucket_id='wardrobe-images' AND owner_id::text=app_private.request_subject()::text AND app_private.current_account_active());
 
 -- A collision with a public/incompatible bucket must fail, never silently weaken it.
 INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
@@ -67,7 +67,7 @@ BEGIN
  IF NOT app_private.current_account_active() THEN RETURN false; END IF;
  -- Serialize insertion metadata with attach/retire transitions; no overwrite policy.
  SELECT state INTO image_state FROM app_private.wardrobe_images
-  WHERE owner_id=auth.uid() AND object_name=p_name FOR SHARE;
+  WHERE owner_id=app_private.request_subject() AND object_name=p_name FOR SHARE;
  RETURN CASE p_operation WHEN 'insert' THEN image_state='pending'
   WHEN 'read' THEN image_state IN ('pending','attached','cleanup_pending')
   WHEN 'delete' THEN image_state='cleanup_pending' ELSE false END;
@@ -95,9 +95,9 @@ DECLARE result jsonb;
 BEGIN
  PERFORM app_private.require_active_account();
  INSERT INTO app_private.wardrobe_images(id,owner_id,sha256,byte_size,state)
-  VALUES(p_id,auth.uid(),p_sha256,p_byte_size,'pending');
+  VALUES(p_id,app_private.request_subject(),p_sha256,p_byte_size,'pending');
  SELECT jsonb_build_object('id',id,'object',object_name,'sha256',sha256,'byteSize',byte_size)
-  INTO result FROM app_private.wardrobe_images WHERE id=p_id AND owner_id=auth.uid();
+  INTO result FROM app_private.wardrobe_images WHERE id=p_id AND owner_id=app_private.request_subject();
  RETURN result;
 END;
 $fn$;
@@ -117,7 +117,7 @@ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $fn$
 DECLARE garment app_private.wardrobe_garments%ROWTYPE;
 BEGIN
  IF NOT app_private.current_account_active() THEN RAISE EXCEPTION 'Account access denied' USING ERRCODE='42501'; END IF;
- SELECT * INTO garment FROM app_private.wardrobe_garments WHERE id=p_id AND owner_id=auth.uid();
+ SELECT * INTO garment FROM app_private.wardrobe_garments WHERE id=p_id AND owner_id=app_private.request_subject();
  IF NOT FOUND THEN RAISE EXCEPTION 'Garment not found' USING ERRCODE='P0002'; END IF;
  RETURN app_private.wardrobe_record(garment);
 END;
@@ -141,7 +141,7 @@ BEGIN
  IF p_changes ? 'category' AND p_changes->>'category' NOT IN ('Tops','Bottoms','Outerwear','Dresses','Shoes','Accessories') THEN
   RAISE EXCEPTION 'Invalid garment category' USING ERRCODE='22023'; END IF;
  IF p_id IS NOT NULL THEN
-  SELECT * INTO garment FROM app_private.wardrobe_garments WHERE id=p_id AND owner_id=auth.uid() FOR UPDATE;
+  SELECT * INTO garment FROM app_private.wardrobe_garments WHERE id=p_id AND owner_id=app_private.request_subject() FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Garment not found' USING ERRCODE='P0002'; END IF;
   old_image:=garment.image_id;
  ELSE
@@ -149,16 +149,16 @@ BEGIN
    RAISE EXCEPTION 'Name, category and image required' USING ERRCODE='22023'; END IF;
  END IF;
  IF p_image_id IS NOT NULL THEN
-  SELECT * INTO image FROM app_private.wardrobe_images WHERE id=p_image_id AND owner_id=auth.uid() FOR UPDATE;
+  SELECT * INTO image FROM app_private.wardrobe_images WHERE id=p_image_id AND owner_id=app_private.request_subject() FOR UPDATE;
   IF NOT FOUND OR image.state<>'pending' THEN RAISE EXCEPTION 'Image not found' USING ERRCODE='P0002'; END IF;
   IF NOT EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='wardrobe-images' AND name=image.object_name
-   AND owner_id::text=auth.uid()::text AND metadata->>'mimetype'='image/jpeg'
+   AND owner_id::text=app_private.request_subject()::text AND metadata->>'mimetype'='image/jpeg'
    AND (metadata->>'size')::bigint=image.byte_size) THEN
    RAISE EXCEPTION 'Image upload incomplete' USING ERRCODE='22023'; END IF;
  END IF;
  IF p_id IS NULL THEN
   INSERT INTO app_private.wardrobe_garments(owner_id,name,category,color,brand,size,material,notes,image_id)
-   VALUES(auth.uid(),btrim(p_changes->>'name'),p_changes->>'category',nullif(btrim(p_changes->>'color'),''),
+   VALUES(app_private.request_subject(),btrim(p_changes->>'name'),p_changes->>'category',nullif(btrim(p_changes->>'color'),''),
     nullif(btrim(p_changes->>'brand'),''),nullif(btrim(p_changes->>'size'),''),nullif(btrim(p_changes->>'material'),''),
     nullif(btrim(p_changes->>'notes'),''),p_image_id) RETURNING * INTO garment;
  ELSE
@@ -171,11 +171,11 @@ BEGIN
    material=CASE WHEN p_changes ? 'material' THEN nullif(btrim(p_changes->>'material'),'') ELSE material END,
    notes=CASE WHEN p_changes ? 'notes' THEN nullif(btrim(p_changes->>'notes'),'') ELSE notes END,
    image_id=coalesce(p_image_id,image_id),updated_at=transaction_timestamp()
-   WHERE id=p_id AND owner_id=auth.uid() RETURNING * INTO garment;
+   WHERE id=p_id AND owner_id=app_private.request_subject() RETURNING * INTO garment;
  END IF;
  IF p_image_id IS NOT NULL THEN
-  UPDATE app_private.wardrobe_images SET state='attached' WHERE id=p_image_id AND owner_id=auth.uid();
-  IF old_image IS NOT NULL THEN UPDATE app_private.wardrobe_images SET state='cleanup_pending' WHERE id=old_image AND owner_id=auth.uid(); END IF;
+  UPDATE app_private.wardrobe_images SET state='attached' WHERE id=p_image_id AND owner_id=app_private.request_subject();
+  IF old_image IS NOT NULL THEN UPDATE app_private.wardrobe_images SET state='cleanup_pending' WHERE id=old_image AND owner_id=app_private.request_subject(); END IF;
  END IF;
  RETURN app_private.wardrobe_record(garment);
 END;
@@ -187,9 +187,9 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $fn$
 DECLARE image uuid;
 BEGIN
  PERFORM app_private.require_active_account();
- DELETE FROM app_private.wardrobe_garments WHERE id=p_id AND owner_id=auth.uid() RETURNING image_id INTO image;
+ DELETE FROM app_private.wardrobe_garments WHERE id=p_id AND owner_id=app_private.request_subject() RETURNING image_id INTO image;
  IF NOT FOUND THEN RAISE EXCEPTION 'Garment not found' USING ERRCODE='P0002'; END IF;
- UPDATE app_private.wardrobe_images SET state='cleanup_pending' WHERE id=image AND owner_id=auth.uid();
+ UPDATE app_private.wardrobe_images SET state='cleanup_pending' WHERE id=image AND owner_id=app_private.request_subject();
 END;
 $fn$;
 ALTER FUNCTION app_private.delete_wardrobe(uuid) OWNER TO dd_user_executor;
@@ -205,7 +205,7 @@ BEGIN
  IF p_cursor IS NOT NULL AND (jsonb_typeof(p_cursor)<>'object' OR NOT(p_cursor ? 'id' AND p_cursor ? 'value')) THEN
   RAISE EXCEPTION 'Invalid cursor' USING ERRCODE='22023'; END IF;
  FOR garment IN
-  SELECT g.* FROM app_private.wardrobe_garments g WHERE owner_id=auth.uid()
+  SELECT g.* FROM app_private.wardrobe_garments g WHERE owner_id=app_private.request_subject()
    AND (p_category='' OR category=p_category)
    AND (p_search='' OR strpos(lower(name||' '||coalesce(brand,'')),lower(btrim(p_search)))>0)
    AND (p_cursor IS NULL OR CASE WHEN p_sort='name' THEN
@@ -232,7 +232,7 @@ BEGIN
  PERFORM app_private.read_wardrobe(p_garment_id);
  SELECT jsonb_build_object('id',i.id,'object',i.object_name,'sha256',i.sha256,'byteSize',i.byte_size) INTO result
  FROM app_private.wardrobe_images i JOIN app_private.wardrobe_garments g ON g.image_id=i.id AND g.owner_id=i.owner_id
- WHERE g.id=p_garment_id AND g.owner_id=auth.uid() AND i.state='attached';
+ WHERE g.id=p_garment_id AND g.owner_id=app_private.request_subject() AND i.state='attached';
  IF result IS NULL THEN RAISE EXCEPTION 'Image association unavailable' USING ERRCODE='55000'; END IF;
  RETURN result;
 END;
@@ -243,7 +243,7 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $fn$
 BEGIN
  PERFORM app_private.require_active_account();
  UPDATE app_private.wardrobe_images SET state='cleanup_pending'
- WHERE id=p_id AND owner_id=auth.uid() AND state='pending';
+ WHERE id=p_id AND owner_id=app_private.request_subject() AND state='pending';
 END;
 $fn$;
 ALTER FUNCTION app_private.abandon_wardrobe_image(uuid) OWNER TO dd_user_executor;
@@ -253,14 +253,14 @@ DECLARE result jsonb;
 BEGIN
  PERFORM app_private.require_active_account();
  IF p_finished IS NOT NULL THEN
-  PERFORM 1 FROM app_private.wardrobe_images WHERE id=p_finished AND owner_id=auth.uid() AND state='cleanup_pending' FOR UPDATE;
+  PERFORM 1 FROM app_private.wardrobe_images WHERE id=p_finished AND owner_id=app_private.request_subject() AND state='cleanup_pending' FOR UPDATE;
   IF FOUND AND NOT EXISTS(SELECT 1 FROM storage.objects o JOIN app_private.wardrobe_images i ON o.name=i.object_name
-   WHERE i.id=p_finished AND i.owner_id=auth.uid() AND o.bucket_id='wardrobe-images') THEN
-   UPDATE app_private.wardrobe_images SET state='removed' WHERE id=p_finished AND owner_id=auth.uid();
+   WHERE i.id=p_finished AND i.owner_id=app_private.request_subject() AND o.bucket_id='wardrobe-images') THEN
+   UPDATE app_private.wardrobe_images SET state='removed' WHERE id=p_finished AND owner_id=app_private.request_subject();
   END IF;
  END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'object',object_name)),'[]'::jsonb) INTO result FROM (
-  SELECT id,object_name FROM app_private.wardrobe_images WHERE owner_id=auth.uid() AND state='cleanup_pending' ORDER BY created_at,id LIMIT 10
+  SELECT id,object_name FROM app_private.wardrobe_images WHERE owner_id=app_private.request_subject() AND state='cleanup_pending' ORDER BY created_at,id LIMIT 10
  ) pending;
  RETURN result;
 END;

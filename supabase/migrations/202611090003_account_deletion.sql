@@ -18,8 +18,8 @@ GRANT SELECT,INSERT,UPDATE ON app_private.deletion_tasks TO dd_control_executor;
 CREATE POLICY trusted_cleanup ON app_private.deletion_tasks TO dd_control_executor USING(true) WITH CHECK(true);
 GRANT CREATE ON SCHEMA app_private TO dd_control_executor;
 GRANT USAGE ON SCHEMA api TO service_role,dd_lifecycle_operator;
-GRANT USAGE ON SCHEMA auth,storage TO dd_control_executor;
-GRANT EXECUTE ON FUNCTION auth.uid() TO dd_control_executor;
+GRANT USAGE ON SCHEMA storage TO dd_control_executor;
+GRANT EXECUTE ON FUNCTION app_private.request_subject() TO dd_control_executor;
 GRANT SELECT ON storage.objects TO dd_control_executor;
 CREATE POLICY deletion_manifest ON storage.objects FOR SELECT TO dd_control_executor
  USING(bucket_id IN ('wardrobe-images','tryon-inputs') AND EXISTS(SELECT 1 FROM app_private.deletion_tasks t WHERE t.subject_id::text=split_part(name,'/',1) AND t.phase<>'complete'));
@@ -29,7 +29,7 @@ CREATE POLICY deletion_outfits_delete ON app_private.saved_outfits FOR DELETE TO
 
 CREATE FUNCTION app_private.request_account_deletion(p_confirmation text) RETURNS jsonb
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
-DECLARE subject uuid:=auth.uid();claims jsonb;entry jsonb;fresh boolean:=false;state text;
+DECLARE subject uuid:=app_private.request_subject();claims jsonb;entry jsonb;fresh boolean:=false;state text;
 BEGIN
  IF subject IS NULL OR p_confirmation IS DISTINCT FROM 'DELETE' THEN RAISE EXCEPTION 'Confirmation required' USING ERRCODE='22023'; END IF;
  PERFORM pg_advisory_xact_lock(hashtextextended(subject::text,0));
@@ -56,7 +56,7 @@ CREATE FUNCTION app_private.account_deletion_status() RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE task app_private.deletion_tasks%ROWTYPE;
 BEGIN
- SELECT * INTO task FROM app_private.deletion_tasks WHERE subject_id=auth.uid();
+ SELECT * INTO task FROM app_private.deletion_tasks WHERE subject_id=app_private.request_subject();
  IF NOT FOUND THEN RETURN jsonb_build_object('status','not_requested','retryable',false); END IF;
  RETURN jsonb_build_object('status',CASE WHEN task.phase='complete' THEN 'complete' ELSE 'deleting' END,
   'retryable',task.last_error IS NOT NULL,'message',CASE WHEN task.phase='complete' THEN 'Account and private data deletion completed.' ELSE 'Private data access is disabled. Cleanup is queued or in progress.' END);
@@ -100,13 +100,21 @@ BEGIN
  RETURN true;
 END; $$;
 ALTER FUNCTION app_private.prepare_auth_deletion(uuid,uuid) OWNER TO dd_control_executor;
+-- Only the trusted cleanup executor may check whether a specific identity remains.
+CREATE FUNCTION app_private.auth_subject_exists(p_subject uuid) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+ SELECT EXISTS (SELECT 1 FROM auth.users WHERE id = p_subject);
+$$;
+REVOKE ALL ON FUNCTION app_private.auth_subject_exists(uuid) FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION app_private.auth_subject_exists(uuid) TO dd_control_executor;
+
 CREATE FUNCTION app_private.finish_deletion(p_subject uuid,p_lease uuid,p_success boolean) RETURNS void
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 BEGIN
  PERFORM 1 FROM app_private.deletion_tasks WHERE subject_id=p_subject AND lease=p_lease AND lease_until>clock_timestamp() AND phase<>'complete' FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Invalid cleanup lease' USING ERRCODE='42501'; END IF;
  IF p_success THEN
-  IF EXISTS(SELECT 1 FROM auth.users WHERE id=p_subject) OR EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id IN ('wardrobe-images','tryon-inputs') AND split_part(name,'/',1)=p_subject::text) THEN
+  IF app_private.auth_subject_exists(p_subject) OR EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id IN ('wardrobe-images','tryon-inputs') AND split_part(name,'/',1)=p_subject::text) THEN
    RAISE EXCEPTION 'Cleanup incomplete' USING ERRCODE='22023'; END IF;
   UPDATE app_private.account_deletion_tombstones SET cleanup_stage='complete',auth_deleted_at=clock_timestamp(),cleanup_completed_at=clock_timestamp() WHERE former_subject_id=p_subject;
   UPDATE app_private.deletion_tasks SET phase='complete',last_error=NULL,lease=NULL,lease_until=NULL,updated_at=clock_timestamp() WHERE subject_id=p_subject;
@@ -115,7 +123,6 @@ BEGIN
  END IF;
 END; $$;
 ALTER FUNCTION app_private.finish_deletion(uuid,uuid,boolean) OWNER TO dd_control_executor;
-GRANT SELECT ON auth.users TO dd_control_executor;
 -- Defer both new input and existing wardrobe source constraints during Auth cascade deletion.
 ALTER TABLE app_private.tryon_jobs DROP CONSTRAINT tryon_jobs_input_image_id_owner_id_fkey;
 ALTER TABLE app_private.tryon_jobs ADD CONSTRAINT tryon_jobs_input_image_id_owner_id_fkey FOREIGN KEY(input_image_id,owner_id) REFERENCES app_private.tryon_images(id,owner_id) ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED;

@@ -15,6 +15,10 @@ pytestmark = pytest.mark.skipif(not SOCKET, reason="Run tests/database/run_local
 
 
 def sql(statement):
+    if os.environ.get('DD_TEST_HOSTED_CANDIDATE') == '1':
+        # Some fixtures construct rows while impersonating an executor. Use its
+        # supported subject helper, since that role has no managed schema access.
+        statement = statement.replace('auth.uid()', 'app_private.request_subject()')
     return subprocess.run(
         ["psql", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-h", SOCKET,
          "-d", "postgres", "-c", statement],
@@ -243,3 +247,15 @@ def test_owner_columns_and_lock_role_cannot_be_written(users):
 def test_anonymous_cannot_invoke_api_operations(operation):
     result=sql('BEGIN;SET LOCAL ROLE anon;SELECT api.'+operation+';ROLLBACK;')
     assert result.returncode!=0 and 'permission denied' in result.stderr
+
+@pytest.mark.skipif(os.environ.get('DD_TEST_HOSTED_CANDIDATE') != '1', reason='Hosted compatibility candidate only')
+def test_hosted_subject_helper_has_no_managed_auth_grants(users):
+    a, _, seed = users
+    for role in ('dd_user_executor', 'dd_control_reader', 'dd_control_executor'):
+        assert success(f"SELECT has_schema_privilege('{role}','auth','USAGE');") == 'f'
+    assert success(seed + as_user(a) + 'SELECT app_private.request_subject();ROLLBACK;') == a
+    assert success("BEGIN; SET LOCAL ROLE authenticated; SELECT app_private.request_subject() IS NULL; ROLLBACK;") == 't'
+    for role in ('anon', 'service_role'):
+        denied = sql(f'BEGIN; SET LOCAL ROLE {role}; SELECT app_private.request_subject(); ROLLBACK;')
+        assert denied.returncode != 0
+        assert 'permission denied' in denied.stderr

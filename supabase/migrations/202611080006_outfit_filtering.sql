@@ -28,7 +28,7 @@ BEGIN
    RAISE EXCEPTION 'Invalid outfit cursor' USING ERRCODE='22023'; END;
  END IF;
  FOR outfit IN SELECT o.* FROM app_private.saved_outfits o
- WHERE o.owner_id=auth.uid()
+ WHERE o.owner_id=app_private.request_subject()
   AND (p_search='' OR strpos(lower(o.name),lower(btrim(p_search)))>0)
   AND (p_created_from IS NULL OR o.created_at>=p_created_from)
   AND (p_created_before IS NULL OR o.created_at<p_created_before)

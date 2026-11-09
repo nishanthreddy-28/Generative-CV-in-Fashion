@@ -19,8 +19,13 @@ CREATE SCHEMA api AUTHORIZATION dd_owner;
 REVOKE ALL ON SCHEMA app_private, api FROM PUBLIC, anon, authenticated;
 GRANT USAGE ON SCHEMA api, app_private TO authenticated;
 GRANT USAGE ON SCHEMA app_private TO dd_user_executor, dd_control_reader, dd_control_executor, dd_lifecycle_operator;
-GRANT USAGE ON SCHEMA auth TO dd_user_executor, dd_control_reader, dd_control_executor;
-GRANT EXECUTE ON FUNCTION auth.uid() TO dd_user_executor, dd_control_reader, dd_control_executor;
+-- Created by the migration operator, which can call the managed Auth helper.
+CREATE FUNCTION app_private.request_subject() RETURNS uuid
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+ SELECT auth.uid();
+$$;
+REVOKE ALL ON FUNCTION app_private.request_subject() FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION app_private.request_subject() TO authenticated, dd_user_executor, dd_control_reader, dd_control_executor;
 -- Temporary CREATE permits assigning function ownership; revoked before COMMIT.
 GRANT CREATE ON SCHEMA app_private TO dd_user_executor, dd_control_reader, dd_control_executor;
 
@@ -126,10 +131,10 @@ CREATE POLICY control_lock ON app_private.account_lifecycle FOR UPDATE TO dd_con
 
 CREATE FUNCTION app_private.current_account_active() RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $fn$
- SELECT auth.uid() IS NOT NULL AND EXISTS (
-  SELECT 1 FROM app_private.account_lifecycle l WHERE l.user_id = auth.uid() AND l.state = 'active'
+ SELECT app_private.request_subject() IS NOT NULL AND EXISTS (
+  SELECT 1 FROM app_private.account_lifecycle l WHERE l.user_id = app_private.request_subject() AND l.state = 'active'
  ) AND NOT EXISTS (
-  SELECT 1 FROM app_private.account_deletion_tombstones t WHERE t.former_subject_id = auth.uid()
+  SELECT 1 FROM app_private.account_deletion_tombstones t WHERE t.former_subject_id = app_private.request_subject()
  );
 $fn$;
 ALTER FUNCTION app_private.current_account_active() OWNER TO dd_control_reader;
@@ -138,7 +143,7 @@ CREATE FUNCTION app_private.current_catalog_admin() RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $fn$
  SELECT app_private.current_account_active() AND EXISTS (
   SELECT 1 FROM app_private.administrator_memberships m
-  WHERE m.user_id = auth.uid() AND m.permission = 'catalog_manage'
+  WHERE m.user_id = app_private.request_subject() AND m.permission = 'catalog_manage'
  );
 $fn$;
 ALTER FUNCTION app_private.current_catalog_admin() OWNER TO dd_control_reader;
@@ -150,9 +155,9 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $fn$
 DECLARE account_state text;
 BEGIN
  SELECT state INTO account_state FROM app_private.account_lifecycle
- WHERE user_id = auth.uid() FOR SHARE;
- IF auth.uid() IS NULL OR account_state IS DISTINCT FROM 'active'
-  OR EXISTS (SELECT 1 FROM app_private.account_deletion_tombstones WHERE former_subject_id = auth.uid()) THEN
+ WHERE user_id = app_private.request_subject() FOR SHARE;
+ IF app_private.request_subject() IS NULL OR account_state IS DISTINCT FROM 'active'
+  OR EXISTS (SELECT 1 FROM app_private.account_deletion_tombstones WHERE former_subject_id = app_private.request_subject()) THEN
   RAISE EXCEPTION 'Account access denied' USING ERRCODE = '42501';
  END IF;
 END;
@@ -166,20 +171,20 @@ GRANT SELECT ON app_private.user_profiles, app_private.user_preferences TO dd_us
 GRANT UPDATE (name,style,location,bio,updated_at) ON app_private.user_profiles TO dd_user_executor;
 GRANT UPDATE (units,email_notifications,updated_at) ON app_private.user_preferences TO dd_user_executor;
 CREATE POLICY own_active_select ON app_private.user_profiles FOR SELECT TO dd_user_executor
- USING (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY own_active_update ON app_private.user_profiles FOR UPDATE TO dd_user_executor
- USING (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()))
- WITH CHECK (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()))
+ WITH CHECK (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY own_active_select ON app_private.body_profiles FOR SELECT TO dd_user_executor
- USING (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY own_active_update ON app_private.body_profiles FOR UPDATE TO dd_user_executor
- USING (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()))
- WITH CHECK (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()))
+ WITH CHECK (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY own_active_select ON app_private.user_preferences FOR SELECT TO dd_user_executor
- USING (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY own_active_update ON app_private.user_preferences FOR UPDATE TO dd_user_executor
- USING (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()))
- WITH CHECK (user_id = (SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()))
+ WITH CHECK (user_id = (SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 
 -- No body read/write operation yet: unit conversion/precision semantics await review.
 CREATE FUNCTION app_private.read_profile() RETURNS jsonb
@@ -191,7 +196,7 @@ BEGIN
  END IF;
  SELECT jsonb_build_object('name',name,'style',coalesce(style,''),
   'location',coalesce(location,''),'bio',coalesce(bio,'')) INTO result
- FROM app_private.user_profiles WHERE user_id = auth.uid();
+ FROM app_private.user_profiles WHERE user_id = app_private.request_subject();
  IF result IS NULL THEN RAISE EXCEPTION 'Profile bootstrap incomplete' USING ERRCODE = '55000'; END IF;
  RETURN result;
 END;
@@ -208,7 +213,7 @@ BEGIN
  END IF;
  UPDATE app_private.user_profiles SET name = btrim(p_name), style = nullif(btrim(p_style),''),
   location = nullif(btrim(p_location),''), bio = nullif(btrim(p_bio),''), updated_at = transaction_timestamp()
- WHERE user_id = auth.uid();
+ WHERE user_id = app_private.request_subject();
  IF NOT FOUND THEN RAISE EXCEPTION 'Profile bootstrap incomplete' USING ERRCODE = '55000'; END IF;
 END;
 $fn$;
@@ -223,7 +228,7 @@ BEGIN
  END IF;
  SELECT jsonb_build_object('units',coalesce(units,''),'emailNotifications',
   CASE email_notifications WHEN true THEN 'Enabled' WHEN false THEN 'Disabled' ELSE '' END)
- INTO result FROM app_private.user_preferences WHERE user_id = auth.uid();
+ INTO result FROM app_private.user_preferences WHERE user_id = app_private.request_subject();
  IF result IS NULL THEN RAISE EXCEPTION 'Preferences bootstrap incomplete' USING ERRCODE = '55000'; END IF;
  RETURN result;
 END;
@@ -240,7 +245,7 @@ BEGIN
  END IF;
  UPDATE app_private.user_preferences SET units = nullif(p_units,''), email_notifications =
   CASE p_email_notifications WHEN 'Enabled' THEN true WHEN 'Disabled' THEN false ELSE NULL END,
-  updated_at = transaction_timestamp() WHERE user_id = auth.uid();
+  updated_at = transaction_timestamp() WHERE user_id = app_private.request_subject();
  IF NOT FOUND THEN RAISE EXCEPTION 'Preferences bootstrap incomplete' USING ERRCODE = '55000'; END IF;
 END;
 $fn$;
@@ -331,9 +336,9 @@ GRANT EXECUTE ON FUNCTION app_private.bootstrap_user(uuid,text), app_private.set
  app_private.begin_account_deletion(uuid), app_private.set_catalog_membership(uuid,boolean) TO dd_lifecycle_operator;
 
 -- Exposed wrappers are invoker functions. Private implementations execute with a
--- dedicated non-owner, non-BYPASSRLS role and retain auth.uid() from the user JWT.
+-- dedicated non-owner, non-BYPASSRLS role and retain app_private.request_subject() from the user JWT.
 CREATE FUNCTION api.account_access() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path = '' AS $fn$
- SELECT jsonb_build_object('userId',auth.uid(),'active',app_private.current_account_active(),
+ SELECT jsonb_build_object('userId',app_private.request_subject(),'active',app_private.current_account_active(),
   'isCatalogAdmin',app_private.current_catalog_admin());
 $fn$;
 CREATE FUNCTION api.read_profile() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path = '' AS $fn$
@@ -357,6 +362,7 @@ REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA app_private FROM PUBLIC, anon, authent
 GRANT EXECUTE ON FUNCTION app_private.current_account_active(), app_private.current_catalog_admin() TO authenticated;
 GRANT EXECUTE ON FUNCTION app_private.read_profile(),app_private.update_profile(text,text,text,text),
  app_private.read_preferences(),app_private.update_preferences(text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION app_private.request_subject() TO authenticated;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA api TO authenticated;
 REVOKE CREATE ON SCHEMA app_private FROM dd_user_executor, dd_control_reader, dd_control_executor;
 
