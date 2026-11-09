@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "react";
+import {SafeAreaView} from "react-native-safe-area-context";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -8,24 +9,21 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
-import { Link, type Href, useLocalSearchParams } from "expo-router";
+import { Link, type Href, usePathname } from "expo-router";
 import { Button } from "./Button";
 import { colors } from "../theme/tokens";
 import { useSession } from "../features/session";
+import { appDestinations, activeDestination } from "../features/navigation";
 import { protectedScreenState } from "../services/auth/contracts";
-export function usePreview() {
-  const p = useLocalSearchParams<{ preview?: string }>();
-  return p.preview === "1";
-}
+// Legacy screen prop retained temporarily; query parameters never unlock access.
+export function usePreview(): boolean { return false; }
 export function RouteLink({
   to,
   children,
-  preview = false,
 }: PropsWithChildren<{ to: string; preview?: boolean }>) {
-  const href = (
-    preview ? `${to}${to.includes("?") ? "&" : "?"}preview=1` : to
-  ) as Href;
+  const href = to as Href;
   return (
     <Link href={href} style={ui.link}>
       {children}
@@ -37,43 +35,47 @@ export function Screen({
   subtitle,
   children,
 }: PropsWithChildren<{ title: string; subtitle?: string }>) {
-  const preview = usePreview();
+  const {session,accountDeleting}=useSession();
+  const path=usePathname();
+  const {width}=useWindowDimensions();
+  const showNavigation=!!session && !accountDeleting;
+  const active=activeDestination(path);
   return (
+    <SafeAreaView style={{flex:1,backgroundColor:colors.background}} edges={["top","bottom"]}>
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={ui.screen}
+        contentContainerStyle={[ui.screen,width<380 && {paddingHorizontal:18}]}
       >
         <View style={ui.top}>
-          <Text style={ui.brand}>DRAPE & DROP</Text>
-          <RouteLink to="/preview">Workflows</RouteLink>
+          <Link href={session ? "/dashboard" : "/"} style={ui.brand} accessibilityLabel="Drape and Drop home">DRAPE &amp; DROP</Link>
+          {!session && <RouteLink to={path==="/login" ? "/signup" : "/login"}>{path==="/login" ? "Join us" : "Sign in"}</RouteLink>}
+          {showNavigation && <RouteLink to="/settings">Your account</RouteLink>}
         </View>
-        {preview && (
-          <Notice
-            title="WORKFLOW PREVIEW"
-            text="No account, records, or backend requests. Drafts stay in memory while navigating; closing the app clears them."
-          />
-        )}
         <Text accessibilityRole="header" style={ui.title}>
           {title}
         </Text>
         {Boolean(subtitle) && <Text style={ui.body}>{subtitle}</Text>}
         {children}
       </ScrollView>
+      {showNavigation && <View style={ui.navigation} accessibilityLabel="Main navigation">
+        {appDestinations.map(item=><Link key={item.path} href={item.path} accessibilityState={{selected:active===item.path}}
+          style={[ui.navItem,active===item.path && ui.navActive]}>{item.label}</Link>)}
+      </View>}
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 export function Gate({
-  preview,
   admin = false,
   children,
 }: PropsWithChildren<{ preview: boolean; admin?: boolean }>) {
   const { session, ready, accountDeleting } = useSession();
-  if (accountDeleting && !preview) return <Notice title="Account deletion pending" text="Normal application access is disabled."><RouteLink to="/account-deletion">Check deletion progress</RouteLink></Notice>;
-  const access = protectedScreenState(preview, ready, session?.user.role, admin);
+  if (accountDeleting) return <Notice title="Account deletion pending" text="Normal application access is disabled."><RouteLink to="/account-deletion">Check deletion progress</RouteLink></Notice>;
+  const access = protectedScreenState(false, ready, session?.user.role, admin);
   if (access === "restoring")
     return <ActivityIndicator accessibilityLabel="Restoring session" />;
   if (access === "signed-out")
@@ -83,7 +85,6 @@ export function Gate({
         text="Your personal wardrobe and profile require an account."
       >
         <RouteLink to="/login">Sign in</RouteLink>
-        <RouteLink to="/preview">Review frontend workflows</RouteLink>
       </Notice>
     );
   if (access === "forbidden")
@@ -174,9 +175,12 @@ export function Confirm({
   );
 }
 export const ui = StyleSheet.create({
+  navigation: {flexDirection:"row",backgroundColor:colors.surface,borderTopWidth:1,borderColor:colors.border,paddingHorizontal:8,paddingBottom:12,paddingTop:8,width:"100%",maxWidth:660,alignSelf:"center"},
+  navItem: {flex:1,textAlign:"center",fontSize:12,fontWeight:"600",color:colors.muted,paddingVertical:16,minHeight:48,borderBottomWidth:2,borderBottomColor:"transparent"},
+  navActive: {color:colors.ink,borderBottomColor:colors.ink},
   screen: {
     padding: 24,
-    paddingBottom: 64,
+    paddingBottom: 32,
     gap: 22,
     maxWidth: 660,
     width: "100%",

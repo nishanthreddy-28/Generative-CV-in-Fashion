@@ -156,7 +156,9 @@ test("protected screens stay closed during restoration and after logout", () => 
   assert.equal(protectedScreenState(false, true, "user", false), "open");
   assert.equal(protectedScreenState(false, true, undefined, false), "signed-out");
   assert.equal(protectedScreenState(false, true, "user", true), "forbidden");
-  assert.equal(protectedScreenState(true, false, undefined, true), "open");
+  assert.equal(protectedScreenState(true, false, undefined, true), "restoring");
+  assert.equal(protectedScreenState(true, true, undefined, false), "signed-out");
+  assert.equal(protectedScreenState(true, true, "user", true), "forbidden");
 });
 
 

@@ -2,7 +2,6 @@ import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../components/Button";
-import { RouteLink } from "../components/Screen";
 import { colors } from "../theme/tokens";
 export default function Introduction() {
   return (
@@ -31,7 +30,6 @@ export default function Introduction() {
           <Text style={styles.feature}>YOUR WAY</Text>
         </View>
         <Button label="Get started  →" onPress={() => router.push("/login")} />
-        <RouteLink to="/preview">Explore the frontend workflows →</RouteLink>
         <Text style={styles.note}>
           A little intention. A lot more possibility.
         </Text>
