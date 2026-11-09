@@ -117,8 +117,8 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
       <View style={styles.layout}>
         {mode !== "reset" && (
           <View style={styles.editorial}>
-            <FramedImage source={require("../../assets/editorial/introduction.png")}
-              ratio={1.8} contain label="Trench coat and tailored trousers in a neutral fashion editorial" />
+            <FramedImage source={require("../../assets/editorial/campaign-daylight.jpg")}
+              ratio={1.8} contain label="Model wearing chocolate tailoring and ivory knitwear" />
             <View style={styles.caption}>
               <Text style={styles.eyebrow}>THE PERSONAL EDIT</Text>
               <Text style={styles.captionTitle}>A place for the pieces you love.</Text>
@@ -190,7 +190,6 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
               />
             </View>
           )}
-          <RouteLink to="/privacy">Privacy &amp; your data</RouteLink>
           {mode === "login" ? (
             <>
               <RouteLink to="/signup">Create an account</RouteLink>

@@ -128,7 +128,6 @@ export default function Settings() {
           <Text style={ui.body}>
             Sessions are stored securely on mobile. Web sessions end when you reload the page.
           </Text>
-          <RouteLink to="/privacy">Photo privacy and retention details</RouteLink>
           <Button
             label="Sign out"
             variant="secondary"
