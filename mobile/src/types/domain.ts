@@ -71,6 +71,8 @@ export type Dashboard = {
   wardrobeCount: number;
   savedOutfitCount: number;
   recommendationCount: number;
+  savedRecommendationCount: number;
+  tryOnJobCount: number;
 };
 export type TryOnJob = {
   id: string;

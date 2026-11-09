@@ -90,7 +90,7 @@ def test_existing_profile_settings_contracts(client):
     response=browser.patch('/profile',json={'name':'Name','style':'','location':'','bio':''})
     assert response.status_code==204 and response.content==b''
     assert browser.patch('/settings',json={'units':'in','emailNotifications':'Disabled'}).status_code==204
-    assert ('update_preferences',{'p_units':'in','p_email_notifications':'Disabled'}) in calls
+    assert ('update_preference_fields',{'p_changes':{'units':'in','emailNotifications':'Disabled'}}) in calls
 
 
 @pytest.mark.parametrize('path,body',[
@@ -125,4 +125,13 @@ def test_routes_are_closed_without_configuration():
         assert browser.get('/settings').status_code==503
         assert browser.get('/profile/body').status_code==503
         assert browser.patch('/profile/body',json={'fit':'Regular'}).status_code==503
-        assert browser.request('DELETE','/account',json={'confirmation':'DELETE'}).status_code==404
+        assert browser.request('DELETE','/account',json={'confirmation':'DELETE'}).status_code==503
+
+
+def test_sparse_profile_and_settings_contracts(client):
+ browser,calls,_=client
+ assert browser.patch('/profile',json={'bio':''}).status_code==204
+ assert ('update_profile_fields',{'p_changes':{'bio':''}}) in calls
+ assert browser.patch('/settings',json={'emailNotifications':'Enabled'}).status_code==204
+ assert ('update_preference_fields',{'p_changes':{'emailNotifications':'Enabled'}}) in calls
+ assert browser.patch('/profile',json={'name':None}).status_code==422

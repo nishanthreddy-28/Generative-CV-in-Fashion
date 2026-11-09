@@ -4,6 +4,7 @@ import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { publicAuthConfig } from "./contracts";
+import { webAuthStorage } from "./webStorage";
 import { secureSessionStorage } from "./storage";
 
 const config = publicAuthConfig(
@@ -30,13 +31,13 @@ const storage = native ? secureSessionStorage({
   get: (key) => SecureStore.getItemAsync(key, options),
   set: (key, value) => SecureStore.setItemAsync(key, value, options),
   remove: (key) => SecureStore.deleteItemAsync(key, options),
-}) : undefined;
+}) : webAuthStorage(typeof window!=="undefined" ? window.sessionStorage : undefined);
 
 export const sessionKey = config ? `drapedrop.${new URL(config.url).hostname}.session` : "";
 export const clearPersistedSession = () => storage?.removeItem(sessionKey);
 export const supabase = config && createClient(config.url, config.key, {
   auth: {
-    storage, storageKey: sessionKey, persistSession: native,
+    storage, storageKey: sessionKey, persistSession: true,
     autoRefreshToken: false, detectSessionInUrl: false,
     flowType: "pkce",
   },
@@ -59,6 +60,6 @@ export function createEmailLinkAuth() {
   }).auth;
 }
 
-export function emailRedirect(path: "auth-confirm" | "reset-password") {
+export function emailRedirect(path: "auth-confirm" | "reset-password" | "oauth-callback") {
   return native ? `drapedrop://${path}` : `${window.location.origin}/${path}`;
 }

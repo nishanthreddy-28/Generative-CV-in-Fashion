@@ -2,7 +2,7 @@
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, field_validator
 
 from .data_api import UserDataAPI
 from .dependencies import active_user_data
@@ -15,6 +15,16 @@ class ProfileWrite(BaseModel):
     style: Annotated[StrictStr, Field(max_length=2000)] = ""
     location: Annotated[StrictStr, Field(max_length=200)] = ""
     bio: Annotated[StrictStr, Field(max_length=2000)] = ""
+
+
+class ProfilePatch(ProfileWrite):
+    name: Annotated[StrictStr, Field(min_length=1,max_length=200)] | None = None
+
+    @field_validator('*',mode='before')
+    @classmethod
+    def valid_text(cls,value):
+        if not isinstance(value,str) or '\x00' in value:raise ValueError('Use valid text.')
+        return value
 
 
 class ProfileRead(ProfileWrite):
@@ -70,10 +80,10 @@ async def read_profile(data: Data) -> ProfileRead:
 
 
 @router.patch("/profile", status_code=204)
-async def update_profile(body: ProfileWrite, data: Data) -> Response:
-    if not body.name.strip():
+async def update_profile(body: ProfilePatch, data: Data) -> Response:
+    if body.name is not None and not body.name.strip():
         raise HTTPException(422, "Name must not be blank.")
-    await rpc(data, "update_profile", {f"p_{key}": value for key, value in body.model_dump().items()})
+    await rpc(data, "update_profile_fields", {"p_changes":body.model_dump(exclude_unset=True)})
     return Response(status_code=204)
 
 
@@ -92,7 +102,5 @@ async def read_preferences(data: Data) -> Preferences:
 
 @router.patch("/settings", status_code=204)
 async def update_preferences(body: Preferences, data: Data) -> Response:
-    await rpc(data, "update_preferences", {
-        "p_units": body.units, "p_email_notifications": body.emailNotifications,
-    })
+    await rpc(data, "update_preference_fields", {"p_changes":body.model_dump(exclude_unset=True)})
     return Response(status_code=204)

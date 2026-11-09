@@ -93,7 +93,7 @@ def test_existing_wardrobe_only_contract_works_without_typed_input(outfits_clien
  {'name':'Look','items':[{'source':'other','garmentId':str(uuid4())}]*2},
  {'name':'Look','garmentIds':['bad','bad']},{'name':'Look','garmentIds':[str(uuid4())]*2},
  {'name':'Look','items':[{'source':'catalog','garmentId':str(uuid4()),'owner_id':str(uuid4())}]*2},
- {'recommendationId':str(uuid4())}])
+ {'recommendationId':'invalid'}])
 def test_invalid_variants_reject_without_writes(outfits_client,payload):
     client,_,_,calls,*_=outfits_client
     assert client.post('/outfits',json=payload).status_code==422
@@ -170,7 +170,7 @@ def test_flag_keeps_outfits_closed_and_edit_delete_not_implemented():
         assert client.get('/outfits').status_code==503
         assert client.post('/outfits',json={'name':'Look','garmentIds':[str(uuid4()),str(uuid4())]}).status_code==503
         assert client.patch('/outfits/'+str(uuid4()),json={}).status_code==503
-        assert client.delete('/outfits/'+str(uuid4())).status_code==405
+        assert client.delete('/outfits/'+str(uuid4())).status_code==503
 
 
 def test_referenced_wardrobe_deletion_returns_conflict(outfits_client):
@@ -281,3 +281,15 @@ def test_malformed_name_cursor_projection_is_dependency_error(outfits_client):
     client,_,_,_,faults,*_=outfits_client
     faults['query_outfits']=httpx.Response(200,json={'items':[],'nextCursor':{'id':str(uuid4()),'createdAt':'2026-11-08T00:00:00Z'}})
     assert client.get('/outfits?sort=name').status_code==503
+
+
+def test_whole_outfit_delete_and_recommendation_conversion_http(outfits_client):
+ client,w,c,_,faults,*_=outfits_client
+ row=client.post('/outfits',json=mixed(w,c)).json()
+ faults['delete_outfit']=httpx.Response(204)
+ assert client.delete('/outfits/'+row['id']).status_code==204
+ faults['save_recommendation_outfit']=httpx.Response(200,json=row)
+ ident=str(uuid4())
+ result=client.post('/outfits',json={'recommendationId':ident})
+ assert result.status_code==201 and result.json()['items']==row['items']
+ assert client.post('/outfits',json={'recommendationId':ident,'name':'Override'}).status_code==422

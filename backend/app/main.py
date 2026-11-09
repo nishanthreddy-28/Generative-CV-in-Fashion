@@ -17,6 +17,7 @@ from .recommendations import router as recommendations_router
 from .saved_recommendations import router as saved_recommendations_router
 from .tryon import router as tryon_router
 from .account import router as account_router
+from .dashboard import router as dashboard_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -55,6 +56,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(saved_recommendations_router)
     app.include_router(tryon_router)
     app.include_router(account_router)
+    app.include_router(dashboard_router)
     return app
 
 

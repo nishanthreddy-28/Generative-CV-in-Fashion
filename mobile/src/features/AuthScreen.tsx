@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
+import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { Screen, RouteLink, Notice, ui } from "../components/Screen";
 import { Button } from "../components/Button";
@@ -76,6 +77,18 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
       setBusy(false);
     }
   }
+  async function google(){
+    if(busy)return;setBusy(true);setMessage("");
+    try{
+      const {data,error}=await requireAuth().signInWithOAuth({provider:"google",options:{redirectTo:emailRedirect("oauth-callback"),skipBrowserRedirect:true}});
+      if(error || !data.url)throw new Error("Google sign-in is unavailable. Verify provider and redirect configuration.");
+      const origin=new URL(process.env.EXPO_PUBLIC_SUPABASE_URL ?? "").origin;
+      const target=new URL(data.url);
+      if(target.origin!==origin || !target.pathname.startsWith("/auth/v1/"))throw new Error("Unexpected sign-in destination.");
+      if(Platform.OS==="web")window.location.assign(target.href);else await Linking.openURL(target.href);
+    }catch(e){setMessage(e instanceof Error ? e.message : "Unable to start Google sign-in.");}
+    finally{setBusy(false);}
+  }
   return (
     <Screen
       title={
@@ -134,15 +147,10 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
             label="Continue with Google"
             variant="secondary"
             disabled={busy}
-            onPress={() => {
-              setSuccess(false);
-              setMessage(
-                "Google sign-in is not available yet.",
-              );
-            }}
+            onPress={google}
           />
           <Text style={ui.body}>
-            Email and password are available for this milestone.
+            Google sign-in requires the configured provider and an approved callback URL.
           </Text>
         </View>
       )}

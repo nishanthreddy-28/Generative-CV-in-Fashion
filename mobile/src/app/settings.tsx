@@ -77,8 +77,7 @@ export default function Settings() {
         await logout();
         router.replace("/login");
       } else if (session) {
-        if(!deletion.password)throw new Error("Enter your current password to confirm deletion.");
-        await reauthenticate(requireAuth(),session.user.email,deletion.password,session.user.id);
+        if(deletion.password)await reauthenticate(requireAuth(),session.user.email,deletion.password,session.user.id);
         await request("/account", {
           method: "DELETE",
           body: { confirmation: "DELETE" },
@@ -143,7 +142,7 @@ export default function Settings() {
           <Text style={ui.heading}>Delete account</Text>
           <Text style={ui.body}>
             Request permanent deletion of your account and associated personal
-            data. Type DELETE to enable confirmation.
+            data. Type DELETE to enable confirmation. Password accounts can confirm with their password below. Google-only accounts must sign in again first; the server requires sign-in within five minutes.
           </Text>
           <Fields
             fields={[{ key: "confirmation", label: "Deletion confirmation" },{key:"password",label:"Current password for deletion",kind:"password"}]}
@@ -155,7 +154,7 @@ export default function Settings() {
           <Button
             label="Delete my account"
             variant="danger"
-            disabled={deletion.confirmation !== "DELETE" || !deletion.password || busy}
+            disabled={deletion.confirmation !== "DELETE" || busy}
             onPress={() => setConfirm("delete")}
           />
         </View>
