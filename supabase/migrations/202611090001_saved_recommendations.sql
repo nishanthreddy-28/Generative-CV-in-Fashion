@@ -16,7 +16,7 @@ ALTER TABLE app_private.saved_recommendations FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON app_private.saved_recommendations FROM PUBLIC,anon,authenticated,service_role;
 GRANT SELECT,INSERT,DELETE ON app_private.saved_recommendations TO dd_user_executor;
 CREATE POLICY own_active ON app_private.saved_recommendations TO dd_user_executor
- USING(owner_id=auth.uid() AND app_private.current_account_active()) WITH CHECK(owner_id=auth.uid() AND app_private.current_account_active());
+ USING(owner_id=app_private.request_subject() AND app_private.current_account_active()) WITH CHECK(owner_id=app_private.request_subject() AND app_private.current_account_active());
 -- Row locks protect provenance during save. No actual history update is permitted.
 GRANT UPDATE(id) ON app_private.recommendation_results TO dd_user_executor;
 CREATE POLICY recommendation_history_immutable ON app_private.recommendation_results AS RESTRICTIVE FOR UPDATE TO dd_user_executor
@@ -29,17 +29,17 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$
  'description',array_to_string(p_result.reasons,' '),'occasion',p_request.occasion,'items',p_result.items,
  'garmentIds',coalesce((SELECT jsonb_agg(item->'garmentId' ORDER BY n) FROM jsonb_array_elements(p_result.items) WITH ORDINALITY x(item,n) WHERE item->>'source'='wardrobe'),'[]'::jsonb),
  'score',p_result.score,'reasons',to_jsonb(p_result.reasons),'engineVersion',p_request.engine_version,'generatedAt',p_request.created_at,
- 'savedId',(SELECT id FROM app_private.saved_recommendations WHERE owner_id=auth.uid() AND recommendation_id=p_result.id));
+ 'savedId',(SELECT id FROM app_private.saved_recommendations WHERE owner_id=app_private.request_subject() AND recommendation_id=p_result.id));
 $$;
 
 CREATE FUNCTION app_private.saved_recommendation_record(p_saved app_private.saved_recommendations) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE rec app_private.recommendation_results%ROWTYPE; run app_private.recommendation_requests%ROWTYPE; available boolean:=false;
 BEGIN
- SELECT * INTO rec FROM app_private.recommendation_results WHERE id=p_saved.recommendation_id AND owner_id=auth.uid();
+ SELECT * INTO rec FROM app_private.recommendation_results WHERE id=p_saved.recommendation_id AND owner_id=app_private.request_subject();
  IF FOUND THEN
   available:=app_private.recommendation_visible(rec.items);
-  SELECT * INTO run FROM app_private.recommendation_requests WHERE id=rec.request_id AND owner_id=auth.uid();
+  SELECT * INTO run FROM app_private.recommendation_requests WHERE id=rec.request_id AND owner_id=app_private.request_subject();
  END IF;
  RETURN jsonb_build_object('id',p_saved.id,'recommendationId',p_saved.recommendation_id,'savedAt',p_saved.saved_at,
   'available',available,'recommendation',CASE WHEN available THEN app_private.recommendation_record(rec,run) ELSE NULL END);
@@ -52,24 +52,24 @@ DECLARE rec app_private.recommendation_results%ROWTYPE; saved app_private.saved_
  item jsonb; target uuid; inserted boolean;
 BEGIN
  PERFORM app_private.require_active_account();
- SELECT * INTO rec FROM app_private.recommendation_results WHERE id=p_id AND owner_id=auth.uid() FOR SHARE;
+ SELECT * INTO rec FROM app_private.recommendation_results WHERE id=p_id AND owner_id=app_private.request_subject() FOR SHARE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Recommendation not found' USING ERRCODE='P0002'; END IF;
  -- Lock real sources, in deterministic order, before accepting the saved link.
  BEGIN
   FOR item IN SELECT value FROM jsonb_array_elements(rec.items) ORDER BY value->>'source',(value->>'garmentId')::uuid LOOP
    target:=(item->>'garmentId')::uuid;
    IF item->>'source'='wardrobe' THEN
-    PERFORM 1 FROM app_private.wardrobe_garments WHERE id=target AND owner_id=auth.uid() FOR SHARE;
+    PERFORM 1 FROM app_private.wardrobe_garments WHERE id=target AND owner_id=app_private.request_subject() FOR SHARE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Source unavailable' USING ERRCODE='P0002'; END IF;
    ELSE PERFORM app_private.lock_outfit_catalog_item(target);
    END IF;
   END LOOP;
  EXCEPTION WHEN SQLSTATE 'P0002' THEN RAISE EXCEPTION 'Recommendation garments unavailable' USING ERRCODE='DD001';
  END;
- INSERT INTO app_private.saved_recommendations(owner_id,recommendation_id) VALUES(auth.uid(),p_id)
+ INSERT INTO app_private.saved_recommendations(owner_id,recommendation_id) VALUES(app_private.request_subject(),p_id)
  ON CONFLICT(owner_id,recommendation_id) DO NOTHING RETURNING * INTO saved;
  inserted:=FOUND;
- IF NOT inserted THEN SELECT * INTO saved FROM app_private.saved_recommendations WHERE owner_id=auth.uid() AND recommendation_id=p_id; END IF;
+ IF NOT inserted THEN SELECT * INTO saved FROM app_private.saved_recommendations WHERE owner_id=app_private.request_subject() AND recommendation_id=p_id; END IF;
  IF saved.id IS NULL THEN RAISE EXCEPTION 'Save changed concurrently' USING ERRCODE='DD001'; END IF;
  RETURN app_private.saved_recommendation_record(saved)||jsonb_build_object('created',inserted);
 END; $$;
@@ -79,7 +79,7 @@ CREATE FUNCTION app_private.remove_saved_recommendation(p_id uuid) RETURNS void
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 BEGIN
  PERFORM app_private.require_active_account();
- DELETE FROM app_private.saved_recommendations WHERE id=p_id AND owner_id=auth.uid();
+ DELETE FROM app_private.saved_recommendations WHERE id=p_id AND owner_id=app_private.request_subject();
  IF NOT FOUND THEN RAISE EXCEPTION 'Saved recommendation not found' USING ERRCODE='P0002'; END IF;
 END; $$;
 ALTER FUNCTION app_private.remove_saved_recommendation(uuid) OWNER TO dd_user_executor;
@@ -100,7 +100,7 @@ BEGIN
   EXCEPTION WHEN invalid_text_representation OR invalid_datetime_format OR datetime_field_overflow THEN
    RAISE EXCEPTION 'Invalid saved cursor' USING ERRCODE='22023'; END;
  END IF;
- FOR saved IN SELECT * FROM app_private.saved_recommendations WHERE owner_id=auth.uid()
+ FOR saved IN SELECT * FROM app_private.saved_recommendations WHERE owner_id=app_private.request_subject()
   AND (p_cursor IS NULL OR (saved_at,id)<((p_cursor->>'savedAt')::timestamptz,(p_cursor->>'id')::uuid))
   ORDER BY saved_at DESC,id DESC LIMIT p_limit+1
  LOOP

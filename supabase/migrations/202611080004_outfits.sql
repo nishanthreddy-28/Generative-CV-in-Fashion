@@ -36,13 +36,13 @@ ALTER TABLE app_private.outfit_items FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON app_private.saved_outfits,app_private.outfit_items FROM PUBLIC,anon,authenticated,service_role;
 GRANT SELECT,INSERT ON app_private.saved_outfits,app_private.outfit_items TO dd_user_executor;
 CREATE POLICY outfit_owner_read ON app_private.saved_outfits FOR SELECT TO dd_user_executor
- USING(owner_id=(SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING(owner_id=(SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY outfit_owner_insert ON app_private.saved_outfits FOR INSERT TO dd_user_executor
- WITH CHECK(owner_id=(SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ WITH CHECK(owner_id=(SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY outfit_item_owner_read ON app_private.outfit_items FOR SELECT TO dd_user_executor
- USING(owner_id=(SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ USING(owner_id=(SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 CREATE POLICY outfit_item_owner_insert ON app_private.outfit_items FOR INSERT TO dd_user_executor
- WITH CHECK(owner_id=(SELECT auth.uid()) AND (SELECT app_private.current_account_active()));
+ WITH CHECK(owner_id=(SELECT app_private.request_subject()) AND (SELECT app_private.current_account_active()));
 GRANT CREATE ON SCHEMA app_private TO dd_user_executor;
 
 CREATE FUNCTION app_private.outfit_record(p_row app_private.saved_outfits) RETURNS jsonb
@@ -101,17 +101,17 @@ BEGIN
  FOR item IN SELECT value FROM jsonb_array_elements(p_items) ORDER BY value->>'source',(value->>'garmentId')::uuid LOOP
   target:=(item->>'garmentId')::uuid; source:=item->>'source';
   IF source='wardrobe' THEN
-   PERFORM 1 FROM app_private.wardrobe_garments WHERE id=target AND owner_id=auth.uid() FOR SHARE;
+   PERFORM 1 FROM app_private.wardrobe_garments WHERE id=target AND owner_id=app_private.request_subject() FOR SHARE;
   ELSE
    PERFORM app_private.lock_outfit_catalog_item(target);
   END IF;
   IF NOT FOUND THEN RAISE EXCEPTION 'Garment unavailable' USING ERRCODE='P0002'; END IF;
  END LOOP;
  INSERT INTO app_private.saved_outfits(owner_id,name,description,occasion)
-  VALUES(auth.uid(),btrim(p_name),p_description,p_occasion) RETURNING * INTO outfit;
+  VALUES(app_private.request_subject(),btrim(p_name),p_description,p_occasion) RETURNING * INTO outfit;
  FOR item,ordinal IN SELECT value,ordinality FROM jsonb_array_elements(p_items) WITH ORDINALITY LOOP
   INSERT INTO app_private.outfit_items(outfit_id,owner_id,position,wardrobe_garment_id,catalog_garment_id)
-   VALUES(outfit.id,auth.uid(),ordinal-1,CASE WHEN item->>'source'='wardrobe' THEN (item->>'garmentId')::uuid END,
+   VALUES(outfit.id,app_private.request_subject(),ordinal-1,CASE WHEN item->>'source'='wardrobe' THEN (item->>'garmentId')::uuid END,
     CASE WHEN item->>'source'='catalog' THEN (item->>'garmentId')::uuid END);
  END LOOP;
  RETURN app_private.outfit_record(outfit);
@@ -123,7 +123,7 @@ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE outfit app_private.saved_outfits%ROWTYPE;
 BEGIN
  IF NOT app_private.current_account_active() THEN RAISE EXCEPTION 'Account access denied' USING ERRCODE='42501'; END IF;
- SELECT * INTO outfit FROM app_private.saved_outfits WHERE id=p_id AND owner_id=auth.uid();
+ SELECT * INTO outfit FROM app_private.saved_outfits WHERE id=p_id AND owner_id=app_private.request_subject();
  IF NOT FOUND THEN RAISE EXCEPTION 'Outfit not found' USING ERRCODE='P0002'; END IF;
  RETURN app_private.outfit_record(outfit);
 END; $$;
@@ -143,7 +143,7 @@ BEGIN
   EXCEPTION WHEN invalid_text_representation OR invalid_datetime_format OR datetime_field_overflow THEN
    RAISE EXCEPTION 'Invalid cursor' USING ERRCODE='22023'; END;
  END IF;
- FOR outfit IN SELECT * FROM app_private.saved_outfits WHERE owner_id=auth.uid()
+ FOR outfit IN SELECT * FROM app_private.saved_outfits WHERE owner_id=app_private.request_subject()
   AND (p_cursor IS NULL OR (created_at,id)<((p_cursor->>'createdAt')::timestamptz,(p_cursor->>'id')::uuid))
   ORDER BY created_at DESC,id DESC LIMIT p_limit+1
  LOOP

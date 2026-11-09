@@ -19,10 +19,10 @@ REVOKE ALL ON app_private.tryon_images FROM PUBLIC,anon,authenticated,service_ro
 GRANT SELECT,INSERT ON app_private.tryon_images TO dd_user_executor;
 GRANT UPDATE(state) ON app_private.tryon_images TO dd_user_executor;
 CREATE POLICY own_active ON app_private.tryon_images TO dd_user_executor
- USING(owner_id=auth.uid() AND app_private.current_account_active()) WITH CHECK(owner_id=auth.uid() AND app_private.current_account_active());
+ USING(owner_id=app_private.request_subject() AND app_private.current_account_active()) WITH CHECK(owner_id=app_private.request_subject() AND app_private.current_account_active());
 GRANT CREATE ON SCHEMA app_private TO dd_user_executor;
 CREATE POLICY tryon_executor_objects ON storage.objects FOR SELECT TO dd_user_executor
- USING(bucket_id='tryon-inputs' AND owner_id::text=auth.uid()::text AND app_private.current_account_active());
+ USING(bucket_id='tryon-inputs' AND owner_id::text=app_private.request_subject()::text AND app_private.current_account_active());
 -- A collision with a public/incompatible bucket must fail, never silently weaken it.
 INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
  VALUES('tryon-inputs','tryon-inputs',false,10485760,ARRAY['image/jpeg']) ON CONFLICT(id) DO NOTHING;
@@ -42,7 +42,7 @@ BEGIN
  IF NOT app_private.current_account_active() THEN RETURN false; END IF;
  -- Serialize insertion metadata with attach/retire transitions; no overwrite policy.
  SELECT state INTO image_state FROM app_private.tryon_images
-  WHERE owner_id=auth.uid() AND object_name=p_name FOR SHARE;
+  WHERE owner_id=app_private.request_subject() AND object_name=p_name FOR SHARE;
  RETURN CASE p_operation WHEN 'insert' THEN image_state='pending'
   WHEN 'read' THEN image_state IN ('pending','attached','cleanup_pending')
   WHEN 'delete' THEN image_state='cleanup_pending' ELSE false END;
@@ -70,9 +70,9 @@ DECLARE result jsonb;
 BEGIN
  PERFORM app_private.require_active_account();
  INSERT INTO app_private.tryon_images(id,owner_id,sha256,byte_size,state)
-  VALUES(p_id,auth.uid(),p_sha256,p_byte_size,'pending');
+  VALUES(p_id,app_private.request_subject(),p_sha256,p_byte_size,'pending');
  SELECT jsonb_build_object('id',id,'object',object_name,'sha256',sha256,'byteSize',byte_size)
-  INTO result FROM app_private.tryon_images WHERE id=p_id AND owner_id=auth.uid();
+  INTO result FROM app_private.tryon_images WHERE id=p_id AND owner_id=app_private.request_subject();
  RETURN result;
 END;
 $fn$;
@@ -83,7 +83,7 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $fn$
 BEGIN
  PERFORM app_private.require_active_account();
  UPDATE app_private.tryon_images SET state='cleanup_pending'
- WHERE id=p_id AND owner_id=auth.uid() AND state='pending';
+ WHERE id=p_id AND owner_id=app_private.request_subject() AND state='pending';
 END;
 $fn$;
 ALTER FUNCTION app_private.abandon_tryon_image(uuid) OWNER TO dd_user_executor;
@@ -93,14 +93,14 @@ DECLARE result jsonb;
 BEGIN
  PERFORM app_private.require_active_account();
  IF p_finished IS NOT NULL THEN
-  PERFORM 1 FROM app_private.tryon_images WHERE id=p_finished AND owner_id=auth.uid() AND state='cleanup_pending' FOR UPDATE;
+  PERFORM 1 FROM app_private.tryon_images WHERE id=p_finished AND owner_id=app_private.request_subject() AND state='cleanup_pending' FOR UPDATE;
   IF FOUND AND NOT EXISTS(SELECT 1 FROM storage.objects o JOIN app_private.tryon_images i ON o.name=i.object_name
-   WHERE i.id=p_finished AND i.owner_id=auth.uid() AND o.bucket_id='tryon-inputs') THEN
-   UPDATE app_private.tryon_images SET state='removed' WHERE id=p_finished AND owner_id=auth.uid();
+   WHERE i.id=p_finished AND i.owner_id=app_private.request_subject() AND o.bucket_id='tryon-inputs') THEN
+   UPDATE app_private.tryon_images SET state='removed' WHERE id=p_finished AND owner_id=app_private.request_subject();
   END IF;
  END IF;
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'object',object_name)),'[]'::jsonb) INTO result FROM (
-  SELECT id,object_name FROM app_private.tryon_images WHERE owner_id=auth.uid() AND state='cleanup_pending' ORDER BY created_at,id LIMIT 10
+  SELECT id,object_name FROM app_private.tryon_images WHERE owner_id=app_private.request_subject() AND state='cleanup_pending' ORDER BY created_at,id LIMIT 10
  ) pending;
  RETURN result;
 END;
@@ -146,7 +146,7 @@ REVOKE ALL ON app_private.tryon_jobs FROM PUBLIC,anon,authenticated,service_role
 GRANT SELECT,INSERT ON app_private.tryon_jobs TO dd_user_executor;
 GRANT UPDATE(status,updated_at,finished_at,failure_code) ON app_private.tryon_jobs TO dd_user_executor;
 CREATE POLICY own_active ON app_private.tryon_jobs TO dd_user_executor
- USING(owner_id=auth.uid() AND app_private.current_account_active()) WITH CHECK(owner_id=auth.uid() AND app_private.current_account_active());
+ USING(owner_id=app_private.request_subject() AND app_private.current_account_active()) WITH CHECK(owner_id=app_private.request_subject() AND app_private.current_account_active());
 
 CREATE FUNCTION app_private.tryon_transition() RETURNS trigger
 LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
@@ -196,18 +196,18 @@ BEGIN
  PERFORM app_private.require_active_account();
  IF p_consent IS DISTINCT FROM true OR p_source IS NULL OR p_source NOT IN ('wardrobe','catalog') THEN RAISE EXCEPTION 'Explicit consent and valid source required' USING ERRCODE='22023'; END IF;
  IF p_source='wardrobe' THEN
-  PERFORM 1 FROM app_private.wardrobe_garments WHERE id=p_garment_id AND owner_id=auth.uid() FOR SHARE;
+  PERFORM 1 FROM app_private.wardrobe_garments WHERE id=p_garment_id AND owner_id=app_private.request_subject() FOR SHARE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Garment not found' USING ERRCODE='P0002'; END IF;
  ELSE PERFORM app_private.lock_outfit_catalog_item(p_garment_id);
  END IF;
- SELECT * INTO image FROM app_private.tryon_images WHERE id=p_image_id AND owner_id=auth.uid() AND purpose='input' AND state='pending' FOR UPDATE;
+ SELECT * INTO image FROM app_private.tryon_images WHERE id=p_image_id AND owner_id=app_private.request_subject() AND purpose='input' AND state='pending' FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Input photo not found' USING ERRCODE='P0002'; END IF;
- IF NOT EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='tryon-inputs' AND name=image.object_name AND owner_id::text=auth.uid()::text
+ IF NOT EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='tryon-inputs' AND name=image.object_name AND owner_id::text=app_private.request_subject()::text
   AND metadata->>'mimetype'='image/jpeg' AND (metadata->>'size')::bigint=image.byte_size) THEN
   RAISE EXCEPTION 'Input upload incomplete' USING ERRCODE='22023'; END IF;
- UPDATE app_private.tryon_images SET state='attached' WHERE id=p_image_id AND owner_id=auth.uid();
+ UPDATE app_private.tryon_images SET state='attached' WHERE id=p_image_id AND owner_id=app_private.request_subject();
  INSERT INTO app_private.tryon_jobs(owner_id,garment_source,original_garment_id,wardrobe_garment_id,catalog_garment_id,input_image_id,consent_version)
- VALUES(auth.uid(),p_source,p_garment_id,CASE WHEN p_source='wardrobe' THEN p_garment_id END,CASE WHEN p_source='catalog' THEN p_garment_id END,p_image_id,'photo-consent-v1') RETURNING * INTO job;
+ VALUES(app_private.request_subject(),p_source,p_garment_id,CASE WHEN p_source='wardrobe' THEN p_garment_id END,CASE WHEN p_source='catalog' THEN p_garment_id END,p_image_id,'photo-consent-v1') RETURNING * INTO job;
  RETURN app_private.tryon_record(job);
 END; $$;
 ALTER FUNCTION app_private.submit_tryon(uuid,text,uuid,boolean) OWNER TO dd_user_executor;
@@ -216,7 +216,7 @@ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE job app_private.tryon_jobs%ROWTYPE;
 BEGIN
  IF NOT app_private.current_account_active() THEN RAISE EXCEPTION 'Account access denied' USING ERRCODE='42501'; END IF;
- SELECT * INTO job FROM app_private.tryon_jobs WHERE id=p_id AND owner_id=auth.uid();
+ SELECT * INTO job FROM app_private.tryon_jobs WHERE id=p_id AND owner_id=app_private.request_subject();
  IF NOT FOUND THEN RAISE EXCEPTION 'Job not found' USING ERRCODE='P0002'; END IF;
  RETURN app_private.tryon_record(job);
 END; $$;
@@ -226,12 +226,12 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE job app_private.tryon_jobs%ROWTYPE;
 BEGIN
  PERFORM app_private.require_active_account();
- SELECT * INTO job FROM app_private.tryon_jobs WHERE id=p_id AND owner_id=auth.uid() FOR UPDATE;
+ SELECT * INTO job FROM app_private.tryon_jobs WHERE id=p_id AND owner_id=app_private.request_subject() FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Job not found' USING ERRCODE='P0002'; END IF;
  IF job.status='failed' AND job.failure_code='CANCELLED' THEN RETURN app_private.tryon_record(job); END IF;
  IF job.status<>'queued' THEN RAISE EXCEPTION 'Job cannot be cancelled' USING ERRCODE='DD001'; END IF;
- UPDATE app_private.tryon_jobs SET status='failed',failure_code='CANCELLED',finished_at=clock_timestamp(),updated_at=clock_timestamp() WHERE id=p_id AND owner_id=auth.uid() RETURNING * INTO job;
- UPDATE app_private.tryon_images SET state='cleanup_pending' WHERE id=job.input_image_id AND owner_id=auth.uid();
+ UPDATE app_private.tryon_jobs SET status='failed',failure_code='CANCELLED',finished_at=clock_timestamp(),updated_at=clock_timestamp() WHERE id=p_id AND owner_id=app_private.request_subject() RETURNING * INTO job;
+ UPDATE app_private.tryon_images SET state='cleanup_pending' WHERE id=job.input_image_id AND owner_id=app_private.request_subject();
  RETURN app_private.tryon_record(job);
 END; $$;
 ALTER FUNCTION app_private.cancel_tryon(uuid) OWNER TO dd_user_executor;
@@ -242,7 +242,7 @@ BEGIN
  PERFORM app_private.read_tryon(p_id);
  SELECT jsonb_build_object('id',i.id,'object',i.object_name,'sha256',i.sha256,'byteSize',i.byte_size) INTO result
  FROM app_private.tryon_images i JOIN app_private.tryon_jobs j ON j.input_image_id=i.id AND j.owner_id=i.owner_id
- WHERE j.id=p_id AND j.owner_id=auth.uid() AND i.state='attached';
+ WHERE j.id=p_id AND j.owner_id=app_private.request_subject() AND i.state='attached';
  IF result IS NULL THEN RAISE EXCEPTION 'Input photo unavailable' USING ERRCODE='P0002'; END IF;
  RETURN result;
 END; $$;
@@ -260,7 +260,7 @@ BEGIN
    IF NOT isfinite((p_cursor->>'createdAt')::timestamptz) THEN RAISE EXCEPTION 'Invalid timestamp' USING ERRCODE='22023'; END IF;
   EXCEPTION WHEN invalid_text_representation OR invalid_datetime_format OR datetime_field_overflow THEN RAISE EXCEPTION 'Invalid job cursor' USING ERRCODE='22023'; END;
  END IF;
- FOR job IN SELECT * FROM app_private.tryon_jobs WHERE owner_id=auth.uid()
+ FOR job IN SELECT * FROM app_private.tryon_jobs WHERE owner_id=app_private.request_subject()
  AND(p_cursor IS NULL OR (created_at,id)<((p_cursor->>'createdAt')::timestamptz,(p_cursor->>'id')::uuid)) ORDER BY created_at DESC,id DESC LIMIT p_limit+1 LOOP
   count_rows:=count_rows+1;
   IF count_rows>p_limit THEN RETURN jsonb_build_object('items',items,'nextCursor',position); END IF;

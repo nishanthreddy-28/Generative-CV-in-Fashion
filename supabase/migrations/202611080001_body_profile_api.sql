@@ -18,7 +18,7 @@ BEGIN
   'units',coalesce(units,''),'height',height,'chest',chest,'waist',waist,'hips',hips,'inseam',inseam,
   'bodyShape',coalesce(body_shape,''),'skinTone',coalesce(skin_tone,''),
   'undertone',coalesce(undertone,''),'fit',coalesce(fit,'')) INTO result
- FROM app_private.body_profiles WHERE user_id = auth.uid();
+ FROM app_private.body_profiles WHERE user_id = app_private.request_subject();
  IF result IS NULL THEN
   RAISE EXCEPTION 'Body profile not found' USING ERRCODE = 'P0002';
  END IF;
@@ -75,7 +75,7 @@ BEGIN
  END LOOP;
 
  -- Serialize partial updates before inspecting existing values or replacing units.
- SELECT * INTO previous FROM app_private.body_profiles WHERE user_id = auth.uid() FOR UPDATE;
+ SELECT * INTO previous FROM app_private.body_profiles WHERE user_id = app_private.request_subject() FOR UPDATE;
  IF NOT FOUND THEN
   RAISE EXCEPTION 'Body profile not found' USING ERRCODE = 'P0002';
  END IF;
@@ -103,7 +103,7 @@ BEGIN
   undertone = CASE WHEN p_changes ? 'undertone' THEN nullif(p_changes->>'undertone','') ELSE previous.undertone END,
   fit = CASE WHEN p_changes ? 'fit' THEN nullif(p_changes->>'fit','') ELSE previous.fit END,
   updated_at = transaction_timestamp()
- WHERE user_id = auth.uid();
+ WHERE user_id = app_private.request_subject();
 END;
 $fn$;
 ALTER FUNCTION app_private.update_body_profile(jsonb) OWNER TO dd_user_executor;

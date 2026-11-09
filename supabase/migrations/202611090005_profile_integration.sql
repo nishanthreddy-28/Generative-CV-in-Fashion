@@ -5,14 +5,14 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE item record;previous jsonb;
 BEGIN
  PERFORM app_private.require_active_account();
- PERFORM 1 FROM app_private.user_profiles WHERE user_id=auth.uid() FOR UPDATE;
+ PERFORM 1 FROM app_private.user_profiles WHERE user_id=app_private.request_subject() FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Profile bootstrap incomplete' USING ERRCODE='55000'; END IF;
  IF p_changes IS NULL OR jsonb_typeof(p_changes)<>'object' THEN RAISE EXCEPTION 'Invalid profile fields' USING ERRCODE='22023'; END IF;
  FOR item IN SELECT * FROM jsonb_each(p_changes) LOOP
   IF item.key NOT IN ('name','style','location','bio') OR jsonb_typeof(item.value)<>'string' OR char_length(item.value #>> '{}')>(CASE WHEN item.key IN ('style','bio') THEN 2000 ELSE 200 END) OR (item.key='name' AND btrim(item.value #>> '{}')='') THEN RAISE EXCEPTION 'Invalid profile fields' USING ERRCODE='22023'; END IF;
  END LOOP;
  previous:=app_private.read_profile()||p_changes;
- UPDATE app_private.user_profiles SET name=btrim(previous->>'name'),style=nullif(btrim(previous->>'style'),''),location=nullif(btrim(previous->>'location'),''),bio=nullif(btrim(previous->>'bio'),''),updated_at=clock_timestamp() WHERE user_id=auth.uid();
+ UPDATE app_private.user_profiles SET name=btrim(previous->>'name'),style=nullif(btrim(previous->>'style'),''),location=nullif(btrim(previous->>'location'),''),bio=nullif(btrim(previous->>'bio'),''),updated_at=clock_timestamp() WHERE user_id=app_private.request_subject();
 END; $$;
 ALTER FUNCTION app_private.update_profile_fields(jsonb) OWNER TO dd_user_executor;
 CREATE FUNCTION app_private.update_preference_fields(p_changes jsonb) RETURNS void
@@ -20,7 +20,7 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE item record;previous jsonb;
 BEGIN
  PERFORM app_private.require_active_account();
- PERFORM 1 FROM app_private.user_preferences WHERE user_id=auth.uid() FOR UPDATE;
+ PERFORM 1 FROM app_private.user_preferences WHERE user_id=app_private.request_subject() FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Preferences bootstrap incomplete' USING ERRCODE='55000'; END IF;
  IF p_changes IS NULL OR jsonb_typeof(p_changes)<>'object' THEN RAISE EXCEPTION 'Invalid preferences' USING ERRCODE='22023'; END IF;
  FOR item IN SELECT * FROM jsonb_each(p_changes) LOOP
