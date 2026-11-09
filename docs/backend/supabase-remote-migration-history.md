@@ -1,5 +1,8 @@
 # Supabase remote migration history
 
+> Current recovery evidence is recorded in [access recovery](access-recovery.md). The saved CLI login successfully inspected the hosted database after excluding the rejected process token. The standard migration-history relation, api/app_private schemas and foundation objects are absent. Historical failures below remain part of the earlier evidence.
+
+
 Checked at 2026-11-06T08:54:38+05:30 (Asia/Kolkata, UTC+05:30).
 
 ## Current result

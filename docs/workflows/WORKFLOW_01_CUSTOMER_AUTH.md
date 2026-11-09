@@ -69,3 +69,8 @@ The final frontend run passed 71 tests, including four new password/navigation r
 
 
 The repeat inspection after the reported access restoration still returned Management API HTTP 401. Browser inventory still reported “Local browser use is disabled in Work settings” and returned no available browsers. No further authentication retries were made. The separate public Auth settings GET succeeded with HTTP 200 and reported disable_signup=false, mailer_autoconfirm=false and Google=false. This verifies only those public capabilities. It does not expose migration history, SMTP, templates, callback allowlists, hooks or project permissions.
+
+
+### Access recovery update
+
+Read-only hosted inspection now works through the existing saved Supabase CLI session after excluding the rejected process environment token. Hosted api/app_private schemas, application tables, standard migration history, provisioning triggers and Storage buckets are absent. Two existing Auth users are email-confirmed. Hosted Auth uses localhost:3000, an empty redirect allowlist and eight-digit email OTPs. Google is disabled. Exact evidence, local migration hashes and approval requirements are recorded in [access recovery](../backend/access-recovery.md). Browser control remains disabled. These findings supersede the earlier claim that all hosted schema inspection is inaccessible.
