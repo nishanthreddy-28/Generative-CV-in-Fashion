@@ -40,8 +40,7 @@ export function Screen({
   const {width}=useWindowDimensions();
   const showNavigation=!!session && !accountDeleting;
   const active=activeDestination(path);
-  const wide = !session && (path === "/login" || path === "/signup") && width >= 860;
-  const reviewOnly = process.env.EXPO_PUBLIC_REVIEW_ONLY === "true";
+  const accountForm = !session && ["/login", "/signup", "/forgot-password", "/reset-password"].includes(path);
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}} edges={["top","bottom"]}>
     <KeyboardAvoidingView
@@ -50,11 +49,11 @@ export function Screen({
     >
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[ui.screen, wide && ui.wideScreen, width < 380 && ui.narrowScreen]}
+        contentContainerStyle={[ui.screen, accountForm && ui.accountScreen, width < 380 && ui.narrowScreen]}
       >
         <View style={ui.top}>
           <Link href={session ? "/dashboard" : "/"} style={ui.brand} accessibilityLabel="Drape and Drop home">DRAPE &amp; DROP</Link>
-          {!session && !reviewOnly && <RouteLink to={path==="/login" ? "/signup" : "/login"}>{path==="/login" ? "Join us" : "Sign in"}</RouteLink>}
+          {!session && <RouteLink to={path==="/login" ? "/signup" : "/login"}>{path==="/login" ? "Join us" : "Sign in"}</RouteLink>}
           {showNavigation && <RouteLink to="/settings">Your account</RouteLink>}
         </View>
         <Text accessibilityRole="header" style={ui.title}>
@@ -194,7 +193,7 @@ export const ui = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
-  wideScreen: { maxWidth: 960 },
+  accountScreen: { maxWidth: 480 },
   narrowScreen: { paddingHorizontal: 18 },
   top: {
     flexDirection: "row",

@@ -40,4 +40,4 @@ Non-password editing drafts are held only in session memory across screen naviga
 
 Version history is in [the ledger](../docs/VERSIONS.md). Version 0.4.0 is a frontend preview; device, Figma and backend integration checks remain explicit in its release note.
 
-For the hosted visual review, use the [Vercel Production site](https://drape-drop-eta.vercel.app/). Its optional service-status button checks the public FastAPI liveness endpoint without sending account information. The current Render Free instance can take about a minute to wake after idle. See the [deployment runbook](../docs/frontend/vercel-deployment.md) for configuration and verification.
+For the hosted visual review, use the [Vercel Production site](https://drape-drop-eta.vercel.app/). Welcome, sign-in, registration and recovery pages use compact mobile layouts. Credential submissions stay gated until the approved Auth integration is ready. Service status controls are kept outside customer screens. The current Render Free instance can take about a minute to wake after idle. See the [deployment runbook](../docs/frontend/vercel-deployment.md) for configuration and verification.

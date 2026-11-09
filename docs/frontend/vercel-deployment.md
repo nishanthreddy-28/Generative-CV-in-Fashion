@@ -14,7 +14,7 @@ npm ci --legacy-peer-deps
 DRAPE_WEB_MODE=review npm run build
 ```
 
-CI runs the same review export after the Android artifact upload. Expo ignores local dotenv files in this build command. Review mode drops Supabase Auth configuration. If `EXPO_PUBLIC_API_URL` is supplied, it must be an HTTPS origin and the homepage offers a public, read-only health check. The UI indicates that accounts and wardrobe data are unavailable.
+CI runs the same review export after the Android artifact upload. Expo ignores local dotenv files in this build command. Review mode drops Supabase Auth configuration. If `EXPO_PUBLIC_API_URL` is supplied, it must be an HTTPS origin. Public account pages remain navigable with real form layouts, while credential submissions stay gated with customer-facing availability messages. Service health is checked outside the customer UI.
 
 ## Preview and Production settings
 
