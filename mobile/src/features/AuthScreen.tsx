@@ -1,6 +1,6 @@
 import {FramedImage} from "../components/FramedImage";
 import { useState } from "react";
-import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { Screen, RouteLink, Notice, ui } from "../components/Screen";
@@ -12,6 +12,7 @@ import { type Field, validate } from "./validation";
 import { useSession } from "./session";
 import { emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
 import { beginGoogleOAuth, authError } from "../services/auth/contracts";
+const reviewOnly = process.env.EXPO_PUBLIC_REVIEW_ONLY === "true";
 const googleEnabled=process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -20,8 +21,6 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
   const { login, session, ready } = useSession();
-  const { width, fontScale } = useWindowDimensions();
-  const split = mode !== "reset" && width >= 860 && fontScale <= 1.2;
   const fields: Field[] = [
     { key: "email", label: "Email", required: true, kind: "email" },
     ...(mode !== "reset"
@@ -63,6 +62,10 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
       setMessage("Registration is unavailable while email verification is being configured.");
       return;
     }
+    if (reviewOnly) {
+      setMessage(mode === "reset" ? "Password recovery is temporarily unavailable. Please try again later." : "Sign-in is temporarily unavailable. Please try again later.");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "login") {
@@ -96,15 +99,6 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
     }catch(e){setMessage(e instanceof Error ? e.message : "Unable to start Google sign-in.");}
     finally{setBusy(false);}
   }
-  if (process.env.EXPO_PUBLIC_REVIEW_ONLY === "true") {
-    return (
-      <Screen title="Your style. Your space.">
-        <Notice title="Website preview" text="Explore Drape & Drop before launch. Accounts and wardrobe data are unavailable in this preview." />
-        <RouteLink to="/privacy">Privacy &amp; your data</RouteLink>
-        <RouteLink to="/">Back to Drape &amp; Drop</RouteLink>
-      </Screen>
-    );
-  }
   return (
     <Screen
       title={
@@ -120,24 +114,24 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
           : "A considered wardrobe starts with you."
       }
     >
-      <View style={[styles.layout, split && styles.split]}>
+      <View style={styles.layout}>
         {mode !== "reset" && (
-          <View style={[styles.editorial, split && styles.panel]}>
+          <View style={styles.editorial}>
             <FramedImage source={require("../../assets/editorial/introduction.png")}
-              ratio={split ? 0.9 : 1.8} label="Trench coat and tailored trousers in a neutral fashion editorial" />
+              ratio={1.8} contain label="Trench coat and tailored trousers in a neutral fashion editorial" />
             <View style={styles.caption}>
               <Text style={styles.eyebrow}>THE PERSONAL EDIT</Text>
               <Text style={styles.captionTitle}>A place for the pieces you love.</Text>
             </View>
           </View>
         )}
-        <View style={[styles.form, split && styles.panel]}>
+        <View style={styles.form}>
           {session && (
             <RouteLink to="/dashboard">Continue to your dashboard</RouteLink>
           )}
-          {!supabase && (
+          {(reviewOnly || !supabase) && mode !== "signup" && (
             <Notice
-              title="Sign-in is temporarily unavailable"
+              title={mode === "reset" ? "Password recovery is temporarily unavailable" : "Sign-in is temporarily unavailable"}
               text="Please try again later. Your account details have not been submitted."
             />
           )}
@@ -165,8 +159,8 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
               {!!values.confirm && <Text style={values.confirm === values.password ? ui.body : ui.error}>
                 {values.confirm === values.password ? "Passwords match." : "Passwords must match."}
               </Text>}
-              <Notice title="Registration is being prepared"
-                text="Email verification setup is pending. Please return when registration opens." />
+              <Notice title="Registration opens soon"
+                text="New accounts will be available soon." />
             </View>
           )}
           {Boolean(message) && (
@@ -179,14 +173,14 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
               mode === "login"
                 ? "Sign in"
                 : mode === "signup"
-                  ? "Create account"
+                  ? "Registration opens soon"
                   : "Send reset instructions"
             }
             loading={busy}
-            disabled={!ready || !supabase || mode === "signup"}
+            disabled={!ready || busy || mode === "signup" || (!reviewOnly && !supabase)}
             onPress={submit}
           />
-          {mode !== "reset" && googleEnabled && (
+          {mode !== "reset" && !reviewOnly && googleEnabled && (
             <View style={{ gap: 12 }}>
               <Button
                 label="Continue with Google"
@@ -213,8 +207,6 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
 
 const styles = StyleSheet.create({
   layout: { gap: 24 },
-  split: { flexDirection: "row", alignItems: "flex-start" },
-  panel: { flex: 1, minWidth: 0 },
   editorial: { backgroundColor: colors.editorial, overflow: "hidden" },
   caption: { gap: 8, padding: 18 },
   eyebrow: { fontSize: 11, letterSpacing: 2, color: colors.sage, fontWeight: "700" },
