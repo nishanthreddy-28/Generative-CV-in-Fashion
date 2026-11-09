@@ -6,7 +6,7 @@ Started 2026-11-09 on main. This is the single execution checklist; local verifi
 - [x] 2 Dashboard (local): owner-only real counts, UI refresh/empty/error and tests.
 - [x] 3 Profile/settings/body (local): sparse updates/clearing, bootstrap behavior, auth/ownership and refresh regression.
 - [x] 4 API gaps (local implementation; Google provider acceptance pending): whole-outfit delete, supported password change, contract consistency; preserve completed features.
-- [ ] 5 Images: interrupted upload reconciliation, try-on retention defaults, safe retryable private cleanup; integrate account deletion.
+- [x] 5 Images (local; hosted scheduler/retention approval pending): interrupted upload reconciliation, try-on retention defaults, safe retryable private cleanup; integrate account deletion.
 - [ ] 6 Hosted: local migration/release preparation; actual hosted reads only when authorized access is available; no writes/flag enablement without explicit approval.
 - [ ] 7 Security: local Auth/JWT, identity/RLS/Storage tests; hosted acceptance separately pending.
 - [ ] 8 E2E: locally available workflow regression; record unavailable real Supabase/device dependencies.
@@ -25,3 +25,7 @@ Deny-first deletion API, progress UI and separate trusted cleanup worker impleme
 ## Milestone 2 evidence
 
 Dashboard real owner aggregates, sparse profile/preferences PATCH with explicit clearing, trusted Auth provisioning/backfill, whole-outfit delete, idempotent recommendation-to-outfit conversion and Google PKCE flow are implemented locally. SQL regression: 304 passed. Focused foundation/outfit/dashboard HTTP checks: 100 passed. Frontend: 58 passed; typecheck/lint passed. Google provider/callback configuration and actual OAuth sign-in remain hosted acceptance tasks, not claimed complete. Web session tokens remain memory-only; only a PKCE verifier survives a same-tab redirect.
+
+## Milestone 3 evidence
+
+Trusted image reconciliation, interrupted-upload retirement, 24-hour queued-input expiration, preserved consent/submission evidence and retryable Storage cleanup implemented. Dedicated worker tests: 2 passed; complete disposable PostgreSQL suite: 307 passed. Real service_role wrapper authorization is exercised locally; hosted key/worker/scheduler remain unconfigured. No privileged fallback was added to ordinary API operations.

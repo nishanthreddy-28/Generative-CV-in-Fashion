@@ -73,3 +73,29 @@ def test_recommendation_conversion_idempotent_outfit_delete_keeps_sources(users)
  assert values[-1]['id']==values[-2]['id']
  value=rows(success(prefix+"DO $$DECLARE r jsonb;BEGIN r:=api.save_recommendation_outfit(current_setting('test.rec')::uuid);PERFORM api.delete_outfit((r->>'id')::uuid);END;$$;SELECT api.dashboard();ROLLBACK;"))[-1]
  assert value['wardrobeCount']==2 and value['savedOutfitCount']==0 and value['recommendationCount']==1
+
+def test_image_reconciliation_expiry_preserves_job_evidence(users):
+ a,_,seed=users;image,statement=tryon(a)
+ old=f"RESET ROLE;SET CONSTRAINTS ALL IMMEDIATE;ALTER TABLE app_private.tryon_jobs DISABLE TRIGGER tryon_transition;UPDATE app_private.tryon_jobs SET consent_at=clock_timestamp()-interval '25 hours' WHERE input_image_id='{image}';ALTER TABLE app_private.tryon_jobs ENABLE TRIGGER tryon_transition;SET LOCAL ROLE service_role;"
+ prefix=seed+statement+old
+ values=rows(success(prefix+f"SELECT api.image_cleanup_manifest();SELECT api.finish_image_cleanup('tryon-inputs','{image}');"+as_user(a)+"SELECT api.list_tryon();ROLLBACK;"))
+ assert values[-2][0]['id']==image
+ job=values[-1]['items'][0]
+ assert job['failureCode']=='INPUT_EXPIRED' and job['consentAt'] and not job['inputAvailable']
+ result=success(prefix+f"SELECT api.image_cleanup_manifest();RESET ROLE;DELETE FROM storage.objects WHERE bucket_id='tryon-inputs' AND name='{a}/{image}.jpg';SET LOCAL ROLE service_role;SELECT api.finish_image_cleanup('tryon-inputs','{image}');ROLLBACK;")
+ assert result.splitlines()[-1]=='t'
+
+def test_retention_preserves_attached_garments_reconciles_interrupted_upload(users):
+ from test_tryon_database import upload
+ a,_,seed=users;image,statement=upload(a)
+ prefix=seed+garments(a)+statement+f"RESET ROLE;UPDATE app_private.tryon_images SET created_at=clock_timestamp()-interval '2 hours' WHERE id='{image}';SET LOCAL ROLE service_role;"
+ value=rows(success(prefix+'SELECT api.image_cleanup_manifest();ROLLBACK;'))[-1]
+ assert len(value)==1 and value[0]['id']==image
+ for operation in ['image_cleanup_manifest()',f"finish_image_cleanup('tryon-inputs','{image}')"]:
+  assert 'permission denied' in sql(seed+as_user(a)+'SELECT api.'+operation+';ROLLBACK;').stderr
+ assert 'Invalid retention window' in sql(seed+'SET LOCAL ROLE service_role;SELECT api.image_cleanup_manifest(0,24);ROLLBACK;').stderr
+
+def test_retention_does_not_expire_processing_job(users):
+ a,_,seed=users;image,statement=tryon(a)
+ prefix=seed+statement+f"RESET ROLE;UPDATE app_private.tryon_jobs SET status='processing' WHERE input_image_id='{image}';SET LOCAL ROLE service_role;"
+ assert rows(success(prefix+'SELECT api.image_cleanup_manifest();ROLLBACK;'))[-1]==[]
