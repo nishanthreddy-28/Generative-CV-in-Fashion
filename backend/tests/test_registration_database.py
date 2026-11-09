@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 
+from registration.crypto import digest, replacement_attempt
 from test_foundation_database import SOCKET, as_user, sql, success
 
 pytestmark = pytest.mark.skipif(
@@ -75,6 +76,25 @@ def test_resend_cooldown_expiry_and_binding():
     assert success(seed + issue(replacement,previous=attempt,session='e'*64) + 'ROLLBACK;').splitlines()[-1] == 'f'
     assert success(seed + issue(replacement,previous=attempt) + prove(attempt,'link') + prove(replacement,'link') + 'ROLLBACK;').splitlines()[-3:] == ['t','f','t']
     assert success(seed + 'SELECT api.registration_expire();ROLLBACK;').splitlines()[-1] == '1'
+
+
+def test_lost_resend_recovers_durable_successor_but_cannot_reuse_old_proofs():
+    attempt, capability = uuid4(), 'b' * 43
+    pepper = b'x' * 32
+    session = digest(capability)
+    successor = replacement_attempt(pepper, attempt, capability)
+    seed = 'BEGIN;SET LOCAL ROLE service_role;' + issue(attempt, session=session)
+    seed += ("RESET ROLE;UPDATE app_private.registration_challenges SET "
+             "issued_at=issued_at-interval '2 minutes',expires_at=expires_at-interval '2 minutes' "
+             f"WHERE id='{attempt}';SET LOCAL ROLE service_role;")
+    rotation = issue(successor, session=session, previous=attempt)
+    seed += rotation + rotation
+    seed += f"SELECT api.registration_lookup('{attempt}','{session}') IS NULL;"
+    seed += f"SELECT api.registration_lookup('{successor}','{digest('z' * 43)}') IS NULL;"
+    seed += f"SELECT api.registration_lookup('{successor}','{session}')->>'state';"
+    seed += prove(attempt, 'link', session=session) + prove(successor, 'otp', session=session)
+    seed += prove(successor, 'link', session=session) + prove(successor, 'otp', session=session)
+    assert success(seed + 'ROLLBACK;').splitlines() == ['t', 't', 'f', 't', 't', 'pending', 'f', 'f', 't', 't']
 
 
 def test_wrong_attempts_lock_and_wrong_email_cannot_activate():

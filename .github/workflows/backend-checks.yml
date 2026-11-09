@@ -20,12 +20,14 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.lock
       - run: python -m pip install -r requirements.lock
-      - run: python -m pytest -q
-      - run: python -m compileall -q app
+      - run: python -m pytest -q --ignore=tests/test_registration.py
+      - name: Verify registration coordinator
+        run: python -m pytest -q tests/test_registration.py
+      - run: python -m compileall -q app registration
       - name: Install disposable PostgreSQL test tools
         run: |
           sudo apt-get update
           sudo apt-get install --yes postgresql libpq-dev
           echo "$(pg_config --bindir)" >> "$GITHUB_PATH"
       - name: Verify migration, grants, RLS and lifecycle isolation
-        run: python tests/database/run_local.py
+        run: python tests/database/run_local.py --registration
