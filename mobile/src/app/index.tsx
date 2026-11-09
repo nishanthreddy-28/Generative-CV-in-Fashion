@@ -1,4 +1,5 @@
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import {FramedImage} from "../components/FramedImage";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../components/Button";
@@ -11,10 +12,11 @@ export default function Introduction() {
           <Text style={styles.wordmark}>DRAPE & DROP</Text>
           <Text style={styles.edition}>THE PERSONAL EDIT</Text>
         </View>
-        <Image
+        <FramedImage
           source={require("../../assets/editorial/introduction.png")}
-          style={styles.image}
-          accessibilityLabel="Fashion editorial introducing Drape and Drop"
+          ratio={1}
+          contain
+          label="Fashion editorial introducing Drape and Drop"
         />
         <Text style={styles.eyebrow}>LESS GUESSWORK. MORE YOU.</Text>
         <Text accessibilityRole="header" style={styles.title}>
