@@ -101,3 +101,25 @@ export async function reauthenticate(
   if(session.user.id!==expectedUser)throw new Error("Account changed during confirmation. Sign out and retry.");
   return session;
 }
+
+export async function exchangeOAuth(
+  auth: Pick<Auth, "exchangeCodeForSession">, code: string, flowId?: string,
+) {
+  if (!code || code.length > 2048 || (!flowId || !/^[a-zA-Z0-9_-]{8,64}$/.test(flowId)))
+    throw new Error("Invalid sign-in callback. Start Google sign-in again.");
+  const { data, error } = await auth.exchangeCodeForSession(code, { flowId });
+  if (error || !data.session) throw new Error("Sign-in link is invalid or expired. Start Google sign-in again.");
+  return data.session;
+}
+
+export async function beginGoogleOAuth(auth: Pick<Auth,"signInWithOAuth">, redirectTo: string) {
+  const {data,error}=await auth.signInWithOAuth({provider:"google",options:{redirectTo,skipBrowserRedirect:true}});
+  if(error || !data.url || !data.flowId || !/^[a-zA-Z0-9_-]{8,64}$/.test(data.flowId))
+    throw new Error("Google sign-in is unavailable. Verify provider and redirect configuration.");
+  // Installed SDK returns per-flow verifier identity; bind it to this callback only.
+  const callback=new URL(redirectTo);
+  callback.searchParams.set("sb_flow_id",data.flowId);
+  const target=new URL(data.url);
+  target.searchParams.set("redirect_to",callback.toString());
+  return target;
+}

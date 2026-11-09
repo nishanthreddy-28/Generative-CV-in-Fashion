@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClient } from "@supabase/supabase-js";
-import { reauthenticate, catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
+import { beginGoogleOAuth, exchangeOAuth, reauthenticate, catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
 import { secureSessionStorage } from "../src/services/auth/storage.ts";
 import { apiRequest } from "../src/services/api/client.ts";
 
@@ -182,4 +182,29 @@ test("web OAuth verifier survives redirect without persisting access or refresh 
  const before=webAuthStorage(storage);before.setItem('session','private-session');before.setItem('session-code-verifier','verifier');
  const after=webAuthStorage(storage);assert.equal(after.getItem('session'),null);assert.equal(after.getItem('session-code-verifier'),'verifier');
  after.removeItem('session-code-verifier');assert.equal(values.size,0);
+});
+
+test("real SDK PKCE redirect exchange restores only the verifier and returns a fresh session", async () => {
+  const {webAuthStorage}=await import('../src/services/auth/webStorage.ts');
+  const values=new Map();
+  const verifiers={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+  const options=storage=>({global:{fetch:async (endpoint,init)=>{
+    assert.equal(new URL(endpoint).searchParams.get('grant_type'),'pkce');
+    const body=JSON.parse(init.body);
+    assert.equal(body.auth_code,'fixture-oauth-code');
+    assert.ok(body.code_verifier.length>=43);
+    return response(payload('oauth-access'));
+  }},auth:{storage,storageKey:'oauth-contract',persistSession:true,autoRefreshToken:false,detectSessionInUrl:false,flowType:'pkce'}});
+  const first=createClient(url,key,options(webAuthStorage(verifiers))).auth;
+  const redirect=await beginGoogleOAuth(first,'drapedrop://oauth-callback');
+  assert.equal(redirect.searchParams.get('code_challenge_method'),'s256');
+  assert.ok(values.has('oauth-contract-code-verifier'));
+  const returned=createClient(url,key,options(webAuthStorage(verifiers))).auth;
+  const flowId=new URL(redirect.searchParams.get('redirect_to')).searchParams.get('sb_flow_id');
+  assert.ok(flowId);
+  await assert.rejects(exchangeOAuth(returned,'fixture-oauth-code'),/Invalid sign-in callback/);
+  await assert.rejects(exchangeOAuth(returned,'fixture-oauth-code','missing-flow-slot'),/invalid or expired/);
+  const result=await exchangeOAuth(returned,'fixture-oauth-code',flowId);
+  assert.equal(result.access_token,'oauth-access');
+  assert.deepEqual([...values.keys()],[]);
 });

@@ -5,7 +5,7 @@ import {
 import { AppState } from "react-native";
 import type { Session as AuthSession } from "@supabase/supabase-js";
 import { apiRequest, ApiError, type RequestOptions } from "../services/api/client";
-import { catalogRole, currentAccessToken, register, signIn } from "../services/auth/contracts";
+import { exchangeOAuth, catalogRole, currentAccessToken, register, signIn } from "../services/auth/contracts";
 import { clearPersistedSession, emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
 import { draftStore } from "./draftStore";
 import type { Session } from "../types/domain";
@@ -16,6 +16,7 @@ type Context = {
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  completeOAuth: (code: string, flowId?: string) => Promise<void>;
   request: <T>(path: string, options?: Omit<RequestOptions, "token">) => Promise<T>;
 };
 
@@ -90,6 +91,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
     return Boolean(next);
   }, [applySession]);
 
+  const completeOAuth = useCallback(async (code: string, flowId?: string) => {
+    const auth = requireAuth();
+    const next = await exchangeOAuth(auth, code, flowId);
+    signedOut.current = false;
+    applySession(next);
+    if (AppState.currentState === "active") void auth.startAutoRefresh();
+  }, [applySession]);
+
   const logout = useCallback(async () => {
     signedOut.current = true;
     setReady(false);
@@ -143,7 +152,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, [session?.user.id, permissionRevision, request]);
 
   return (
-    <SessionContext.Provider value={{ session, ready, login, signup, logout, request }}>
+    <SessionContext.Provider value={{ session, ready, login, signup, logout, completeOAuth, request }}>
       {children}
     </SessionContext.Provider>
   );

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from starlette.middleware.cors import CORSMiddleware
 
 from .config import Settings
 from .dependencies import DatabaseEligibility, UnconfiguredEligibility
@@ -33,6 +34,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
 
     app = FastAPI(title="Drape & Drop API", version="0.2.0", lifespan=lifespan)
+
+    class ConfiguredCORS(CORSMiddleware):
+        def is_allowed_origin(self, origin: str) -> bool:
+            return origin in app.state.settings.api_cors_origins
+
+    app.add_middleware(ConfiguredCORS, allow_origins=[], allow_credentials=False,
+                       allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+                       allow_headers=["Authorization", "Content-Type"])
 
     @app.exception_handler(Unauthorized)
     async def unauthorized(request: Request, error: Unauthorized):

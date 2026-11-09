@@ -64,7 +64,7 @@ export default function Preview() {
       </View>
       <Notice
         title="Preview does not load account data"
-        text="Review screens, navigation and unsaved forms. Account forms use Supabase when configured; personal and admin previews do not load records or submit changes. Saved collections and AI results still require backend integration."
+        text="Review screens, navigation and unsaved forms. Account forms use Supabase when configured; personal and admin previews do not load records or submit changes. Authenticated collections use backend APIs when configured. Virtual try-on has job infrastructure only; no inference worker is configured."
       />
       {flows.map((flow, index) => (
         <View key={flow.title} style={styles.card}>

@@ -2,14 +2,14 @@ import {useState} from "react";
 import {router,useLocalSearchParams} from "expo-router";
 import {Button} from "../components/Button";
 import {Screen,Notice,RouteLink} from "../components/Screen";
-import {requireAuth} from "../services/auth/supabase";
+import {useSession} from "../features/session";
 export default function OAuthCallback(){
- const {code,error}=useLocalSearchParams<{code?:string;error?:string}>();const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
+ const {completeOAuth}=useSession();
+ const {code,error,sb_flow_id}=useLocalSearchParams<{code?:string;error?:string;sb_flow_id?:string}>();const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");
  async function complete(){
   if(busy || typeof code!=="string" || code.length>2048)return;setBusy(true);
   try{
-   const {data,error:failure}=await requireAuth().exchangeCodeForSession(code);
-   if(failure || !data.session)throw new Error("Sign-in link is invalid or expired. Start Google sign-in again.");
+   await completeOAuth(code, sb_flow_id);
    router.replace("/dashboard");
   }catch(e){setMessage(e instanceof Error ? e.message : "Unable to complete sign-in.");}
   finally{setBusy(false);}

@@ -124,13 +124,14 @@ export default function Settings() {
         <View style={ui.card}>
           <Text style={ui.heading}>Privacy & account</Text>
           <Text style={ui.body}>
-            Photos are selected only when you choose them. Preview drafts are
-            not stored or uploaded. Personal data policies and retention
-            controls will be finalized before release.
+            Photos upload only when you submit a garment or try-on job. Preview forms never upload.
+            Personal photos require authentication. Deletion first blocks account access;
+            a trusted cleanup worker must finish removing stored data.
           </Text>
           <Text style={ui.body}>
             Sessions are stored securely on mobile. Web sessions end when you reload the page.
           </Text>
+          <RouteLink to="/privacy">Photo privacy and retention details</RouteLink>
           <Button
             label="Sign out"
             variant="secondary"

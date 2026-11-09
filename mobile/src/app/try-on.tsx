@@ -131,6 +131,7 @@ export default function TryOn() {
     >
       <Gate preview={preview}>
         <Notice title="Inference worker unavailable" text="This submits a real queued job and a private photo. No worker is configured, so no try-on image will be generated. You can cancel queued jobs."/>
+        <RouteLink to="/privacy">Photo privacy and retention</RouteLink>
         <PhotoField
           label="Your full-length photo"
           value={person}
