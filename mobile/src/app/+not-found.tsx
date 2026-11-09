@@ -7,7 +7,6 @@ export default function NotFound() {
         text="This page may have moved or no longer exists."
       />
       <RouteLink to="/">Return to introduction</RouteLink>
-      <RouteLink to="/preview">Review workflows</RouteLink>
     </Screen>
   );
 }

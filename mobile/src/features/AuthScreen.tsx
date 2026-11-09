@@ -9,6 +9,7 @@ import { type Field, validate } from "./validation";
 import { useSession } from "./session";
 import { emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
 import { beginGoogleOAuth, authError, signupMessage } from "../services/auth/contracts";
+const googleEnabled=process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -107,8 +108,8 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
       )}
       {!supabase && (
         <Notice
-          title="Account service not connected"
-          text="You can review and validate these forms. Sign-in and account creation require Supabase configuration; no demo account will be created."
+          title="Sign-in is temporarily unavailable"
+          text="Please try again later. Your account details have not been submitted."
         />
       )}
       <Fields
@@ -139,7 +140,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
         disabled={!ready || !supabase}
         onPress={submit}
       />
-      {mode !== "reset" && (
+      {mode !== "reset" && googleEnabled && (
         <View style={{ gap: 12 }}>
           <Button
             label="Continue with Google"
@@ -147,11 +148,9 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
             disabled={busy}
             onPress={google}
           />
-          <Text style={ui.body}>
-            Google sign-in requires the configured provider and an approved callback URL.
-          </Text>
         </View>
       )}
+      <RouteLink to="/privacy">Privacy &amp; your data</RouteLink>
       {mode === "login" ? (
         <>
           <RouteLink to="/signup">Create an account</RouteLink>
@@ -160,7 +159,6 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
       ) : (
         <RouteLink to="/login">Back to sign in</RouteLink>
       )}
-      <RouteLink to="/preview">Review all frontend workflows</RouteLink>
     </Screen>
   );
 }

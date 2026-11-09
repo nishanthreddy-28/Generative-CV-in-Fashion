@@ -78,9 +78,8 @@ export async function verifyEmailLink(
 }
 
 export function protectedScreenState(
-  preview: boolean, ready: boolean, role: "user" | "admin" | undefined, admin: boolean,
+  _preview: boolean, ready: boolean, role: "user" | "admin" | undefined, admin: boolean,
 ) {
-  if (preview) return "open";
   if (!ready) return "restoring";
   if (!role) return "signed-out";
   if (admin && role !== "admin") return "forbidden";

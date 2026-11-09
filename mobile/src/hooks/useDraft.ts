@@ -6,7 +6,6 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { useLocalSearchParams } from "expo-router";
 import { Platform } from "react-native";
 import { useSession } from "../features/session";
 import { draftStore } from "../features/draftStore";
@@ -17,8 +16,7 @@ export function useDraft<T>(
 ): [T, Dispatch<SetStateAction<T>>] {
   const { session } = useSession();
   const [fallback] = useState(() => initial);
-  const { preview } = useLocalSearchParams<{ preview?: string }>();
-  const key = `${preview === "1" ? "preview" : (session?.user.id ?? "signed-out")}:${name}`;
+  const key = `${session?.user.id ?? "signed-out"}:${name}`;
   const snapshot = useCallback(
     () => draftStore.get(key, fallback),
     [key, fallback],
