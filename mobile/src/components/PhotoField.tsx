@@ -16,7 +16,10 @@ export function PhotoField({
   disabled?: boolean;
 }) {
   const [error, setError] = useState("");
+  const [picking,setPicking]=useState(false);
   async function pick() {
+    if(picking || disabled)return;
+    setPicking(true);
     setError("");
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -43,11 +46,12 @@ export function PhotoField({
       });
     } catch {
       setError("Photo selection is unavailable. Please try again.");
-    }
+    } finally {setPicking(false);}
   }
   return (
     <View style={{ gap: 12 }}>
       <Text style={ui.label}>{label}</Text>
+      {!value && <View style={{aspectRatio:1.5,borderWidth:1,borderStyle:"dashed",borderColor:"#C7C8C0",backgroundColor:"#EFEEE9",alignItems:"center",justifyContent:"center",padding:20,gap:8}}><Text style={ui.heading}>One piece. A clearer picture.</Text><Text style={ui.body}>Choose a clear photo from your library.</Text></View>}
       {value && (
         <Image
           accessibilityLabel={label}
@@ -58,7 +62,8 @@ export function PhotoField({
       <Button
         label={value ? "Replace photo" : "Choose photo"}
         onPress={pick}
-        disabled={disabled}
+        loading={picking}
+        disabled={disabled || picking}
         variant="secondary"
       />
       {value && (
@@ -66,7 +71,7 @@ export function PhotoField({
           label="Remove selected photo"
           variant="secondary"
           onPress={() => onChange(null)}
-          disabled={disabled}
+          disabled={disabled || picking}
         />
       )}
       <Text style={ui.body}>

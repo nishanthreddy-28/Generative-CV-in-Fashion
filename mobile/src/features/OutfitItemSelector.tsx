@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import {WardrobeImage} from "../components/WardrobeImage";
 import { Button } from "../components/Button";
 import { Notice, ResourceState, RouteLink, ui } from "../components/Screen";
 import { useResource } from "../hooks/useResource";
@@ -31,7 +32,10 @@ export function OutfitItemSelector({ items, onChange, preview, disabled = false 
       return <Pressable key={itemKey(item)} accessibilityRole="checkbox" accessibilityLabel={`${source}: ${garment.name}`}
         accessibilityState={{ checked, disabled }} disabled={disabled || (!checked && items.length >= 100)}
         onPress={() => onChange(toggleItem(items, item))} style={[ui.chip, checked && ui.selected]}>
-        <Text>{garment.name} · {garment.category}</Text>
+        <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
+         <View style={{width:64}}><WardrobeImage id={garment.id} label={garment.name} source={source}/></View>
+         <View style={{flex:1,gap:6}}><Text style={ui.label}>{garment.name}</Text><Text style={ui.body}>{garment.category}</Text><Text style={ui.body}>{checked ? "Selected" : "Add to outfit"}</Text></View>
+        </View>
       </Pressable>;
     })}
     {!result.loading && !result.error && !result.data?.items.length &&

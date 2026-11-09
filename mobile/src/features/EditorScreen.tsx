@@ -204,6 +204,7 @@ export function EditorScreen({
           </>
         )}
         <Confirm
+          confirmLabel={confirm==="delete" ? admin ? "Deactivate item" : "Delete garment" : "Discard changes"}
           visible={confirm !== null}
           title={
             confirm === "delete"

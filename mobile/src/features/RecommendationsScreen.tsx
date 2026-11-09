@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { router, useFocusEffect } from "expo-router";
 import { Text, View } from "react-native";
 import { Screen, Gate, Notice, RouteLink, ResourceState, usePreview, ui } from "../components/Screen";
+import {WardrobeImage} from "../components/WardrobeImage";
 import { Button } from "../components/Button";
 import { Fields } from "../components/Fields";
 import { useResource } from "../hooks/useResource";
@@ -22,12 +23,15 @@ export function RecommendationLooks({items,preview,onSave,onCreateOutfit,saved,s
 }) {
   return <>{items.map(look=><View key={look.id} style={ui.card}>
     <Text style={ui.heading}>{look.name}</Text>
-    <Text style={ui.body}>Rule score: {look.score}/100 · {look.occasion}</Text>
-    {look.items.map(piece=><View key={`${piece.source}:${piece.garmentId}`}>
+    <Text style={ui.body}>{look.occasion} · Compatibility rule score {look.score}/100</Text>
+    <View style={{flexDirection:"row",gap:12,flexWrap:"wrap"}}>
+    {look.items.map(piece=><View key={`${piece.source}:${piece.garmentId}`} style={{flex:1,minWidth:130,gap:10}}>
+      <WardrobeImage id={piece.garmentId} label={piece.name} source={piece.source} preview={preview}/>
       <Text style={ui.body}>{piece.name} · {piece.category}{piece.color ? ` · ${piece.color}` : ""}</Text>
       <RouteLink to={itemRoute(piece)} preview={preview}>View {piece.source} piece →</RouteLink>
     </View>)}
-    <Text style={ui.label}>Why these pieces</Text>
+    </View>
+    <Text style={ui.label}>Why it works</Text>
     {look.reasons.map(reason=><Text key={reason} style={ui.body}>• {reason}</Text>)}
     {onSave && <Button label={savedStatus(look.id,look.savedId,saved ?? {}) ? "Saved" : "Save recommendation"}
       disabled={Boolean(savedStatus(look.id,look.savedId,saved ?? {}) || saving)} loading={saving===look.id} onPress={()=>onSave(look)} />}
@@ -100,7 +104,7 @@ export function RecommendationsScreen() {
       finally{setSaving("");}
     });
   }
-  return <Screen title="Find your next look." subtitle="Explainable combinations from your actual pieces.">
+  return <Screen title="Find your next look." subtitle="Thoughtful combinations, made from your available pieces.">
     <Gate preview={preview}>
       <Fields fields={fields} values={values} errors={errors} disabled={busy} onChange={(key,value)=>setValues(current=>({...current,[key]:value}))} />
       <Text style={ui.body}>Uses your saved style text and preference words. Rules pair tops with bottoms or dresses with shoes; scores describe these rules, not fit or sizing.</Text>

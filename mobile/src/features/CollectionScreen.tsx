@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Image, Pressable, Text, TextInput, View } from "react-native";
+import {useCallback} from "react";
+import {useFocusEffect} from "expo-router";
+import { Pressable, Text, TextInput, View, useWindowDimensions } from "react-native";
 import {
   Screen,
   Gate,
@@ -10,7 +11,9 @@ import {
   ui,
 } from "../components/Screen";
 import { Button } from "../components/Button";
-import { WardrobeImage } from "../components/WardrobeImage";
+import {GarmentCard} from "../components/GarmentCard";
+import {useDraft} from "../hooks/useDraft";
+import {collectionColumns} from "./presentation";
 import { useResource } from "../hooks/useResource";
 import { categories } from "./schema";
 import type { Garment, Outfit, Page } from "../types/domain";
@@ -21,11 +24,12 @@ type Props = {
 };
 export function CollectionScreen({ kind, title, subtitle }: Props) {
   const preview = usePreview();
-  const [search, setSearch] = useState("");
-  const [applied, setApplied] = useState("");
-  const [category, setCategory] = useState("");
-  const [sort, setSort] = useState("newest");
-  const [cursor, setCursor] = useState("");
+  const columns=collectionColumns(useWindowDimensions().width);
+  const [search, setSearch] = useDraft(`${kind}:collection:search`,"");
+  const [applied, setApplied] = useDraft(`${kind}:collection:applied`,"");
+  const [category, setCategory] = useDraft(`${kind}:collection:category`,"");
+  const [sort, setSort] = useDraft(`${kind}:collection:sort`,"newest");
+  const [cursor, setCursor] = useDraft(`${kind}:collection:cursor`,"");
   const base = kind === "admin" ? "/admin/catalog" : `/${kind}`;
   const params = new URLSearchParams({
     search: applied,
@@ -39,6 +43,8 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
     preview,
     kind === "admin",
   );
+  const refresh=result.retry;
+  useFocusEffect(useCallback(()=>{refresh();},[refresh]));
   const list = result.data?.items ?? [];
   return (
     <Screen title={title} subtitle={subtitle}>
@@ -66,6 +72,8 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
             value={search}
             onChangeText={setSearch}
             placeholder="Search by name or brand"
+            returnKeyType="search"
+            onSubmitEditing={()=>{setApplied(search.trim());setCursor("");}}
             style={ui.input}
           />
           <Button
@@ -119,11 +127,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
         <ResourceState {...result} />
         {!result.loading && !result.error && list.length === 0 && (
           <Notice
-            title={
-              applied || category
-                ? "No matching pieces"
-                : "Your collection starts here"
-            }
+            title={applied || category ? "No matching pieces" : kind==="wardrobe" ? "Your wardrobe starts with one piece" : "The collection is on its way"}
             text={
               preview
                 ? "No example records are supplied in preview. Your real collection will appear after sign-in and backend connection."
@@ -133,45 +137,12 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
             }
           />
         )}
-        {list.map((item) => (
-          <View key={item.id} style={ui.card}>
-            {Boolean(item.imageUrl) && kind === "wardrobe" && (
-              <WardrobeImage id={item.id} label={item.name} preview={preview} />
-            )}
-            {Boolean(item.imageUrl) && kind === "outfits" && (
-              <Image
-                source={{ uri: item.imageUrl }}
-                accessibilityLabel={item.name}
-                style={ui.image}
-              />
-            )}
-            {Boolean(item.imageUrl) && (kind === "catalog" || kind === "admin") && (
-              <WardrobeImage id={item.id} label={item.name} preview={preview}
-                source={kind === "admin" ? "admin/catalog" : "catalog"} />
-            )}
-            <Text style={ui.heading}>{item.name}</Text>
-            {kind === "admin" && "active" in item && item.active === false &&
-              <Text style={ui.body}>Inactive · hidden from the catalog</Text>}
-            {"category" in item && (
-              <Text style={ui.body}>
-                {[item.category, item.color, item.brand]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </Text>
-            )}
-            {"description" in item && Boolean(item.description) && (
-              <Text style={ui.body}>{item.description}</Text>
-            )}
-            <RouteLink to={`${base}/${encodeURIComponent(item.id)}`}>
-              {kind === "admin" ? "Manage garment" : "View details"} →
-            </RouteLink>
-          </View>
-        ))}
-        {preview && (kind === "wardrobe" || kind === "admin") && (
-          <RouteLink to={`${base}/review`} preview>
-            Review edit & delete form (no record)
-          </RouteLink>
-        )}
+        <View style={{flexDirection:"row",flexWrap:"wrap",gap:12}}>
+        {list.map(item=><View key={item.id} style={{width:columns===2 ? "47%" : "100%"}}>
+          {"category" in item ? <GarmentCard item={item} source={kind==="admin" ? "admin/catalog" : kind==="catalog" ? "catalog" : "wardrobe"}/> :
+           <View style={ui.card}><Text style={ui.heading}>{item.name}</Text><RouteLink to={`/outfits/${encodeURIComponent(item.id)}`}>View outfit →</RouteLink></View>}
+        </View>)}
+        </View>
         {Boolean(result.data?.nextCursor) && (
           <Button
             label="Next page"

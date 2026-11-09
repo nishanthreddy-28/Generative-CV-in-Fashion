@@ -179,7 +179,7 @@ export default function TryOn() {
           !selected && (
             <Notice
               title="No garment selected"
-              text="Add wardrobe pieces or choose an item from the catalog. Preview does not provide sample garments."
+              text="Add a wardrobe piece or choose an item from Discover."
             />
           )}
         {Boolean(wardrobe.data?.nextCursor) && (
@@ -217,7 +217,7 @@ export default function TryOn() {
         <Text style={ui.heading}>Job history</Text>
         <Button label="Refresh job history" variant="secondary" onPress={history.retry} disabled={busy || history.loading}/>
         <ResourceState {...history}/>
-        {!history.loading && !history.error && !history.data?.items.length && <Notice title="No jobs on this page" text="Submitted jobs will appear here. No example jobs are supplied."/>}
+        {!history.loading && !history.error && !history.data?.items.length && <Notice title="No jobs on this page" text="Your submitted requests will appear here, with their status and cancellation options."/>}
         {(history.data?.items ?? []).map(item=><TryOnJobCard key={item.id} job={item} preview={preview} busy={busy}
           onRefresh={()=>loadJob(item.id)} onCancel={()=>cancel(item.id)}/>)}
         {history.data?.nextCursor && <Button label="Next page of jobs" variant="secondary" disabled={busy} onPress={()=>setHistoryCursor(history.data!.nextCursor!)}/>}

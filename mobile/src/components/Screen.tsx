@@ -100,9 +100,10 @@ export function Notice({
   title,
   text,
   children,
-}: PropsWithChildren<{ title: string; text: string }>) {
+  tone="default",
+}: PropsWithChildren<{ title: string; text: string; tone?:"default"|"success"|"error" }>) {
   return (
-    <View accessibilityRole="alert" style={ui.notice}>
+    <View accessibilityRole={tone==="error" ? "alert" : undefined} accessibilityLiveRegion="polite" style={[ui.notice,tone==="error" && {borderLeftWidth:3,borderLeftColor:colors.error},tone==="success" && {borderLeftWidth:3,borderLeftColor:colors.sage}]}>
       <Text style={ui.heading}>{title}</Text>
       <Text style={ui.body}>{text}</Text>
       {children}
@@ -119,12 +120,14 @@ export function ResourceState({
   retry: () => void;
 }) {
   return loading ? (
-    <View style={ui.row}>
-      <ActivityIndicator color={colors.ink} />
-      <Text style={ui.body}>Loading your data…</Text>
+    <View accessibilityLabel="Loading your data" accessibilityState={{busy:true}} style={{gap:12}}>
+      <View style={ui.row}><ActivityIndicator color={colors.ink}/><Text style={ui.body}>Getting your collection ready…</Text></View>
+      <View accessible={false} importantForAccessibility="no-hide-descendants" style={{gap:10}}>
+        <View style={[ui.skeleton,{height:18,width:"62%"}]}/><View style={[ui.skeleton,{height:12,width:"92%"}]}/><View style={[ui.skeleton,{height:12,width:"78%"}]}/>
+      </View>
     </View>
   ) : error ? (
-    <Notice title="Unable to load" text={error}>
+    <Notice title="We couldn’t load this" text={error} tone="error">
       <Button label="Try again" onPress={retry} variant="secondary" />
     </Notice>
   ) : null;
@@ -136,6 +139,7 @@ export function Confirm({
   onCancel,
   onConfirm,
   busy = false,
+  confirmLabel="Confirm",
 }: {
   visible: boolean;
   title: string;
@@ -143,13 +147,14 @@ export function Confirm({
   onCancel: () => void;
   onConfirm: () => void;
   busy?: boolean;
+  confirmLabel?: string;
 }) {
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onCancel}
+      onRequestClose={()=>{if(!busy)onCancel();}}
     >
       <View style={ui.overlay}>
         <View accessibilityViewIsModal style={ui.dialog}>
@@ -164,7 +169,7 @@ export function Confirm({
             variant="secondary"
           />
           <Button
-            label="Confirm"
+            label={confirmLabel}
             onPress={onConfirm}
             loading={busy}
             variant="danger"
@@ -175,6 +180,7 @@ export function Confirm({
   );
 }
 export const ui = StyleSheet.create({
+  skeleton: {backgroundColor:colors.border,borderRadius:4},
   navigation: {flexDirection:"row",backgroundColor:colors.surface,borderTopWidth:1,borderColor:colors.border,paddingHorizontal:8,paddingBottom:12,paddingTop:8,width:"100%",maxWidth:660,alignSelf:"center"},
   navItem: {flex:1,textAlign:"center",fontSize:12,fontWeight:"600",color:colors.muted,paddingVertical:16,minHeight:48,borderBottomWidth:2,borderBottomColor:"transparent"},
   navActive: {color:colors.ink,borderBottomColor:colors.ink},
@@ -197,8 +203,8 @@ export const ui = StyleSheet.create({
   },
   brand: { fontSize: 13, letterSpacing: 2, color: colors.ink },
   title: {
-    fontSize: 36,
-    lineHeight: 42,
+    fontSize: 32,
+    lineHeight: 38,
     fontFamily: "serif",
     color: colors.ink,
   },
@@ -216,7 +222,8 @@ export const ui = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     gap: 12,
-    backgroundColor: "#F0EEE7",
+    backgroundColor: colors.surface,
+    borderRadius:6,
   },
   row: {
     flexDirection: "row",
@@ -225,9 +232,11 @@ export const ui = StyleSheet.create({
     gap: 12,
   },
   card: {
-    borderBottomWidth: 1,
+    borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 18,
+    backgroundColor:colors.surface,
+    borderRadius:6,
+    padding:20,
     gap: 12,
   },
   error: { color: colors.error, fontSize: 14, lineHeight: 22 },
@@ -238,6 +247,7 @@ export const ui = StyleSheet.create({
     borderColor: colors.border,
     minHeight: 52,
     padding: 14,
+    borderRadius:4,
     color: colors.ink,
     fontSize: 16,
   },
@@ -245,11 +255,12 @@ export const ui = StyleSheet.create({
   chip: {
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: 16,
+    borderRadius:4,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     minHeight: 48,
   },
-  selected: { borderColor: colors.ink, backgroundColor: "#E5E4DC" },
+  selected: { borderColor: colors.sage, backgroundColor: "#E7EBE4" },
   image: { width: "100%", aspectRatio: 0.85, backgroundColor: colors.border },
   overlay: {
     flex: 1,

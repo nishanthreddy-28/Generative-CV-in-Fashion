@@ -4,7 +4,7 @@ export default function Body() {
   return (
     <EditorScreen
       title="Your body. Your fit."
-      subtitle="Measurements are optional. Enter each value in your selected unit. Automatic body analysis will be connected in a later phase."
+      subtitle="Your measurements are optional and private. Use the selected unit for every value; changing the unit does not automatically convert existing numbers."
       path="/profile/body"
       fields={bodyFields}
     />

@@ -8,6 +8,7 @@ export type Field = {
   decimals?: number;
   options?: string[];
   hint?: string;
+  passwordPurpose?: "new" | "current";
 };
 export function validate(fields: Field[], values: Record<string, string>) {
   const errors: Record<string, string> = {};
