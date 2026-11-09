@@ -8,7 +8,7 @@ import { Fields } from "../components/Fields";
 import { type Field, validate } from "./validation";
 import { useSession } from "./session";
 import { emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
-import { authError, signupMessage } from "../services/auth/contracts";
+import { beginGoogleOAuth, authError, signupMessage } from "../services/auth/contracts";
 export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -80,10 +80,8 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   async function google(){
     if(busy)return;setBusy(true);setMessage("");
     try{
-      const {data,error}=await requireAuth().signInWithOAuth({provider:"google",options:{redirectTo:emailRedirect("oauth-callback"),skipBrowserRedirect:true}});
-      if(error || !data.url)throw new Error("Google sign-in is unavailable. Verify provider and redirect configuration.");
+      const target=await beginGoogleOAuth(requireAuth(),emailRedirect("oauth-callback"));
       const origin=new URL(process.env.EXPO_PUBLIC_SUPABASE_URL ?? "").origin;
-      const target=new URL(data.url);
       if(target.origin!==origin || !target.pathname.startsWith("/auth/v1/"))throw new Error("Unexpected sign-in destination.");
       if(Platform.OS==="web")window.location.assign(target.href);else await Linking.openURL(target.href);
     }catch(e){setMessage(e instanceof Error ? e.message : "Unable to start Google sign-in.");}

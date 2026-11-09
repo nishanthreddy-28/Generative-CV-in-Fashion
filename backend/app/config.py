@@ -12,6 +12,18 @@ class Settings(BaseSettings):
     jwt_leeway_seconds: int = Field(default=15, ge=0, le=60)
     jwks_ttl_seconds: int = Field(default=300, ge=1, le=600)
     database_foundation_enabled: bool = False
+    api_cors_origins: list[str] = []
+
+    @field_validator("api_cors_origins")
+    @classmethod
+    def explicit_origins(cls, values: list[str]) -> list[str]:
+        for value in values:
+            origin = urlparse(value)
+            if (origin.scheme not in ("https", "http") or not origin.hostname or origin.username or origin.password
+                    or origin.path or origin.query or origin.fragment
+                    or (origin.scheme == "http" and origin.hostname not in ("localhost", "127.0.0.1", "::1"))):
+                raise ValueError("CORS requires explicit HTTPS origins or local development loopback origins")
+        return values
 
     @field_validator("supabase_url")
     @classmethod
