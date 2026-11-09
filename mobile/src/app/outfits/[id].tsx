@@ -1,11 +1,12 @@
 import { useDraft } from "../../hooks/useDraft";
 import { useState } from "react";
 import { Image, Text } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   Screen,
   Gate,
   Notice,
+  Confirm,
   ResourceState,
   RouteLink,
   usePreview,
@@ -43,6 +44,7 @@ export default function Detail() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmDelete,setConfirmDelete]=useState(false);
   const [itemDraft, setItemDraft] = useDraft<OutfitItem[] | null>(path + ":typed-items", null);
   const items = itemDraft ?? result.data?.items ?? [];
   async function mutate() {
@@ -81,6 +83,13 @@ export default function Detail() {
       setMessage(error instanceof Error ? error.message : "Unable to save pieces. Your selection is retained.");
     } finally { setBusy(false); }
   }
+  async function removeOutfit(){
+    if(preview){setMessage("Preview only. No outfit removed.");setConfirmDelete(false);return;}
+    setBusy(true);
+    try{await request(path,{method:"DELETE"});setValues({});setItemDraft(null);router.replace("/outfits");}
+    catch(e){setMessage(e instanceof Error ? e.message : "Unable to remove outfit.");}
+    finally{setBusy(false);setConfirmDelete(false);}
+  }
   return (
     <Screen title="The outfit edit.">
       <Gate preview={preview}>
@@ -115,6 +124,8 @@ export default function Detail() {
             />
           </>
         )}
+        <Button label="Delete outfit" variant="danger" disabled={busy || (!preview && !result.data)} onPress={()=>setConfirmDelete(true)}/>
+        <Confirm visible={confirmDelete} title="Delete this outfit?" text="Only this outfit and its item associations are removed. Garments and recommendations remain." busy={busy} onCancel={()=>setConfirmDelete(false)} onConfirm={()=>{void removeOutfit();}}/>
         <RouteLink to="/outfits" preview={preview}>
           Back to saved outfits
         </RouteLink>

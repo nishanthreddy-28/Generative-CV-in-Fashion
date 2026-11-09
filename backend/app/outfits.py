@@ -63,6 +63,11 @@ class StoredOutfitItem(OutfitItem):
     id: UUID
 
 
+class RecommendationSave(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    recommendationId:UUID
+
+
 class OutfitRead(BaseModel):
     model_config = ConfigDict(extra='forbid')
     id: UUID
@@ -106,7 +111,9 @@ def record(value):
 
 
 @router.post('/outfits', response_model=OutfitRead, status_code=201)
-async def create_outfit(body: OutfitCreate, data: Data):
+async def create_outfit(body: OutfitCreate | RecommendationSave, data: Data):
+    if isinstance(body,RecommendationSave):
+        return record(await rpc(data,'save_recommendation_outfit',{'p_id':str(body.recommendationId)},missing_detail='Recommendation or garment unavailable.'))
     return record(await rpc(data, 'create_outfit', {
         'p_name':body.name, 'p_description':body.description, 'p_occasion':body.occasion,
         'p_items':[item.model_dump(mode='json') for item in body.references()],
@@ -214,3 +221,9 @@ async def add_item(outfit_id:UUID,body:OutfitItem,data:Data):
 @router.delete('/outfits/{outfit_id}/items/{item_id}',response_model=OutfitRead)
 async def remove_item(outfit_id:UUID,item_id:UUID,data:Data):
     return await change_items(data,outfit_id,'remove',item_id=item_id)
+
+
+@router.delete('/outfits/{outfit_id}',status_code=204)
+async def delete_outfit(outfit_id:UUID,data:Data):
+    await rpc(data,'delete_outfit',{'p_id':str(outfit_id)},missing_detail='Outfit not found.')
+    return Response(status_code=204)

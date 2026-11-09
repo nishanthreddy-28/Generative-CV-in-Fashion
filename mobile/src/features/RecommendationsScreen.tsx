@@ -1,6 +1,6 @@
 import { useDraft } from "../hooks/useDraft";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Text, View } from "react-native";
 import { Screen, Gate, Notice, RouteLink, ResourceState, usePreview, ui } from "../components/Screen";
 import { Button } from "../components/Button";
@@ -17,8 +17,8 @@ const fields: Field[] = [
   { key:"preferences",label:"What are you in the mood for?",kind:"multiline",hint:"List colours, materials or brands you like. Preference words are matched literally; exclusions are not interpreted." },
   { key:"wardrobeOnly",label:"Pieces to include",required:true,options:["My wardrobe only","Wardrobe and catalog"] },
 ];
-export function RecommendationLooks({items,preview,onSave,saved,saving}: {
-  items:Recommendation[];preview:boolean;onSave?:(look:Recommendation)=>void;saved?:Record<string,string|null>;saving?:string;
+export function RecommendationLooks({items,preview,onSave,onCreateOutfit,saved,saving}: {
+  items:Recommendation[];preview:boolean;onSave?:(look:Recommendation)=>void;onCreateOutfit?:(look:Recommendation)=>void;saved?:Record<string,string|null>;saving?:string;
 }) {
   return <>{items.map(look=><View key={look.id} style={ui.card}>
     <Text style={ui.heading}>{look.name}</Text>
@@ -31,6 +31,7 @@ export function RecommendationLooks({items,preview,onSave,saved,saving}: {
     {look.reasons.map(reason=><Text key={reason} style={ui.body}>• {reason}</Text>)}
     {onSave && <Button label={savedStatus(look.id,look.savedId,saved ?? {}) ? "Saved" : "Save recommendation"}
       disabled={Boolean(savedStatus(look.id,look.savedId,saved ?? {}) || saving)} loading={saving===look.id} onPress={()=>onSave(look)} />}
+    {onCreateOutfit && <Button label="Save as outfit" variant="secondary" disabled={Boolean(saving)} onPress={()=>onCreateOutfit(look)}/>}
   </View>)}</>;
 }
 export function RecommendationsScreen() {
@@ -90,6 +91,15 @@ export function RecommendationsScreen() {
       finally{setSaving("");}
     });
   }
+  async function saveOutfit(look:Recommendation){
+    if(preview){setMessage("Preview only. No outfit saved.");return;}
+    await gate.current.run(async()=>{
+      setSaving(look.id);
+      try{const result=await request<{id:string}>("/outfits",{method:"POST",body:{recommendationId:look.id}});router.push(`/outfits/${encodeURIComponent(result.id)}`);}
+      catch(e){setMessage(e instanceof Error ? e.message : "Unable to save outfit.");}
+      finally{setSaving("");}
+    });
+  }
   return <Screen title="Find your next look." subtitle="Explainable combinations from your actual pieces.">
     <Gate preview={preview}>
       <Fields fields={fields} values={values} errors={errors} disabled={busy} onChange={(key,value)=>setValues(current=>({...current,[key]:value}))} />
@@ -97,12 +107,12 @@ export function RecommendationsScreen() {
       <Button label="Find outfits" onPress={generate} loading={busy} />
       {Boolean(message) && <Notice title="Recommendation status" text={message} />}
       {looks?.length===0 && <Notice title="No outfits found" text="Add a top and bottoms, or a dress and shoes. You can also include the shared catalog." />}
-      {looks && <RecommendationLooks items={looks} preview={preview} onSave={save} saved={saved} saving={saving} />}
+      {looks && <RecommendationLooks items={looks} preview={preview} onSave={save} onCreateOutfit={saveOutfit} saved={saved} saving={saving} />}
       <Button label="Refresh recent recommendations" variant="secondary" disabled={busy || history.loading} onPress={history.retry} />
       <Text style={ui.heading}>Recent recommendations</Text>
       <ResourceState loading={history.loading} error={history.error || historyError} retry={history.retry} />
       {!history.loading && !history.error && !historyError && !recent.length && <Notice title="No recent recommendations" text="Generate a look to start your history. Unavailable pieces are omitted from history results." />}
-      <RecommendationLooks items={recent} preview={preview} onSave={save} saved={saved} saving={saving} />
+      <RecommendationLooks items={recent} preview={preview} onSave={save} onCreateOutfit={saveOutfit} saved={saved} saving={saving} />
       <RouteLink to="/recommendations/saved" preview={preview}>View saved recommendations →</RouteLink>
       <RouteLink to="/outfits/new" preview={preview}>Build an outfit →</RouteLink>
       <RouteLink to="/outfits" preview={preview}>View saved outfits →</RouteLink>

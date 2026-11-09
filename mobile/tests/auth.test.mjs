@@ -175,3 +175,11 @@ test("sensitive account confirmation reauthenticates the same identity", async()
  assert.equal((await reauthenticate(auth,"a@example.invalid","secret-test","user-a")).access_token,"fresh");
  await assert.rejects(reauthenticate(auth,"a@example.invalid","secret-test","user-b"),/Account changed/);
 });
+
+test("web OAuth verifier survives redirect without persisting access or refresh tokens", async()=>{
+ const {webAuthStorage}=await import('../src/services/auth/webStorage.ts');
+ const values=new Map();const storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+ const before=webAuthStorage(storage);before.setItem('session','private-session');before.setItem('session-code-verifier','verifier');
+ const after=webAuthStorage(storage);assert.equal(after.getItem('session'),null);assert.equal(after.getItem('session-code-verifier'),'verifier');
+ after.removeItem('session-code-verifier');assert.equal(values.size,0);
+});
