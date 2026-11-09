@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "../features/session";
 export function useResource<T>(path: string, preview: boolean, admin = false, responseType?: "image") {
-  const { session, request } = useSession();
+  const { session, request, accountDeleting } = useSession();
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{
     key: string;
@@ -10,7 +10,7 @@ export function useResource<T>(path: string, preview: boolean, admin = false, re
   }>({ key: "", data: null, error: "" });
   const retry = useCallback(() => setRevision((n) => n + 1), []);
   const userId = session?.user.id;
-  const skip = preview || !userId || (admin && session?.user.role !== "admin");
+  const skip = preview || !userId || (accountDeleting && path !== "/account/deletion") || (admin && session?.user.role !== "admin");
   const key = JSON.stringify([path, userId, revision, responseType]);
   useEffect(() => {
     if (skip) return;

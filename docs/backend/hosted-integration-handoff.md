@@ -8,11 +8,15 @@ Supabase CLI 3.0.0; linked reference matches. Local api.schemas now includes api
 
 ## Hosted access result
 
-An authorized SUPABASE_ACCESS_TOKEN was present privately. Exactly one redirect-disabled GET to https://api.supabase.com/v1/projects/xpqhqhpqzkjaycraukrj/database/migrations was attempted on 2026-11-09. It failed at the transport layer before an HTTP status was available. Credentials and error response bodies were not printed. There was no retry. The underlying transport cause was not retained, so DNS/TLS/connectivity cannot be distinguished. Hosted history, including 202611060001, remains unverified. A failed request is not empty history.
+A locally supplied SUPABASE_ACCESS_TOKEN was present privately. The initial redirect-disabled GET failed before an HTTP status. A local diagnostic then verified that system Python has neither an available default CA file nor CA directory; the backend has a certifi CA bundle. This is evidence of a local trust-store problem, not proof that the original exception was exclusively TLS.
+
+At 2026-11-09T08:42:29.329715+05:30, one additional GET to https://api.supabase.com/v1/projects/xpqhqhpqzkjaycraukrj/database/migrations used the backend CA bundle with certificate verification enabled and redirects disabled. It reached the Management API and returned **HTTP 401**. Response body and authorization headers were suppressed. No more requests were made after this authentication rejection. Token validity, revocation or project permission cannot be diagnosed from the suppressed response; do not assume a specific cause or modify credentials automatically.
+
+Hosted migration history, including version 202611060001, remains unverified. No remote migration list can be compared honestly, and failure is not empty history. The current blocker is Management API authentication; a trusted project owner must privately provide accepted read access or perform an authorized read-only history inspection. Never paste replacement credentials into chat.
 
 ## Ordered approval and acceptance steps
 
-1. Restore working read-only Management API transport using the authorized private environment token; inspect history and compare the exact local inventory below. No credentials in chat/logs. Inspect current hosted schemas, grants, policies, Auth and Storage before any changes.
+1. Restore accepted read-only Management API authentication privately (the CA-backed transport reached HTTP 401); inspect history and compare the exact local inventory below. No credentials in chat/logs. Inspect current hosted schemas, grants, policies, Auth and Storage before any changes.
 2. Review all additive SQL below, especially provisioning trigger/backfill, forced RLS, restrictive Storage policies, worker privileges and retention defaults. Obtain explicit hosted-application approval. No SQL has been applied remotely.
 3. After separate approval, run `supabase migration list --linked` and `supabase db push --linked --dry-run`. Inspect the exact planned versions; only a separately approved `supabase db push --linked` may apply that plan. Never repair, reset or seed as part of this handoff.
 4. Separately approve hosted Data API exposure: include api, never app_private; verify schema/table/operation/column privileges. Local config is not proof of hosted configuration. Do not push configuration automatically.

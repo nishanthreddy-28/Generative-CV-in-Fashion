@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createClient } from "@supabase/supabase-js";
-import { beginGoogleOAuth, exchangeOAuth, reauthenticate, catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
+import { accountRequestAllowed, beginGoogleOAuth, exchangeOAuth, reauthenticate, catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
 import { secureSessionStorage } from "../src/services/auth/storage.ts";
 import { apiRequest } from "../src/services/api/client.ts";
 
@@ -208,3 +208,12 @@ test("real SDK PKCE redirect exchange restores only the verifier and returns a f
   assert.equal(result.access_token,'oauth-access');
   assert.deepEqual([...values.keys()],[]);
 });
+
+ test("accepted deletion permits only status reads while ordinary and stale requests stay closed",()=>{
+ assert.equal(accountRequestAllowed(true,"/account/deletion"),true);
+ assert.equal(accountRequestAllowed(true,"/account/deletion","DELETE"),false);
+ for(const path of ["/profile","/wardrobe","/catalog","/outfits","/try-on/jobs","/account/deletion?other=user"]){
+ assert.equal(accountRequestAllowed(true,path),false);
+ assert.equal(accountRequestAllowed(false,path),true);
+ }
+ });
