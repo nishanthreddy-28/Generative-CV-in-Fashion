@@ -266,6 +266,9 @@ export const ui = StyleSheet.create({
   image: { width: "100%", aspectRatio: 0.85, backgroundColor: colors.border },
   overlay: {
     flex: 1,
+    width: "100%",
+    alignSelf: "center",
+    ...(Platform.OS === "web" ? {maxWidth: 480} : {}),
     backgroundColor: "#0009",
     justifyContent: "center",
     alignItems: "center",

@@ -1,7 +1,7 @@
 import {Stack} from "expo-router";
 import {StatusBar} from "expo-status-bar";
 import {SafeAreaProvider} from "react-native-safe-area-context";
-import {ActivityIndicator,Text,View} from "react-native";
+import {ActivityIndicator,Platform,StyleSheet,Text,View} from "react-native";
 import {SessionProvider,useSession} from "../features/session";
 import {guestScreens,publicScreens,personalScreens,adminScreens,accountScreens,routeAccess} from "../features/navigation";
 import {colors} from "../theme/tokens";
@@ -21,6 +21,11 @@ function AppNavigator(){
   {publicScreens.map(name=><Stack.Screen key={name} name={name}/>)}
  </Stack>;
 }
-export default function RootLayout(){return <SafeAreaProvider><SessionProvider>
+export default function RootLayout(){return <View style={styles.browser}><View style={styles.app}><SafeAreaProvider><SessionProvider>
  <StatusBar style="dark"/><AppNavigator/>
- </SessionProvider></SafeAreaProvider>;}
+ </SessionProvider></SafeAreaProvider></View></View>;}
+
+const styles=StyleSheet.create({
+ browser:{flex:1,backgroundColor:"#E8E3DF"},
+ app:{flex:1,width:"100%",alignSelf:"center",backgroundColor:colors.background,...(Platform.OS==="web"?{maxWidth:480}:{})},
+});
