@@ -40,3 +40,11 @@ Browser access became available during the next personal-review gate. Earlier st
 - Screenshots saved outside the repository under the session visualization directory (ui-review/mobile-login.jpg and ui-review/desktop-login.jpg). The Chrome tab is left on login for the user's review; both local servers remain running.
 
 Remaining acceptance: no signed-in dashboard/collection/admin visual inspection, hosted data persistence, real email delivery, Google callback, native device or installed build test was performed. Those require actual authorized accounts/configuration and the next approval stages. This review does not approve hosted writes or feature-flag enablement. Wait for the user's personal UI approval before continuing to hosted/Android/final acceptance.
+
+## Mobile campaign landing — 2026-11-09
+
+Added a burgundy/ivory fashion campaign with three generated editorial assets showing fictional adult models. H&M, Zara and Mango were used as visual references for editorial navigation and composition. The original assets are decorative brand imagery, not catalog records or try-on outputs. Optimized JPEG files total approximately 1 MiB and are bundled locally. The landing includes section navigation, product explanation, a style edit, account links and expandable questions. Phone layouts stack, while desktop adds a split hero and three-column feature explanation.
+
+Chrome local review covered 320, 375, 390, 430, 768 and 1280 CSS pixels. No document horizontal overflow was detected and all rendered images loaded. Section links, FAQ expansion, email/password page navigation and the paused privacy URL's return to home were exercised. Public privacy links were removed at the owner's request. The existing privacy route is temporarily redirected to home. Existing signed-in account controls and backend security continue to follow their access rules.
+
+The owner chose a real test account after hosted setup approval. No review credentials or sample customer records were created. That account and real persistence acceptance remain dependent on the reviewed migration, independent verification, Auth callbacks and security gates. The local campaign review does not establish those hosted workflows.
