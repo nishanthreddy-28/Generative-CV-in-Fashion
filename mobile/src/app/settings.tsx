@@ -38,7 +38,7 @@ const passwordFields: Field[] = [
 ];
 export default function Settings() {
   const preview = usePreview();
-  const { session, logout, request } = useSession();
+  const { session, logout, deleteAccount } = useSession();
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deletion, setDeletion] = useState<Record<string, string>>({});
@@ -78,10 +78,7 @@ export default function Settings() {
         router.replace("/login");
       } else if (session) {
         if(deletion.password)await reauthenticate(requireAuth(),session.user.email,deletion.password,session.user.id);
-        await request("/account", {
-          method: "DELETE",
-          body: { confirmation: "DELETE" },
-        });
+        await deleteAccount();
         setDeletion({});setMessage("Deletion accepted. Your private data is inaccessible; trusted cleanup is pending.");
         router.replace("/account-deletion");
       }

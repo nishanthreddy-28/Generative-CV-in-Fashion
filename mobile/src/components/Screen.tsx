@@ -71,7 +71,8 @@ export function Gate({
   admin = false,
   children,
 }: PropsWithChildren<{ preview: boolean; admin?: boolean }>) {
-  const { session, ready } = useSession();
+  const { session, ready, accountDeleting } = useSession();
+  if (accountDeleting && !preview) return <Notice title="Account deletion pending" text="Normal application access is disabled."><RouteLink to="/account-deletion">Check deletion progress</RouteLink></Notice>;
   const access = protectedScreenState(preview, ready, session?.user.role, admin);
   if (access === "restoring")
     return <ActivityIndicator accessibilityLabel="Restoring session" />;

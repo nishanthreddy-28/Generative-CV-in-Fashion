@@ -123,3 +123,7 @@ export async function beginGoogleOAuth(auth: Pick<Auth,"signInWithOAuth">, redir
   target.searchParams.set("redirect_to",callback.toString());
   return target;
 }
+
+export function accountRequestAllowed(deleting: boolean, path: string, method = "GET") {
+  return !deleting || (path === "/account/deletion" && method === "GET");
+}

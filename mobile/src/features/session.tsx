@@ -5,7 +5,7 @@ import {
 import { AppState } from "react-native";
 import type { Session as AuthSession } from "@supabase/supabase-js";
 import { apiRequest, ApiError, type RequestOptions } from "../services/api/client";
-import { exchangeOAuth, catalogRole, currentAccessToken, register, signIn } from "../services/auth/contracts";
+import { accountRequestAllowed, exchangeOAuth, catalogRole, currentAccessToken, register, signIn } from "../services/auth/contracts";
 import { clearPersistedSession, emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
 import { draftStore } from "./draftStore";
 import type { Session } from "../types/domain";
@@ -13,6 +13,8 @@ import type { Session } from "../types/domain";
 type Context = {
   session: Session | null;
   ready: boolean;
+  accountDeleting: boolean;
+  deleteAccount: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -27,6 +29,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [ready, setReady] = useState(!supabase);
   const identity = useRef<{ id: string } | null>(null);
   const signedOut = useRef(false);
+  const deleting = useRef(false);
+  const [accountDeleting, setAccountDeleting] = useState(false);
   const [permissionRevision, setPermissionRevision] = useState(0);
 
   const applySession = useCallback((next: AuthSession | null) => {
@@ -35,6 +39,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const id = signedOut.current ? undefined : user?.id;
     if (identity.current?.id !== id) {
       draftStore.clear();
+      deleting.current = false;
+      setAccountDeleting(false);
       identity.current = id ? { id } : null;
     }
     if (!id || !user) {
@@ -124,6 +130,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const caller = identity.current;
     const auth = supabase?.auth;
     if (!caller || !auth) throw new ApiError("Sign in to continue.", 401);
+    if (!accountRequestAllowed(deleting.current, path, options?.method)) throw new ApiError("Account deletion is pending. Check deletion progress.", 403);
     const token = await currentAccessToken(
       () => auth.getSession(), caller.id,
       () => identity.current === caller && !options?.signal?.aborted,
@@ -131,8 +138,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
     if (!token) throw new ApiError("Unable to use this session. Sign in again or retry.", 401);
     const result = await apiRequest<T>(path, { ...options, token });
     if (identity.current !== caller) throw new ApiError("Account changed during the request.", 401);
+    if (!accountRequestAllowed(deleting.current, path, options?.method)) throw new ApiError("Account deletion is pending.", 403);
     return result;
   }, []);
+
+  const deleteAccount = useCallback(async () => {
+    const caller = identity.current;
+    await request<void>("/account", { method: "DELETE", body: { confirmation: "DELETE" } });
+    if (identity.current !== caller) throw new ApiError("Account changed during deletion.", 401);
+    deleting.current = true;
+    setAccountDeleting(true);
+    draftStore.clear();
+  }, [request]);
 
   useEffect(() => {
     const userId = session?.user.id;
@@ -152,7 +169,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, [session?.user.id, permissionRevision, request]);
 
   return (
-    <SessionContext.Provider value={{ session, ready, login, signup, logout, completeOAuth, request }}>
+    <SessionContext.Provider value={{ session, ready, accountDeleting, deleteAccount, login, signup, logout, completeOAuth, request }}>
       {children}
     </SessionContext.Provider>
   );
