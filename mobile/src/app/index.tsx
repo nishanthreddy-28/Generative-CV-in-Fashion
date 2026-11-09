@@ -31,7 +31,11 @@ export default function Introduction() {
           <Text style={styles.feature}>YOUR STYLE</Text>
           <Text style={styles.feature}>YOUR WAY</Text>
         </View>
-        <Button label="Get started  →" onPress={() => router.push("/login")} />
+        {process.env.EXPO_PUBLIC_REVIEW_ONLY === "true" ? (
+          <Text style={styles.body}>Website preview · Accounts and wardrobe data are unavailable.</Text>
+        ) : (
+          <Button label="Get started  →" onPress={() => router.push("/login")} />
+        )}
         <Text style={styles.note}>
           A little intention. A lot more possibility.
         </Text>

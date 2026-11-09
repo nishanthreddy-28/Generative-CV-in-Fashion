@@ -29,3 +29,6 @@ jobs:
           name: android-js-${{ github.sha }}
           path: mobile/dist
           retention-days: 30
+      - run: npm run build
+        env:
+          DRAPE_WEB_MODE: review
