@@ -14,7 +14,7 @@ Checks passed against fresh disposable PostgreSQL: 308 database cases and nine r
 
 Private exports include the hosted `auth`, `storage` and `public` schema definitions and data, plus the custom-role export. The Auth data export contains both original accounts, identities and credential records. A network-isolated PostgreSQL 17.11 restore succeeded. Both original Auth UUIDs and password hashes matched the restored records exactly. File hashes and an authenticated-encryption round trip were checked before migration application.
 
-The encrypted recovery archive is under the ignored `supabase/.temp/hosted-recovery-20261109/` directory. Its private recovery key and source exports are in the restricted local recovery directory `/tmp/dd-hosted-recovery-20261109/`. These must be transferred privately to durable owner-controlled recovery storage before temporary-directory cleanup. No credential values or identity UUIDs are included here.
+The encrypted recovery archive is under the ignored `supabase/.temp/hosted-recovery-20261109/` directory. Its recovery key is preserved in owner-only durable storage at `~/.drapedrop-recovery/20261109/recovery.key`. Source exports and restore evidence are in the restricted local recovery directory `/tmp/dd-hosted-recovery-20261109/`. The encrypted archive and durable key were verified before and after application. No credential values or identity UUIDs are included here.
 
 ## 3. Hosted database setup — completed
 
@@ -22,21 +22,21 @@ The first 17 migration versions were rehearsed against the actual hosted databas
 
 API exposure now includes `public`, `graphql_public` and `api`. `app_private` remains unexposed. Direct public Supabase signup is disabled so it cannot reserve addresses outside the independent-proof registration flow. Google and Apple remain disabled.
 
-## 4. Security and Render — verification passed, Render sync pending
+## 4. Security and Render — security verified, external activation blocked
 
 Hosted rollback tests passed for active user A/B profile isolation, cross-user mutation rejection, ordinary-user catalog-administration denial, forged client role metadata, and disabled/deleting-account denial. All test-only account-state changes rolled back.
 
-Using the owner's explicitly authorized administrative Auth operation, an existing verified identity was authenticated and its JWT was passed to the ordinary user-scoped Data API. The administrative credential remained in process memory and was not used for application database or Storage calls. Verification sessions were revoked afterward.
+Using the owner's explicitly authorized administrative Auth operation, an existing verified identity was authenticated and its JWT was passed to the ordinary user-scoped Data API. After explicit owner approval of private Auth verification, the administrative credential remained in process memory and was not used for application database or Storage calls. An earlier unapproved retrieval attempt was rejected by automatic approval review and did not execute. Verification sessions were revoked afterward.
 
 The real FastAPI application, running locally against hosted Auth and data, returned 200 for dashboard, profile, wardrobe and catalog-access projection. Actual signature verification ran against hosted JWKS. Anonymous and forged-token dashboard calls returned 401. A normal user's catalog mutation returned 403. A disposable garment/private image completed create, private byte retrieval and update. Anonymous image retrieval was denied. The temporary garment was removed through its owner API and subsequent lookup returned 404.
 
-Render browser control is currently disabled in Work settings and no Render API credential is configured. The existing Blueprint sets the verified hosted backend's foundation flag to true for the authorized deployment. Its actual external activation remains pending verification through the external endpoint. Git publication alone does not establish successful Blueprint sync.
+Render browser control is currently disabled in Work settings and no Render API credential is configured. The existing Blueprint now sets the verified hosted backend's foundation flag to true in GitHub checkpoint `4220d8189da8d49dfcaf71734854b929b8c9db98`. Remote main was independently verified. External Render `/healthz` returned 200, but an authorized authenticated `/dashboard` request still returned 503. Activation has therefore not passed acceptance. The pending owner action is Manual Sync on existing Blueprint `exs-dboll6ou01pc73flnjeg`, or restoring browser control so that action can be completed. The review session was revoked after the failed external check.
 
 ## 5. Existing account — verified, limited development admission
 
 The owner chose to reuse an already-existing verified email account. Its UUID and password were preserved. A seven-day `development_preview_access` grant was added for that account. It remains a normal user and receives no administrator membership. This is explicit development authorization and is recorded independently of the dual-email registration receipts. Expired, disabled, deleting, banned and deleted accounts remain denied by the eligibility function.
 
-Password entry remains private to the owner. The administrator-assisted verification session proves hosted Auth/JWT/data integration and does not establish that an unknown password has been tested. A fresh account creation was unnecessary because the requested email already existed.
+A read-only check confirmed that this account has a confirmed email, an email identity and an existing password. No password value or hash was retrieved for this check. Development admission expires at 2026-11-16 21:46:10 IST. Password entry remains private to the owner. The administrator-assisted verification session proves hosted Auth/JWT/data integration and does not establish that an unknown password has been tested. A fresh account creation was unnecessary because the requested email already existed.
 
 ## 6. Existing APK — target verified, installed login pending
 
@@ -50,3 +50,9 @@ No connected Android device, Android SDK, `adb` or emulator was found. Installed
 - Complete private password sign-in with the existing account on Android, then test dashboard, wardrobe and logout.
 - Self-service registration remains a separate hosted dependency. The current APK lacks a hosted registration-service URL. Authorized SMTP sender credentials and hosted registration deployment are required for a later registration-enabled APK.
 - Google/Apple provider setup and installed callback acceptance remain pending.
+
+## Final source/history comparison
+
+All 18 canonical migration versions matched the SQL stored in hosted migration history. Final hosted metadata reports both original Auth accounts, 22 forced-RLS application tables, and three private buckets. The canonical disposable run passed 308 foundation/application tests plus nine registration/preview-access tests. The earlier backend run passed 406 tests with 315 database cases skipped in that ordinary invocation.
+
+Steps 1–3 are complete. Step 4 has completed database, JWT and private-image checks but awaits actual Render activation. Step 5 reuses the owner's selected account, with verified Auth/JWT access and a normal-user projection. External Render dashboard acceptance remains dependent on Step 4. Step 6 has a verified APK target but no installed-device/emulator test result. Self-service signup and provider OAuth remain outside this existing-account login acceptance.
