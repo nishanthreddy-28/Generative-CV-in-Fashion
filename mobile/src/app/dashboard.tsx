@@ -1,6 +1,7 @@
+import {FramedImage} from "../components/FramedImage";
 import {useCallback} from "react";
 import {useFocusEffect} from "expo-router";
-import {Image,Text,View,StyleSheet} from "react-native";
+import {Text,View,StyleSheet} from "react-native";
 import {Button} from "../components/Button";
 import {Screen,Gate,Notice,RouteLink,ResourceState,ui} from "../components/Screen";
 import {useResource} from "../hooks/useResource";
@@ -12,7 +13,7 @@ export default function DashboardScreen(){
  return <Screen title="Your personal edit." subtitle="Less guesswork. More outfits that feel like you.">
   <Gate preview={false}>
    <View style={styles.hero}>
-    <Image source={require('../../assets/editorial/introduction.png')} style={styles.heroImage} accessibilityLabel="Curated fashion editorial"/>
+    <FramedImage source={require('../../assets/editorial/introduction.png')} ratio={1.8} contain label="Curated fashion editorial"/>
     <View style={styles.heroCopy}>
      <Text style={styles.eyebrow}>THE EVERYDAY EDIT</Text>
      <Text style={styles.heroTitle}>Make more of{`\n`}what you own.</Text>

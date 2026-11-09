@@ -21,4 +21,4 @@ export function WardrobeImage({id,label,preview=false,source="wardrobe"}:{id:str
    </View>}
  </View>;
 }
-const styles=StyleSheet.create({frame:{width:'100%',aspectRatio:0.8,backgroundColor:'#EFEEE9',overflow:'hidden',borderRadius:4},image:{width:'100%',height:'100%'},placeholder:{flex:1,alignItems:'center',justifyContent:'center',padding:12,gap:12},caption:{fontSize:12,color:colors.muted,textAlign:'center'},retry:{minHeight:44,padding:12},retryText:{color:colors.ink,textDecorationLine:'underline',fontSize:12}});
+const styles=StyleSheet.create({frame:{width:'100%',aspectRatio:0.8,backgroundColor:'#EFEEE9',overflow:'hidden',borderRadius:4},image:{position:"absolute",top:0,left:0,width:"100%",height:"100%"},placeholder:{flex:1,alignItems:'center',justifyContent:'center',padding:12,gap:12},caption:{fontSize:12,color:colors.muted,textAlign:'center'},retry:{minHeight:44,padding:12},retryText:{color:colors.ink,textDecorationLine:'underline',fontSize:12}});

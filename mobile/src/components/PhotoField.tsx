@@ -1,5 +1,6 @@
+import {FramedImage} from "./FramedImage";
 import { useState } from "react";
-import { Image, Platform, Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Button } from "./Button";
 import { ui } from "./Screen";
@@ -53,10 +54,11 @@ export function PhotoField({
       <Text style={ui.label}>{label}</Text>
       {!value && <View style={{aspectRatio:1.5,borderWidth:1,borderStyle:"dashed",borderColor:"#C7C8C0",backgroundColor:"#EFEEE9",alignItems:"center",justifyContent:"center",padding:20,gap:8}}><Text style={ui.heading}>One piece. A clearer picture.</Text><Text style={ui.body}>Choose a clear photo from your library.</Text></View>}
       {value && (
-        <Image
-          accessibilityLabel={label}
+        <FramedImage
+          label={label}
           source={{ uri: value.uri }}
-          style={[ui.image, { aspectRatio: 1 }]}
+          ratio={1}
+          contain
         />
       )}
       <Button
