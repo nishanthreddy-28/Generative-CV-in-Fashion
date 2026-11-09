@@ -19,19 +19,19 @@ npm run export:android
 ```
 
 ## Current scope
-Frontend screens cover account forms, dashboard, personal and body profiles, wardrobe, catalog, outfits, recommendations, try-on, preferences and administration. Open `/preview` to review all flows without a backend. Preview uses no fabricated records and never submits changes.
+The customer app covers authentication, dashboard, personal and body profiles, preferences, wardrobe, catalog, outfits, recommendations, try-on job tracking, and trusted catalog administration. Personal and administrator routes are protected. The public website review build displays a service availability notice.
 
-Supabase email/password Auth source is integrated: signup, confirmation/recovery callbacks, login/logout, refresh and native secure session restoration. Hosted email/callback and device acceptance remain pending. Native sessions use SecureStore; web sessions end on page reload. Google sign-in is unavailable. Business persistence is limited to the locally tested FastAPI profile/preferences foundation, which stays disabled pending hosted verification. Wardrobe/catalog/outfit/job APIs and AI processing are not implemented. See [current workflow status](../docs/WORKFLOW_STATUS.md), [Auth setup](../docs/backend/frontend-supabase-auth-integration.md) and the preserved [35-contract inventory](../docs/backend/api-requirements.md).
+Supabase Auth is wired for email/password signup, confirmation, recovery, login/logout, refresh, and native secure session restoration. Google OAuth code is gated pending provider and callback verification. Web sessions end on reload. The FastAPI workflows and PostgreSQL policies have local test coverage. Hosted persistence remains gated by `DATABASE_FOUNDATION_ENABLED=false`, and try-on inference is deferred. See [customer experience](../docs/frontend/customer-experience.md), [Auth setup](../docs/backend/frontend-supabase-auth-integration.md), and the [current checklist](../docs/REMAINING_FULL_STACK_CHECKLIST.md).
 
-Configure `.env` privately using the API origin, Supabase project origin and publishable key template. Never bundle privileged credentials. A reachable API does not supply missing routes or authorize enabling the database flag. Public introduction and workflow preview screens do not load private records.
+Configure `.env` privately using the API origin, Supabase project origin and publishable key template. Never bundle privileged credentials. The public introduction does not load private records. Enable the database feature only after hosted acceptance and approval.
 
-The Android application ID, icons, signing and Play Console configuration must be finalized before a release build. No production identifier is committed yet.
+The candidate Android package is `com.drapedrop.app`. See [Android internal testing](../docs/ANDROID_INTERNAL_TESTING.md) for signing, device checks and Play Console preparation.
 
 ## Preview the implemented screens in a browser
 ```sh
-npm run web -- --localhost --port 8082
+npm run web -- --localhost --port 8081
 ```
-Open http://localhost:8082/preview on the development computer. This renders the actual React Native screens through React Native Web; it is not Android device verification. Use the workflow index to inspect account forms, empty collections, draft editors, and integration notices.
+Open http://localhost:8081/ on the development computer. Review the welcome, account and privacy screens. Reviewing personal screens requires an authorized account and usable backend configuration.
 
 The preview server must remain running. This localhost URL is not a publicly hosted deployment.
 

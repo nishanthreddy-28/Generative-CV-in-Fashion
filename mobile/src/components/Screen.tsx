@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Link, type Href, usePathname } from "expo-router";
 import { Button } from "./Button";
-import { colors } from "../theme/tokens";
+import { colors, typography } from "../theme/tokens";
 import { useSession } from "../features/session";
 import { appDestinations, activeDestination } from "../features/navigation";
 import { protectedScreenState } from "../services/auth/contracts";
@@ -40,6 +40,8 @@ export function Screen({
   const {width}=useWindowDimensions();
   const showNavigation=!!session && !accountDeleting;
   const active=activeDestination(path);
+  const wide = !session && (path === "/login" || path === "/signup") && width >= 860;
+  const reviewOnly = process.env.EXPO_PUBLIC_REVIEW_ONLY === "true";
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}} edges={["top","bottom"]}>
     <KeyboardAvoidingView
@@ -48,11 +50,11 @@ export function Screen({
     >
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[ui.screen,width<380 && {paddingHorizontal:18}]}
+        contentContainerStyle={[ui.screen, wide && ui.wideScreen, width < 380 && ui.narrowScreen]}
       >
         <View style={ui.top}>
           <Link href={session ? "/dashboard" : "/"} style={ui.brand} accessibilityLabel="Drape and Drop home">DRAPE &amp; DROP</Link>
-          {!session && <RouteLink to={path==="/login" ? "/signup" : "/login"}>{path==="/login" ? "Join us" : "Sign in"}</RouteLink>}
+          {!session && !reviewOnly && <RouteLink to={path==="/login" ? "/signup" : "/login"}>{path==="/login" ? "Join us" : "Sign in"}</RouteLink>}
           {showNavigation && <RouteLink to="/settings">Your account</RouteLink>}
         </View>
         <Text accessibilityRole="header" style={ui.title}>
@@ -192,6 +194,8 @@ export const ui = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
+  wideScreen: { maxWidth: 960 },
+  narrowScreen: { paddingHorizontal: 18 },
   top: {
     flexDirection: "row",
     alignItems: "center",
@@ -203,10 +207,9 @@ export const ui = StyleSheet.create({
   },
   brand: { fontSize: 13, letterSpacing: 2, color: colors.ink },
   title: {
-    fontSize: 32,
-    lineHeight: 38,
-    fontFamily: "serif",
-    color: colors.ink,
+    ...typography.editorial,
+    fontSize: 38,
+    lineHeight: 44,
   },
   heading: { fontSize: 17, fontWeight: "600", color: colors.ink },
   body: { fontSize: 15, lineHeight: 24, color: colors.muted },

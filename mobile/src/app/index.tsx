@@ -1,87 +1,83 @@
-import {FramedImage} from "../components/FramedImage";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { Link } from "expo-router";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button } from "../components/Button";
-import { colors } from "../theme/tokens";
+import { FramedImage } from "../components/FramedImage";
+import { colors, typography } from "../theme/tokens";
+
+const reviewOnly = process.env.EXPO_PUBLIC_REVIEW_ONLY === "true";
+const stories = [
+  { number: "01", title: "The wardrobe", text: "Bring the pieces you already own into one considered collection." },
+  { number: "02", title: "The outfit", text: "Put pieces together, save the combinations you love and wear them again." },
+  { number: "03", title: "The next look", text: "Find outfit ideas using your wardrobe, the catalog and your preferences." },
+];
+
 export default function Introduction() {
+  const { width, fontScale } = useWindowDimensions();
+  const wide = width >= 860 && fontScale <= 1.2;
   return (
     <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.brand}>
-          <Text style={styles.wordmark}>DRAPE & DROP</Text>
-          <Text style={styles.edition}>THE PERSONAL EDIT</Text>
+      <ScrollView contentContainerStyle={styles.page}>
+        <View style={styles.masthead}>
+          <Text style={styles.brand}>DRAPE &amp; DROP</Text>
+          <Link href={reviewOnly ? "/privacy" : "/login"} style={styles.link}>
+            {reviewOnly ? "Privacy" : "Sign in"}
+          </Link>
         </View>
-        <FramedImage
-          source={require("../../assets/editorial/introduction.png")}
-          ratio={1}
-          contain
-          label="Fashion editorial introducing Drape and Drop"
-        />
-        <Text style={styles.eyebrow}>LESS GUESSWORK. MORE YOU.</Text>
-        <Text accessibilityRole="header" style={styles.title}>
-          A wardrobe that{"\n"}works for you.
-        </Text>
-        <Text style={styles.body}>
-          Discover your personal style, bring your wardrobe together, and make
-          room for outfits you love.
-        </Text>
-        <View style={styles.features}>
-          <Text style={styles.feature}>YOUR WARDROBE</Text>
-          <Text style={styles.feature}>YOUR STYLE</Text>
-          <Text style={styles.feature}>YOUR WAY</Text>
+        <View style={[styles.hero, wide && styles.heroWide]}>
+          <View style={wide && styles.column}>
+            <FramedImage source={require("../../assets/editorial/introduction.png")}
+              label="A layered trench coat with tailored trousers and a leather crossbody bag" />
+          </View>
+          <View style={[styles.heroCopy, wide && styles.column]}>
+            <Text style={styles.eyebrow}>THE PERSONAL EDIT / 01</Text>
+            <Text accessibilityRole="header" style={[styles.title, wide && styles.titleWide]}>
+              Make more of what you wear.
+            </Text>
+            <Text style={styles.body}>A digital wardrobe for the clothes you own and the outfits you’ll reach for again.</Text>
+            {reviewOnly ? (
+              <Text style={styles.review}>Website preview · Accounts and wardrobe data are unavailable.</Text>
+            ) : (
+              <Link href="/signup" style={styles.action}>Start your wardrobe  →</Link>
+            )}
+          </View>
         </View>
-        {process.env.EXPO_PUBLIC_REVIEW_ONLY === "true" ? (
-          <Text style={styles.body}>Website preview · Accounts and wardrobe data are unavailable.</Text>
-        ) : (
-          <Button label="Get started  →" onPress={() => router.push("/login")} />
-        )}
-        <Text style={styles.note}>
-          A little intention. A lot more possibility.
-        </Text>
+        <View style={[styles.stories, wide && styles.storiesWide]}>
+          {stories.map(story => (
+            <View key={story.number} style={[styles.story, wide && styles.column]}>
+              <Text style={styles.eyebrow}>{story.number}</Text>
+              <Text accessibilityRole="header" style={styles.storyTitle}>{story.title}</Text>
+              <Text style={styles.body}>{story.text}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.footer}>
+          <Text style={styles.eyebrow}>DRAPE &amp; DROP</Text>
+          <Link href="/privacy" style={styles.link}>Privacy &amp; your data</Link>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: {
-    padding: 24,
-    gap: 20,
-    maxWidth: 540,
-    width: "100%",
-    alignSelf: "center",
-  },
-  brand: { alignItems: "center", gap: 8, paddingVertical: 12 },
-  wordmark: { fontSize: 20, letterSpacing: 4, color: colors.ink },
-  edition: { fontSize: 9, letterSpacing: 3, color: colors.muted },
-  image: {
-    width: "100%",
-    aspectRatio: 0.95,
-    borderRadius: 8,
-    backgroundColor: colors.border,
-  },
-  eyebrow: { fontSize: 10, letterSpacing: 2, color: colors.sage, marginTop: 8 },
-  title: {
-    fontSize: 42,
-    lineHeight: 47,
-    fontFamily: "serif",
-    color: colors.ink,
-  },
-  body: { fontSize: 16, lineHeight: 25, color: colors.muted },
-  features: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    gap: 8,
-  },
-  feature: { fontSize: 9, letterSpacing: 1, color: colors.sage },
-  note: {
-    fontSize: 12,
-    textAlign: "center",
-    color: colors.muted,
-    paddingBottom: 12,
-  },
+  page: { width: "100%", maxWidth: 1280, alignSelf: "center", paddingHorizontal: 20, paddingBottom: 24 },
+  masthead: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, paddingVertical: 16 },
+  brand: { fontSize: 19, fontWeight: "700", letterSpacing: 2, color: colors.ink },
+  hero: { backgroundColor: colors.editorial },
+  heroWide: { flexDirection: "row", alignItems: "center" },
+  column: { flex: 1, minWidth: 0 },
+  heroCopy: { gap: 20, padding: 24, paddingBottom: 32 },
+  eyebrow: { color: colors.sage, fontSize: 11, fontWeight: "700", letterSpacing: 2 },
+  title: { ...typography.editorial, fontSize: 40, lineHeight: 44 },
+  titleWide: { fontSize: 60, lineHeight: 65 },
+  body: { color: colors.muted, fontSize: 16, lineHeight: 25, maxWidth: 420 },
+  review: { color: colors.ink, fontSize: 14, lineHeight: 21, borderTopWidth: 1, borderColor: colors.border, paddingTop: 14 },
+  action: { alignSelf: "flex-start", backgroundColor: colors.ink, color: colors.surface, fontWeight: "600", padding: 16, minHeight: 52 },
+  link: { color: colors.ink, textDecorationLine: "underline", paddingVertical: 14, minHeight: 48 },
+  stories: { gap: 20, paddingVertical: 32 },
+  storiesWide: { flexDirection: "row", gap: 24 },
+  story: { borderTopWidth: 1, borderColor: colors.border, gap: 10, paddingTop: 16 },
+  storyTitle: { ...typography.editorial, fontSize: 28 },
+  footer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, borderTopWidth: 1, borderColor: colors.border, paddingTop: 8 },
 });
