@@ -22,15 +22,17 @@ The first 17 migration versions were rehearsed against the actual hosted databas
 
 API exposure now includes `public`, `graphql_public` and `api`. `app_private` remains unexposed. Direct public Supabase signup is disabled so it cannot reserve addresses outside the independent-proof registration flow. Google and Apple remain disabled.
 
-## 4. Security and Render — security verified, external activation blocked
+## 4. Security and Render — hosted API acceptance passed
 
 Hosted rollback tests passed for active user A/B profile isolation, cross-user mutation rejection, ordinary-user catalog-administration denial, forged client role metadata, and disabled/deleting-account denial. All test-only account-state changes rolled back.
 
-Using the owner's explicitly authorized administrative Auth operation, an existing verified identity was authenticated and its JWT was passed to the ordinary user-scoped Data API. After explicit owner approval of private Auth verification, the administrative credential remained in process memory and was not used for application database or Storage calls. An earlier unapproved retrieval attempt was rejected by automatic approval review and did not execute. Verification sessions were revoked afterward.
+Using the owner's explicitly authorized administrative Auth operation, an existing verified identity was authenticated and its JWT was passed to the ordinary user-scoped Data API. After explicit owner approval of private Auth verification, the administrative credential remained in process memory and was not used for application database or Storage calls. An earlier unapproved retrieval attempt was rejected by automatic approval review and did not execute. Successful verification sessions were revoked afterward. One earlier external verification reached its assertions but its logout failed with a network routing error; that earlier session revocation is unconfirmed. No token was persisted, and no blanket logout of the owner’s other sessions was performed. The final verification session was successfully revoked.
 
 The real FastAPI application, running locally against hosted Auth and data, returned 200 for dashboard, profile, wardrobe and catalog-access projection. Actual signature verification ran against hosted JWKS. Anonymous and forged-token dashboard calls returned 401. A normal user's catalog mutation returned 403. A disposable garment/private image completed create, private byte retrieval and update. Anonymous image retrieval was denied. The temporary garment was removed through its owner API and subsequent lookup returned 404.
 
-Render browser control is currently disabled in Work settings and no Render API credential is configured. The existing Blueprint now sets the verified hosted backend's foundation flag to true in GitHub checkpoint `4220d8189da8d49dfcaf71734854b929b8c9db98`. Remote main was independently verified. External Render `/healthz` returned 200, but an authorized authenticated `/dashboard` request still returned 503. Activation has therefore not passed acceptance. The pending owner action is Manual Sync on existing Blueprint `exs-dboll6ou01pc73flnjeg`, or restoring browser control so that action can be completed. The review session was revoked after the failed external check.
+The owner completed Manual Sync on existing Blueprint `exs-dboll6ou01pc73flnjeg` after GitHub checkpoint `4220d8189da8d49dfcaf71734854b929b8c9db98` configured the tested foundation flag. Before that sync, external authenticated dashboard requests returned 503; after sync the actual Render endpoints `/healthz`, `/dashboard`, `/profile`, `/wardrobe` and `/admin/catalog/access` each returned 200. Anonymous and forged-JWT requests returned 401, and an ordinary-user catalog mutation returned 403. The access endpoint reports permissions; its 200 response does not confer administrator status.
+
+The final external acceptance also created a disposable garment (201), retrieved its private image through Render, verified anonymous image rejection, updated it through the owner API, deleted it, and confirmed subsequent lookup returned 404. The fixture was removed and the final verification session was successfully revoked. These are hosted API results, not Android UI acceptance. Browser dashboard control remains unavailable, so a Render dashboard deploy-commit inspection was not claimed.
 
 ## 5. Existing account — verified, limited development admission
 
@@ -46,7 +48,6 @@ No connected Android device, Android SDK, `adb` or emulator was found. Installed
 
 ## Remaining completion gates
 
-- Verify actual Render Blueprint sync and external authenticated endpoints after publication. If Auto Sync is disabled, the owner must run Manual Sync on the existing Blueprint or restore browser control.
 - Complete private password sign-in with the existing account on Android, then test dashboard, wardrobe and logout.
 - Self-service registration remains a separate hosted dependency. The current APK lacks a hosted registration-service URL. Authorized SMTP sender credentials and hosted registration deployment are required for a later registration-enabled APK.
 - Google/Apple provider setup and installed callback acceptance remain pending.
@@ -55,4 +56,4 @@ No connected Android device, Android SDK, `adb` or emulator was found. Installed
 
 All 18 canonical migration versions matched the SQL stored in hosted migration history. Final hosted metadata reports both original Auth accounts, 22 forced-RLS application tables, and three private buckets. The canonical disposable run passed 308 foundation/application tests plus nine registration/preview-access tests. The earlier backend run passed 406 tests with 315 database cases skipped in that ordinary invocation.
 
-Steps 1–3 are complete. Step 4 has completed database, JWT and private-image checks but awaits actual Render activation. Step 5 reuses the owner's selected account, with verified Auth/JWT access and a normal-user projection. External Render dashboard acceptance remains dependent on Step 4. Step 6 has a verified APK target but no installed-device/emulator test result. Self-service signup and provider OAuth remain outside this existing-account login acceptance.
+Steps 1–4 are complete within the recorded database/API acceptance scope. Step 5 reuses the owner’s selected account, with verified hosted Auth/JWT access, external dashboard access and a normal-user projection; private password entry remains untested. Step 6 has a verified APK target but no installed-device/emulator test result. Self-service signup and provider OAuth remain outside this existing-account login acceptance.
