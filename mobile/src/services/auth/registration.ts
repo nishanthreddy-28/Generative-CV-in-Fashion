@@ -5,7 +5,13 @@ const secret = /^[A-Za-z0-9_-]{43}$/;
 export function validBinding(value: unknown): value is RegistrationBinding {
   if (!value || typeof value !== 'object') return false;
   const item = value as RegistrationBinding;
-  return uuid.test(item.attemptId) && secret.test(item.capability);
+  return typeof item.attemptId === 'string' && typeof item.capability === 'string' &&
+    uuid.test(item.attemptId) && secret.test(item.capability);
+}
+
+// Server responses can also carry display copy. Bound requests accept only these two fields.
+export function registrationBinding(value: unknown): RegistrationBinding | null {
+  return validBinding(value) ? {attemptId: value.attemptId, capability: value.capability} : null;
 }
 export function registrationLink(value: string, origin: string): {attemptId: string; link: string} | null {
   try {
@@ -43,4 +49,30 @@ export async function registrationRequest<T>(base: string, operation: 'start'|'l
     if (error instanceof Error && error.name !== 'AbortError' && error.name !== 'TypeError') throw error;
     throw new Error('Unable to connect. Your verification can be retried.');
   } finally {clearTimeout(timer);}
+}
+
+export async function registrationStatus(base: string, binding: RegistrationBinding, localPreview = false) {
+  const result = await registrationRequest<{status: string; attemptId?: unknown}>(base, 'status', binding, localPreview);
+  const current = result.attemptId === undefined ? binding :
+    registrationBinding({attemptId: result.attemptId, capability: binding.capability});
+  if (!current || !['pending', 'link_verified', 'expired', 'locked', 'superseded', 'finalizing', 'complete'].includes(result.status)) {
+    throw new Error('Unexpected verification response.');
+  }
+  return {binding: current, status: result.status};
+}
+
+export async function resendRegistration(base: string, binding: RegistrationBinding, localPreview = false) {
+  try {
+    const result = await registrationRequest<RegistrationBinding & {message?: string}>(base, 'resend', binding, localPreview);
+    const current = registrationBinding(result);
+    if (!current || current.capability !== binding.capability || current.attemptId === binding.attemptId) {
+      throw new Error('Unexpected verification response.');
+    }
+    return {binding: current, status: 'pending', message: result.message ?? 'Check your inbox for the new link and code.'};
+  } catch (resendError) {
+    // A timeout can happen after rotation commits. Read status before asking for another email.
+    const recovered = await registrationStatus(base, binding, localPreview).catch(() => null);
+    if (!recovered || recovered.binding.attemptId === binding.attemptId) throw resendError;
+    return {...recovered, message: 'Your latest attempt was restored. If its email didn’t arrive, wait a minute before requesting another.'};
+  }
 }

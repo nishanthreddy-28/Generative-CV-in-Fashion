@@ -7,7 +7,7 @@ import { type Field, validate } from '../features/validation';
 import { colors } from '../theme/tokens';
 import { Button } from '../components/Button';
 import { pendingRegistration, retainRegistration } from '../services/auth/registrationStorage';
-import { registrationLink, registrationOrigin, registrationRequest, validBinding, type RegistrationBinding } from '../services/auth/registration';
+import { registrationLink, registrationOrigin, registrationRequest, registrationStatus, resendRegistration, type RegistrationBinding } from '../services/auth/registration';
 const localPreview = __DEV__ && process.env.EXPO_PUBLIC_LOCAL_PREVIEW === "true";
 const base = process.env.EXPO_PUBLIC_REGISTRATION_API_URL ?? '';
 const enabled = process.env.EXPO_PUBLIC_REVIEW_ONLY !== 'true' && !!registrationOrigin(base, localPreview);
@@ -36,12 +36,19 @@ export default function VerifyRegistration() {
       if (Platform.OS === 'web' && window.location.hash) setLink(window.location.href);
       if(enabled && value) {
         try {
-          const result=await registrationRequest<{status:string}>(base,'status',value,localPreview);
+          const result=await registrationStatus(base,value,localPreview);
           if(!mounted)return;
-          if(result.status==='complete') {await retainRegistration(null);setBinding(null);setStage('complete');}
+          const recovered = result.binding.attemptId !== value.attemptId;
+          if(result.status==='complete' || recovered) {
+            await retainRegistration(result.status==='complete' ? null : result.binding);
+          }
+          if(!mounted)return;
+          setBinding(result.status==='complete' ? null : result.binding);
+          if(result.status==='complete') setStage('complete');
           else if(result.status==='finalizing')setStage('finalizing');
           else if(result.status==='link_verified')setStage('code');
           else if(['expired','locked','superseded'].includes(result.status))setMessage('This verification has expired or cannot be used. Request a new email.');
+          else if(recovered)setMessage('Your latest attempt was restored. Use the link and code from the latest email.');
         } catch {if(mounted){setShowRestart(true);setMessage('We couldn’t restore this attempt. Try your latest link or start again.');}}
       }
       if(mounted)setReady(true);
@@ -80,9 +87,12 @@ export default function VerifyRegistration() {
         setStage('complete');setBinding(null);setPasswords({});
         await retainRegistration(null);
       } else {
-        const next=await registrationRequest<RegistrationBinding & {message?:string}>(base,'resend',binding,localPreview);
-        if(!validBinding(next))throw new Error('Unexpected verification response.');
-        await retainRegistration(next);setBinding(next);setCode('');setLink('');setStage('link');setMessage(next.message ?? 'Check your inbox for the new link and code.');
+        const next=await resendRegistration(base,binding,localPreview);
+        await retainRegistration(next.status==='complete' ? null : next.binding);
+        setBinding(next.status==='complete' ? null : next.binding);
+        setCode('');setLink('');setShowRestart(false);
+        setStage(next.status==='complete' || next.status==='finalizing' ? next.status : next.status==='link_verified' ? 'code' : 'link');
+        if(next.status!=='complete')setMessage(next.message);
       }
     } catch(error){setMessage(error instanceof Error ? error.message : 'Unable to verify. Please try again.');}
     finally{setBusy(false);}
