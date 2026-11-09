@@ -23,3 +23,8 @@ test('detail routes retain the correct primary navigation destination',()=>{
  assert.equal(activeDestination('/profile/body'),'/settings');
  assert.equal(activeDestination('/login'),undefined);
 });
+
+test('password recovery remains reachable for authenticated settings and guest users',()=>{
+ assert.ok(publicScreens.includes('forgot-password'));
+ assert.ok(!guestScreens.includes('forgot-password'));
+});

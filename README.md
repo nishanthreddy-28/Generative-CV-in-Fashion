@@ -18,3 +18,7 @@ The source is consolidated; the application is **not yet functional end-to-end a
 Run the frontend from `mobile/` and FastAPI from `backend/`. Public introduction and `/preview` are available without account data. Preview does not save changes or grant administrator access. Native sessions use SecureStore; web sessions are intentionally memory-only. Google sign-in is not implemented.
 
 All older branches/tags remain available. The legacy Vite/IndexedDB demo is archived in its existing branch and tags, not merged back over the newer mobile/Supabase implementation. No push, hosted migration, feature-flag activation or Play release is implied by local consolidation.
+
+## Workflow 01 implementation
+
+The current registration, dual-verification design, approval dependencies, regression checks and deployment limits are recorded in [Customer authentication](docs/workflows/WORKFLOW_01_CUSTOMER_AUTH.md). Registration submission is gated while the independent link-and-code verification service is prepared. The previous single-email-confirmation flow is insufficient for that new requirement.

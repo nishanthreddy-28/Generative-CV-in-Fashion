@@ -1,6 +1,6 @@
 // Explicit route inventory: adding a page requires choosing its access boundary.
-export const guestScreens = ["index", "login", "signup", "forgot-password"] as const;
-export const publicScreens = ["auth-confirm", "reset-password", "oauth-callback", "privacy", "+not-found"] as const;
+export const guestScreens = ["index", "login", "signup"] as const;
+export const publicScreens = ["forgot-password", "auth-confirm", "reset-password", "oauth-callback", "privacy", "+not-found"] as const;
 export const personalScreens = [
   "dashboard", "profile/index", "profile/body", "preferences", "settings",
   "wardrobe/index", "wardrobe/add", "wardrobe/[id]", "catalog/index", "catalog/[id]",
