@@ -28,7 +28,9 @@ function validateOrigin(name) {
 
 try {
   if (mode === "review") {
-    for (const name of [apiName, authName, keyName, googleName]) delete env[name];
+    for (const name of [authName, keyName, googleName]) delete env[name];
+    if (env[apiName]?.trim()) validateOrigin(apiName);
+    else delete env[apiName];
   } else if (mode === "connected") {
     validateOrigin(apiName);
     validateOrigin(authName);

@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Button } from "../components/Button";
+import { apiRequest, isApiConfigured } from "../services/api/client";
 import { FramedImage } from "../components/FramedImage";
 import { colors, typography } from "../theme/tokens";
 
@@ -10,6 +13,31 @@ const stories = [
   { number: "02", title: "The outfit", text: "Put pieces together, save the combinations you love and wear them again." },
   { number: "03", title: "The next look", text: "Find outfit ideas using your wardrobe, the catalog and your preferences." },
 ];
+
+function ReviewServiceStatus() {
+  const [checking, setChecking] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function check() {
+    setChecking(true);
+    setMessage("");
+    try {
+      const response = await apiRequest<{ status: string }>("/healthz");
+      setMessage(response.status === "ok" ? "The service is reachable." : "The service could not be verified.");
+    } catch {
+      setMessage("The service may be starting. Give it a moment, then try again.");
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  return (
+    <View style={styles.serviceStatus}>
+      <Button label="Check service status" variant="secondary" loading={checking} onPress={check} />
+      {!!message && <Text role="status" accessibilityLiveRegion="polite" style={styles.body}>{message}</Text>}
+    </View>
+  );
+}
 
 export default function Introduction() {
   const { width, fontScale } = useWindowDimensions();
@@ -54,6 +82,7 @@ export default function Introduction() {
           <Text style={styles.eyebrow}>DRAPE &amp; DROP</Text>
           <Link href="/privacy" style={styles.link}>Privacy &amp; your data</Link>
         </View>
+        {reviewOnly && isApiConfigured() && <ReviewServiceStatus />}
       </ScrollView>
     </SafeAreaView>
   );
@@ -79,5 +108,6 @@ const styles = StyleSheet.create({
   storiesWide: { flexDirection: "row", gap: 24 },
   story: { borderTopWidth: 1, borderColor: colors.border, gap: 10, paddingTop: 16 },
   storyTitle: { ...typography.editorial, fontSize: 28 },
+  serviceStatus: { alignItems: "flex-start", gap: 8, marginTop: 16 },
   footer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, borderTopWidth: 1, borderColor: colors.border, paddingTop: 8 },
 });
