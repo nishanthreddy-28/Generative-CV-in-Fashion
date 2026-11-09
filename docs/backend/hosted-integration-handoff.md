@@ -49,3 +49,9 @@ These SHA-256 values describe local files only, applied inside disposable local 
 - `202611090005_profile_integration.sql` — `005fe4e4f2c0a6fc76e3a624ac4c46a46e7503b8cfb3a54a78d52da37bf04e65`
 - `202611090006_outfit_gaps.sql` — `c5ec202aee56f58c05d900ddacdc6220cdaa284e1446a0c30a21f39bd11d6e34`
 - `202611090007_image_retention.sql` — `60723986f9a6e4d2d7dbc2e585bdfd36e84ba98a09bc0db3ddf61e4bec704d55`
+
+## Rollback decision before any hosted changes
+
+Record the verified hosted migration history, actual schema/grants/policies, Auth and Storage settings, and the project backup or recovery capability before requesting approval. Compare version/name pairs and stop on unexplained versions, duplicates, or drift. Local file hashes identify the reviewed SQL, while a hosted history row alone cannot certify its checksum or current database shape. Rehearse the exact additive sequence on disposable infrastructure before approving the hosted dry run and apply.
+
+If a migration or acceptance check fails, stop, retain the history and failure evidence, keep the API feature disabled, and leave worker schedules stopped. Compare the actual committed versions and effects before proposing a fix. Prefer a reviewed forward correction for an applied migration. A restore requires separate approval and an understood recovery point because it can discard subsequent data. Never use history repair, reset, or a blanket down migration as automatic rollback. Auth deletion and Storage object deletion require separate recovery consideration from PostgreSQL.

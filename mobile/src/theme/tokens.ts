@@ -1,4 +1,5 @@
 export const colors = {
+  editorial: "#ECE6DB",
   background: "#F7F5F0",
   surface: "#FFFFFF",
   ink: "#272923",
@@ -6,6 +7,9 @@ export const colors = {
   sage: "#52604C",
   border: "#DEDCD3",
   error: "#943F32",
+} as const;
+export const typography = {
+  editorial: { fontFamily: "serif", color: colors.ink },
 } as const;
 export const space = {
   xs: 8,

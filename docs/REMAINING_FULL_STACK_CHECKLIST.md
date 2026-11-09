@@ -75,3 +75,37 @@ Actual signed-out desktop/mobile review found and fixed intrinsic image sizing (
 Current stopping point: PERSONAL UI APPROVAL. Website http://localhost:8081, API http://localhost:8000 remain running. Email Auth is configured; actual user sign-in and hosted business persistence remain unverified, Google was last verified disabled, DATABASE_FOUNDATION_ENABLED remains false. No hosted or Android release work may proceed before the user reviews and approves. No credentials, mocked production records, hosted settings or feature flags were changed in this review.
 
 Image-fix checkpoint verification: 67 frontend tests passed; typecheck, lint and Android Hermes export passed after the bounded-image change. Actual web bundle returned 200 after the final edit. No backend/database behavior changed, so previous backend/SQL evidence is retained rather than represented as a new run. Personal approval gate remains open.
+
+## Fashion redesign and review checkpoint — 2026-11-09
+
+Started from clean `main` at `4e518b5`, which includes requested checkpoint `b7e8bb1` and the Vercel build fix. Both local feature branches and their remote-tracking counterparts are integrated into main. The archived web workflow branch has four unique historical commits, with 35 commits on main's side at the starting checkpoint. Its demo data flows remain archived. Existing tags are historical checkpoints.
+
+### Current feature inventory
+
+- **Browser-verified locally** — Editorial homepage, image rendering, signup/recovery required-field errors, and signed-out protection. Chrome loaded the homepage, sign-in and signup at 320, 375, 768 and 1280 CSS pixels without document overflow. Dashboard, wardrobe, outfits, recommendations, try-on, body profile, settings and admin catalog redirected signed-out visits to sign-in.
+- **Locally implemented and tested, hosted acceptance pending** — Email signup/verification, login/logout, native restore and refresh, recovery and password change. Browser validation used empty forms only. Confirmed-email policy, SMTP/templates, actual callbacks and authorized accounts remain needed.
+- **Locally implemented and tested, signed-in runtime acceptance pending** — Dashboard counts; profile, appearance and measurements; preferences; wardrobe CRUD and private images; catalog browse/detail and trusted admin management; outfit creation/editing/filtering/pagination; deterministic recommendations, bookmarks and conversion to outfit; try-on submission/history/cancellation/expiry; privacy and deletion progress. The screens use real APIs and the approved route gates. The feature flag is false, so hosted data persistence was not exercised.
+- **Locally implemented and tested, infrastructure pending** — JWT verification, RLS, scoped Data API, private image byte delivery, trusted provisioning, account-deletion and image-retention workers. Dedicated SQL verification uses disposable PostgreSQL and test Auth/Storage interfaces. Hosted role grants, concurrent JWT propagation, direct gateway isolation, private object bytes, retries and actual cleanup remain unverified.
+- **Gated or missing** — Google sign-in is hidden until hosted callback acceptance. Try-on has job infrastructure only, with inference and generated outputs deferred. No externally hosted FastAPI URL, signed APK/AAB, installed-device acceptance or Play submission is verified. Public Vercel review mode intentionally excludes sign-in and application data.
+
+The new landing and account layouts share editorial colors and typography with the protected screens. Collection grid widths were refined. The project’s existing editorial photograph was reused. Collection/form work from the previous UI checkpoint remains in place; this pass did not individually redesign every protected screen.
+
+### Remaining work in dependency order
+
+1. **Local implementation** — Address UI review feedback and record any authorized signed-in browser findings once a real test environment is available. Review measurement labels and unresolved product decisions before expanding inputs.
+2. **UI approval** — Review the homepage, account screens, privacy, tablet and phone layout, and signed-in design when a usable environment is available. No public workflow bypass or sample customer data.
+3. **Hosted Supabase** — Restore authorized read-only access, compare all 15 versions and names, inspect schema exposure/roles, and review the backup and rollback decision before requesting explicit write approval. See [hosted handoff](backend/hosted-integration-handoff.md).
+4. **Auth and Google** — Review email policy, SMTP/templates, exact web and app callbacks, authorized test accounts, and provider/PKCE setup. Keep Google hidden until accepted.
+5. **Storage and workers** — Verify private buckets and image delivery; separately approve trusted worker credentials, scheduler, retention and cleanup monitoring.
+6. **Hosted security** — Verify A/B isolation, inactive accounts with valid tokens, least-privilege grants, admin membership, Data API and Storage paths before flag approval.
+7. **End-to-end acceptance** — Deploy HTTPS FastAPI, configure exact CORS and separate Preview/Production public values, verify connected browser workflows and worker effects with authorized test accounts. Finish Vercel Preview identity verification where still required. See [Vercel setup](frontend/vercel-deployment.md).
+8. **Android build/device** — Confirm Expo project linkage, signing owner, candidate package, final merged permissions, and install a signed internal APK. Exercise deep links, Back, photo picker, SecureStore and job/account workflows on hardware.
+9. **Play Store** — Complete privacy and deletion URLs, Data Safety, listing, reviewer access and account-specific testing requirements. Produce an accepted signed AAB only after approval.
+10. **Final gate** — Repeat release checks against exact Git/build artifacts and obtain explicit approvals. ML remains deferred.
+
+### Commands and evidence
+
+- From `backend`, `.venv/bin/python -m pytest -q` passed 397 and skipped 307 because the normal run has no disposable database socket. The existing Starlette TestClient deprecation warning remained. `.venv/bin/python -m compileall -q app` and `.venv/bin/python -m pip check` passed.
+- From the root, `backend/.venv/bin/python backend/tests/database/run_local.py` passed all 307 tests separately.
+- From `mobile` with Node 24, `npm test` passed 67 with zero failures or skips. `npm run typecheck`, `npm run lint`, `npm run export:android -- --output-dir /tmp/dd-fashion-android`, and `DRAPE_WEB_MODE=review npm run build` passed. Android export verifies JavaScript/Hermes bundling.
+- Local servers were restarted after Chrome returned connection refused. Personal review uses `http://localhost:8081/` and backend docs use `http://localhost:8000/docs`. Hosted Supabase was not changed.

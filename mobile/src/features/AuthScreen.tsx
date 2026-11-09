@@ -1,10 +1,11 @@
 import {FramedImage} from "../components/FramedImage";
 import { useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { Screen, RouteLink, Notice, ui } from "../components/Screen";
 import { Button } from "../components/Button";
+import { colors, typography } from "../theme/tokens";
 import { Fields } from "../components/Fields";
 import { type Field, validate } from "./validation";
 import { useSession } from "./session";
@@ -18,6 +19,8 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
   const { login, signup, session, ready } = useSession();
+  const { width, fontScale } = useWindowDimensions();
+  const split = mode !== "reset" && width >= 860 && fontScale <= 1.2;
   const fields: Field[] = [
     ...(mode === "signup"
       ? [{ key: "name", label: "Name", required: true }]
@@ -115,63 +118,87 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
           : "A considered wardrobe starts with you."
       }
     >
-      {mode!=="reset" && <View style={{borderRadius:6,overflow:"hidden",backgroundColor:"#EAE7DF"}}><FramedImage source={require("../../assets/editorial/introduction.png")} ratio={2.4} contain label="Drape and Drop fashion editorial"/><View style={{padding:16,gap:6}}><Text style={{fontSize:10,letterSpacing:2,color:"#52604C",fontWeight:"700"}}>YOUR WARDROBE, CONSIDERED</Text><Text style={ui.body}>A place for your pieces, your ideas and your everyday style.</Text></View></View>}
-      {session && (
-        <RouteLink to="/dashboard">Continue to your dashboard</RouteLink>
-      )}
-      {!supabase && (
-        <Notice
-          title="Sign-in is temporarily unavailable"
-          text="Please try again later. Your account details have not been submitted."
-        />
-      )}
-      <Fields
-        fields={fields}
-        values={values}
-        errors={errors}
-        disabled={busy}
-        onChange={(k, v) => {
-          setValues((s) => ({ ...s, [k]: v }));
-          setErrors((s) => ({ ...s, [k]: "" }));
-          setMessage("");
-        }}
-      />
-      {Boolean(message) && (
-        <Text accessibilityRole="alert" style={success ? ui.body : ui.error}>
-          {message}
-        </Text>
-      )}
-      <Button
-        label={
-          mode === "login"
-            ? "Sign in"
-            : mode === "signup"
-              ? "Create account"
-              : "Send reset instructions"
-        }
-        loading={busy}
-        disabled={!ready || !supabase}
-        onPress={submit}
-      />
-      {mode !== "reset" && googleEnabled && (
-        <View style={{ gap: 12 }}>
-          <Button
-            label="Continue with Google"
-            variant="secondary"
+      <View style={[styles.layout, split && styles.split]}>
+        {mode !== "reset" && (
+          <View style={[styles.editorial, split && styles.panel]}>
+            <FramedImage source={require("../../assets/editorial/introduction.png")}
+              ratio={split ? 0.9 : 1.8} label="Trench coat and tailored trousers in a neutral fashion editorial" />
+            <View style={styles.caption}>
+              <Text style={styles.eyebrow}>THE PERSONAL EDIT</Text>
+              <Text style={styles.captionTitle}>A place for the pieces you love.</Text>
+            </View>
+          </View>
+        )}
+        <View style={[styles.form, split && styles.panel]}>
+          {session && (
+            <RouteLink to="/dashboard">Continue to your dashboard</RouteLink>
+          )}
+          {!supabase && (
+            <Notice
+              title="Sign-in is temporarily unavailable"
+              text="Please try again later. Your account details have not been submitted."
+            />
+          )}
+          <Fields
+            fields={fields}
+            values={values}
+            errors={errors}
             disabled={busy}
-            onPress={google}
+            onChange={(k, v) => {
+              setValues((s) => ({ ...s, [k]: v }));
+              setErrors((s) => ({ ...s, [k]: "" }));
+              setMessage("");
+            }}
           />
+          {Boolean(message) && (
+            <Text accessibilityRole="alert" style={success ? ui.body : ui.error}>
+              {message}
+            </Text>
+          )}
+          <Button
+            label={
+              mode === "login"
+                ? "Sign in"
+                : mode === "signup"
+                  ? "Create account"
+                  : "Send reset instructions"
+            }
+            loading={busy}
+            disabled={!ready || !supabase}
+            onPress={submit}
+          />
+          {mode !== "reset" && googleEnabled && (
+            <View style={{ gap: 12 }}>
+              <Button
+                label="Continue with Google"
+                variant="secondary"
+                disabled={busy}
+                onPress={google}
+              />
+            </View>
+          )}
+          <RouteLink to="/privacy">Privacy &amp; your data</RouteLink>
+          {mode === "login" ? (
+            <>
+              <RouteLink to="/signup">Create an account</RouteLink>
+              <RouteLink to="/forgot-password">Forgot password?</RouteLink>
+            </>
+          ) : (
+            <RouteLink to="/login">Back to sign in</RouteLink>
+          )}
         </View>
-      )}
-      <RouteLink to="/privacy">Privacy &amp; your data</RouteLink>
-      {mode === "login" ? (
-        <>
-          <RouteLink to="/signup">Create an account</RouteLink>
-          <RouteLink to="/forgot-password">Forgot password?</RouteLink>
-        </>
-      ) : (
-        <RouteLink to="/login">Back to sign in</RouteLink>
-      )}
+      </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  layout: { gap: 24 },
+  split: { flexDirection: "row", alignItems: "flex-start" },
+  panel: { flex: 1, minWidth: 0 },
+  editorial: { backgroundColor: colors.editorial, overflow: "hidden" },
+  caption: { gap: 8, padding: 18 },
+  eyebrow: { fontSize: 11, letterSpacing: 2, color: colors.sage, fontWeight: "700" },
+  captionTitle: { ...typography.editorial, fontSize: 23, lineHeight: 28 },
+  form: { gap: 16 },
+});

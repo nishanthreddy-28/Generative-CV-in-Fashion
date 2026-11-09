@@ -138,7 +138,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
           />
         )}
         <View style={{flexDirection:"row",flexWrap:"wrap",gap:12}}>
-        {list.map(item=><View key={item.id} style={{width:columns===2 ? "47%" : "100%"}}>
+        {list.map(item=><View key={item.id} style={{flexBasis: columns === 2 ? "48%" : "100%", flexGrow: columns === 2 ? 1 : 0, maxWidth: columns === 2 ? "50%" : "100%"}}>
           {"category" in item ? <GarmentCard item={item} source={kind==="admin" ? "admin/catalog" : kind==="catalog" ? "catalog" : "wardrobe"}/> :
            <View style={ui.card}><Text style={ui.heading}>{item.name}</Text><RouteLink to={`/outfits/${encodeURIComponent(item.id)}`}>View outfit →</RouteLink></View>}
         </View>)}
