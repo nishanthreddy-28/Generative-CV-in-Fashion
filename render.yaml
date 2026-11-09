@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: drape-drop-api
+    runtime: python
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: python -m pip install -r requirements.lock
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --no-access-log
+    healthCheckPath: /healthz
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: DATABASE_FOUNDATION_ENABLED
+        value: "false"
+      - key: API_CORS_ORIGINS
+        sync: false

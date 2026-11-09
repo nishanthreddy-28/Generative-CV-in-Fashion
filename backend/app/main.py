@@ -55,6 +55,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def unavailable(request: Request, error: DependencyUnavailable):
         return JSONResponse({"detail": "Security dependency unavailable."}, status_code=503)
 
+    @app.get("/healthz", include_in_schema=False)
+    async def health():
+        return {"status": "ok"}
+
     # These routes remain fail-closed until the reviewed database integration is enabled.
     app.include_router(foundation_router)
     app.include_router(body_router)
