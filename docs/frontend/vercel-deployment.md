@@ -14,7 +14,7 @@ npm ci --legacy-peer-deps
 DRAPE_WEB_MODE=review npm run build
 ```
 
-CI runs the same review export after the Android artifact upload. Expo ignores local dotenv files in this build command. Review mode also drops API and Supabase configuration from the export process, and the UI indicates that accounts and wardrobe data are unavailable.
+CI runs the same review export after the Android artifact upload. Expo ignores local dotenv files in this build command. Review mode drops Supabase Auth configuration. If `EXPO_PUBLIC_API_URL` is supplied, it must be an HTTPS origin and the homepage offers a public, read-only health check. The UI indicates that accounts and wardrobe data are unavailable.
 
 ## Preview and Production settings
 
@@ -36,3 +36,12 @@ Set the exact Supabase web redirect allowlist for each approved origin and the `
 Dashboard, profile/body/preferences, wardrobe/catalog and image operations, outfits, recommendations, try-on jobs and deletion status require FastAPI. Account deletion completion and image retention need the separately scheduled trusted cleanup workers. Try-on supports job tracking without an inference worker. Keep `DATABASE_FOUNDATION_ENABLED=false` until hosted acceptance and explicit approval.
 
 Verify Preview first. In each environment, open the root and refresh `/privacy`, `/reset-password`, and a protected route. Check that images and JavaScript load and that the protected route sends signed-out visitors to sign-in. Connected acceptance additionally needs real HTTPS API and Auth settings, a CORS preflight, signed-out API rejection, and approved test accounts.
+
+
+## Render Free backend
+
+Import the repository root [Blueprint](../../render.yaml) on Render. It creates one free web service with the `backend` root, Python 3.13, locked dependencies, Uvicorn bound to Render's assigned port, and a public `/healthz` liveness check. The endpoint confirms the server started. It does not exercise Supabase.
+
+Provide `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and the exact `API_CORS_ORIGINS` JSON array in Render's Environment settings. Confirm all three are saved after the first Blueprint sync. The Blueprint keeps `DATABASE_FOUNDATION_ENABLED=false`. Use the service URL as the Vercel Production `EXPO_PUBLIC_API_URL`. Preview can remain standalone until a stable, explicitly allowed Preview origin is configured. No wildcard CORS, database migrations, or cleanup worker provisioning are required for the health check.
+
+Render Free sleeps after 15 minutes of inactivity and typically takes about a minute to wake. The browser check times out after 20 seconds and offers another attempt. Render's filesystem is ephemeral. Keep account deletion and private-image cleanup on separately approved workers or schedules. [Render Free limits](https://render.com/docs/free)
