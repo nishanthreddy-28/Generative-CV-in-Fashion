@@ -125,7 +125,7 @@ export default function Detail() {
           </>
         )}
         <Button label="Delete outfit" variant="danger" disabled={busy || (!preview && !result.data)} onPress={()=>setConfirmDelete(true)}/>
-        <Confirm visible={confirmDelete} title="Delete this outfit?" text="Only this outfit and its item associations are removed. Garments and recommendations remain." busy={busy} onCancel={()=>setConfirmDelete(false)} onConfirm={()=>{void removeOutfit();}}/>
+        <Confirm confirmLabel="Delete outfit" visible={confirmDelete} title="Delete this outfit?" text="Only this outfit and its item associations are removed. Garments and recommendations remain." busy={busy} onCancel={()=>setConfirmDelete(false)} onConfirm={()=>{void removeOutfit();}}/>
         <RouteLink to="/outfits" preview={preview}>
           Back to saved outfits
         </RouteLink>

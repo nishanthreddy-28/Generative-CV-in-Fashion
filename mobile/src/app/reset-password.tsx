@@ -7,7 +7,7 @@ import { validate, type Field } from "../features/validation";
 import { authError, emailLinkHash, verifyEmailLink } from "../services/auth/contracts";
 import { createEmailLinkAuth, supabase } from "../services/auth/supabase";
 const fields: Field[] = [
-  { key: "password", label: "New password", kind: "password", required: true },
+  { key: "password", label: "New password", kind: "password", passwordPurpose:"new", required: true },
   {
     key: "confirm",
     label: "Confirm password",

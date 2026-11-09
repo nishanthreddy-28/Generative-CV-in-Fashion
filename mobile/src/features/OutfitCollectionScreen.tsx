@@ -18,6 +18,7 @@ export function OutfitCollectionScreen() {
   const [cache,setCache]=useDraft<{key:string;items:Outfit[];nextCursor:string|null}|null>("outfit-list:cache",null);
   const [loading,setLoading]=useState(false);const [error,setError]=useState("");
   const [validation,setValidation]=useState("");
+  const [filtersOpen,setFiltersOpen]=useState(false);
   const key=JSON.stringify(applied);const userId=session?.user.id;
   const visible=cache?.key===key ? cache : null;
   useFocusEffect(useCallback(()=>{
@@ -35,8 +36,8 @@ export function OutfitCollectionScreen() {
     return ()=>controller.abort();
   },[applied,key,pages,preview,userId,request,setCache]));
   function apply(next:OutfitFilters) {
-    try {outfitQuery(next);setApplied({...next,search:next.search.trim()});setPages(1);setValidation("");}
-    catch(e){setValidation(e instanceof Error ? e.message : "Invalid filters.");}
+    try {outfitQuery(next);setApplied({...next,search:next.search.trim()});setPages(1);setValidation("");return true;}
+    catch(e){setValidation(e instanceof Error ? e.message : "Invalid filters.");return false;}
   }
   const choice=(field:"source"|"category"|"sort",values:[string,string][]) => <View style={ui.row}>{values.map(([value,label])=>
     <Pressable key={value} accessibilityRole="radio" accessibilityLabel={`${field}: ${label}`} accessibilityState={{checked:draft[field]===value}}
@@ -49,6 +50,8 @@ export function OutfitCollectionScreen() {
       <Text style={ui.label}>Search outfit names</Text>
       <TextInput accessibilityLabel="Search outfits" placeholder="Search by outfit name" style={ui.input} value={draft.search} maxLength={200}
         onChangeText={search=>setDraft(current=>({...current,search}))} />
+      <Button label={filtersOpen ? "Hide filters" : "Filter & sort"} variant="secondary" onPress={()=>setFiltersOpen(value=>!value)}/>
+      {filtersOpen && <View style={ui.card}>
       <Text style={ui.label}>Item source</Text>
       {choice("source",[["","All sources"],["wardrobe","Wardrobe"],["catalog","Catalog"]])}
       <Text style={ui.label}>Item category</Text>
@@ -62,8 +65,9 @@ export function OutfitCollectionScreen() {
       <Text style={ui.label}>Created through · UTC date</Text>
       <TextInput accessibilityLabel="Created through" placeholder="YYYY-MM-DD" style={ui.input} value={draft.through}
         onChangeText={through=>setDraft(current=>({...current,through}))} />
-      <Button label="Apply filters" variant="secondary" onPress={()=>apply(draft)} />
-      <Button label="Clear filters" variant="secondary" onPress={()=>{setDraft(emptyOutfitFilters);apply(emptyOutfitFilters);}} />
+      </View>}
+      <Button label="Apply search & filters" variant="secondary" onPress={()=>{if(apply(draft))setFiltersOpen(false);}} />
+      {Boolean(applied.search || applied.source || applied.category || applied.from || applied.through || applied.sort!=="newest") && <Button label="Clear filters" variant="secondary" onPress={()=>{setDraft(emptyOutfitFilters);apply(emptyOutfitFilters);}} />}
       {Boolean(validation) && <Notice title="Check filters" text={validation} />}
       <ResourceState loading={loading} error={error} retry={()=>setApplied(current=>({...current}))} />
       {Boolean(error && visible) && <Text style={ui.body}>Previously loaded outfits remain visible. Retry to refresh them.</Text>}
@@ -71,6 +75,7 @@ export function OutfitCollectionScreen() {
         text={preview ? "Preview contains no example outfits." : "Create an outfit or adjust the filters."} />}
       {(visible?.items ?? []).map(item=><View key={item.id} style={ui.card}>
         <Text style={ui.heading}>{item.name}</Text>
+        <Text style={ui.body}>{item.items?.length ?? item.garmentIds.length} pieces{item.occasion ? ` · ${item.occasion}` : ""}</Text>
         {Boolean(item.description) && <Text style={ui.body}>{item.description}</Text>}
         <RouteLink to={`/outfits/${encodeURIComponent(item.id)}`} preview={preview}>View and edit outfit →</RouteLink>
       </View>)}

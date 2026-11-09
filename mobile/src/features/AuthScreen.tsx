@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Image, Platform, Text, View } from "react-native";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { Screen, RouteLink, Notice, ui } from "../components/Screen";
@@ -29,6 +29,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
             label: "Password",
             required: true,
             kind: "password" as const,
+            passwordPurpose: mode==="signup" ? "new" as const : "current" as const,
           },
         ]
       : []),
@@ -39,6 +40,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
             label: "Confirm password",
             required: true,
             kind: "password" as const,
+            passwordPurpose: mode==="signup" ? "new" as const : "current" as const,
           },
         ]
       : []),
@@ -103,6 +105,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
           : "A considered wardrobe starts with you."
       }
     >
+      {mode!=="reset" && <View style={{borderRadius:6,overflow:"hidden",backgroundColor:"#EAE7DF"}}><Image source={require("../../assets/editorial/introduction.png")} style={{width:"100%",aspectRatio:2.4}} accessibilityLabel="Drape and Drop fashion editorial"/><View style={{padding:16,gap:6}}><Text style={{fontSize:10,letterSpacing:2,color:"#52604C",fontWeight:"700"}}>YOUR WARDROBE, CONSIDERED</Text><Text style={ui.body}>A place for your pieces, your ideas and your everyday style.</Text></View></View>}
       {session && (
         <RouteLink to="/dashboard">Continue to your dashboard</RouteLink>
       )}

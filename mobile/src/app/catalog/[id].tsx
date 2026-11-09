@@ -1,4 +1,4 @@
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import {
   Screen,
@@ -35,16 +35,11 @@ export default function Detail() {
               <WardrobeImage id={result.data.id} label={result.data.name} preview={preview} source="catalog" />
             )}
             <Text style={ui.heading}>{result.data.category}</Text>
-            <Text style={ui.body}>
-              {[
-                result.data.color,
-                result.data.material,
-                result.data.brand,
-                result.data.size,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </Text>
+            <View style={ui.card}>
+             <Text style={ui.heading}>The details</Text>
+             {[["Brand",result.data.brand],["Colour",result.data.color],["Material",result.data.material],["Size",result.data.size]].filter(([,value])=>Boolean(value)).map(([label,value])=><View key={label} style={{flexDirection:"row",justifyContent:"space-between",gap:16}}><Text style={ui.body}>{label}</Text><Text style={[ui.label,{flexShrink:1,textAlign:"right"}]}>{value}</Text></View>)}
+             {![result.data.brand,result.data.color,result.data.material,result.data.size].some(Boolean) && <Text style={ui.body}>Additional details haven’t been supplied for this piece.</Text>}
+            </View>
             {result.data.price != null && (
               <Text style={ui.body}>
                 INR {result.data.price.toLocaleString("en-IN")}

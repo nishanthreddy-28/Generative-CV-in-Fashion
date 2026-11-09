@@ -12,3 +12,18 @@
 Verification: 63 frontend tests include complete route access classification, restoration/guest/user/admin/deleting state boundaries, active destinations and rejection of the old preview bypass. The installed Expo Router's discovered root screen names were compared with the explicit inventory. Typecheck, lint, Android export and final web-bundle compilation are checked for this checkpoint. Visual browser acceptance remains unavailable because Work settings disable browser control; real signed-in hosted acceptance is not claimed.
 
 The customer review website remains http://localhost:8081 and FastAPI http://localhost:8000. Keep both running and wait for user feedback on the revised experience. DATABASE_FOUNDATION_ENABLED remains false; real application persistence is still pending the separately approved hosted milestone. No ML, hosted writes or release acceptance was performed.
+
+## Collection, form and status polish
+
+The next local UI pass preserves the approved architecture and actual API payloads:
+
+- Wardrobe/catalog/admin: responsive two-column garment cards (one column on narrow screens), category/name/brand/size/INR price hierarchy, distinct inactive state, private image requests, stable image frames and retry placeholders. Missing images/details remain absent instead of substituted products. Search can submit from the keyboard. Collection search/category/order/cursor drafts survive detail navigation within the same account; focus refresh reflects edits/deletions on return.
+- Catalog detail: labeled garment attributes and an explicit absence state when additional fields were not supplied.
+- Outfits: collapsible source/category/date/order filters reduce the initial form length; applying invalid filters keeps controls open. Existing cursor loading, owner state, API semantics and draft preservation remain intact. Cards display actual item counts/occasion. Piece selection includes authenticated thumbnails and selected-state labels.
+- Recommendations/bookmarks: source-aware authenticated garment imagery, compatibility score wording, explanation hierarchy and existing save controls. No predicted sizing or ML confidence is claimed.
+- Try-on: readable queued, cancelled, failed and expired-input states, optional reveal of private photos and honest unavailable-generation messaging. No output is fabricated. Job/consent history remains after image expiration.
+- Shared forms: password show/hide controls, email/name/current/new-password autofill hints, disabled/busy handling, clearer upload placeholders, picker duplicate-click prevention and selected-photo privacy messaging. Body profile explicitly warns that changing units does not convert measurements.
+- Shared feedback: layout skeletons, explicit retry actions, polite status announcements, stronger error/success boundaries, labeled destructive confirmations and busy modal-close protection. Editorial imagery is limited to existing branded assets; no fake collection images or counts.
+- Authentication: existing editorial asset gives the welcome/signup forms a consistent fashion context. Google remains hidden while unverified; email Auth behavior is unchanged.
+
+Local tests added for responsive column decisions, optional garment summaries, zero/invalid prices, try-on state presentation and password autofill classification. Current frontend suite: 67 tests. Typecheck/lint/Android export and runtime bundle evidence are recorded in the master checklist. Real-browser/device verification remains separate: browser control is disabled. Both review servers remain running, and hosted work is deferred at the user's request.

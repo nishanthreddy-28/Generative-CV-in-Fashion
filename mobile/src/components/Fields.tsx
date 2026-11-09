@@ -1,3 +1,5 @@
+import {useState} from "react";
+import {fieldAutofill} from "../features/presentation";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { ui } from "./Screen";
 import type { Field } from "../features/validation";
@@ -14,6 +16,7 @@ export function Fields({
   onChange: (key: string, value: string) => void;
   disabled?: boolean;
 }) {
+  const [shown,setShown]=useState<Record<string,boolean>>({});
   return (
     <>
       {fields.map((f) => (
@@ -50,7 +53,9 @@ export function Fields({
               value={values[f.key] ?? ""}
               onChangeText={(v) => onChange(f.key, v)}
               editable={!disabled}
-              secureTextEntry={f.kind === "password"}
+              secureTextEntry={f.kind === "password" && !shown[f.key]}
+              autoComplete={fieldAutofill(f.key,f.kind,f.passwordPurpose)}
+              returnKeyType={f.kind==="multiline" ? "default" : "next"}
               multiline={f.kind === "multiline"}
               autoCapitalize={
                 f.kind === "email" || f.kind === "password"
@@ -74,6 +79,7 @@ export function Fields({
               ]}
             />
           )}
+          {f.kind==="password" && <Pressable accessibilityRole="button" accessibilityLabel={`${shown[f.key] ? "Hide" : "Show"} ${f.label.toLowerCase()}`} accessibilityState={{disabled}} disabled={disabled} onPress={()=>setShown(state=>({...state,[f.key]:!state[f.key]}))} style={{minHeight:44,justifyContent:"center",alignSelf:"flex-end",paddingHorizontal:8}}><Text style={ui.label}>{shown[f.key] ? "Hide password" : "Show password"}</Text></Pressable>}
           {Boolean(f.hint) && <Text style={ui.body}>{f.hint}</Text>}
           {Boolean(errors[f.key]) && (
             <Text accessibilityRole="alert" style={ui.error}>
