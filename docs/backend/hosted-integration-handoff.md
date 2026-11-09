@@ -1,5 +1,8 @@
 # Hosted integration handoff — local preparation only
 
+> Current recovery evidence is recorded in [access recovery](access-recovery.md). The saved CLI login successfully inspected the hosted database after excluding the rejected process token. The standard migration-history relation, api/app_private schemas and foundation objects are absent. Historical failures below remain part of the earlier evidence.
+
+
 Prepared 2026-11-09 (Asia/Kolkata). Project drape-drop-dev / xpqhqhpqzkjaycraukrj.
 
 ## Verified local state
