@@ -91,6 +91,15 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
     }catch(e){setMessage(e instanceof Error ? e.message : "Unable to start Google sign-in.");}
     finally{setBusy(false);}
   }
+  if (process.env.EXPO_PUBLIC_REVIEW_ONLY === "true") {
+    return (
+      <Screen title="Your style. Your space.">
+        <Notice title="Website preview" text="Explore Drape & Drop before launch. Accounts and wardrobe data are unavailable in this preview." />
+        <RouteLink to="/privacy">Privacy &amp; your data</RouteLink>
+        <RouteLink to="/">Back to Drape &amp; Drop</RouteLink>
+      </Screen>
+    );
+  }
   return (
     <Screen
       title={
