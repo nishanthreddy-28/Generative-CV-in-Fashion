@@ -32,7 +32,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Choose garment and try-on photos for Drape & Drop.",
-          "cameraPermission": false,
+          "cameraPermission": "Take a photo of clothing to add it to your wardrobe.",
           "microphonePermission": false
         }
       ],

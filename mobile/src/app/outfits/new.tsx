@@ -59,7 +59,7 @@ export default function NewOutfit() {
     }
   }
   return (
-    <Screen title="Put a look together.">
+    <Screen title="Create outfit">
       <Gate preview={preview}>
         <Fields
           fields={fields}

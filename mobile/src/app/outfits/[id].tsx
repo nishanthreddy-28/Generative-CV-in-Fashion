@@ -91,7 +91,7 @@ export default function Detail() {
     finally{setBusy(false);setConfirmDelete(false);}
   }
   return (
-    <Screen title="The outfit edit.">
+    <Screen title={result.data?.name ?? "Edit outfit"}>
       <Gate preview={preview}>
         <ResourceState {...result} />
         {(result.data || preview) && (

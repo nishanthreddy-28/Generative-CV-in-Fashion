@@ -1,6 +1,6 @@
 // Explicit route inventory: adding a page requires choosing its access boundary.
 export const guestScreens = ["index", "login", "signup"] as const;
-export const publicScreens = ["forgot-password", "auth-confirm", "reset-password", "oauth-callback", "privacy", "+not-found"] as const;
+export const publicScreens = ["forgot-password", "auth-confirm", "verify-registration", "reset-password", "oauth-callback", "privacy", "+not-found"] as const;
 export const personalScreens = [
   "dashboard", "profile/index", "profile/body", "preferences", "settings",
   "wardrobe/index", "wardrobe/add", "wardrobe/[id]", "catalog/index", "catalog/[id]",
@@ -14,7 +14,7 @@ export function routeAccess(ready:boolean, role:"user"|"admin"|undefined, deleti
 }
 export const appDestinations = [
  {label:"Home",path:"/dashboard"}, {label:"Wardrobe",path:"/wardrobe"},
- {label:"Discover",path:"/catalog"}, {label:"Outfits",path:"/outfits"}, {label:"Account",path:"/settings"},
+ {label:"Catalog",path:"/catalog"}, {label:"Outfits",path:"/outfits"}, {label:"Account",path:"/settings"},
 ] as const;
 export function activeDestination(path:string) {
  if(path.startsWith('/profile') || path==='/preferences')return '/settings';

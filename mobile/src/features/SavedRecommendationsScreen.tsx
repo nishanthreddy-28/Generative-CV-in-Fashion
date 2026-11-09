@@ -32,12 +32,12 @@ export function SavedRecommendationsScreen() {
       finally{setBusy("");}
     });
   }
-  return <Screen title="Your saved recommendations." subtitle="Keep useful combinations close.">
+  return <Screen title="Saved ideas" subtitle="Keep useful combinations close.">
     <Gate preview={preview}>
       <Button label="Refresh saved recommendations" variant="secondary" disabled={Boolean(busy) || result.loading} onPress={refresh} />
       <ResourceState loading={result.loading} error={result.error || invalid} retry={result.retry} />
       {Boolean(message) && <Notice title="Saved recommendation status" text={message} />}
-      {!result.loading && !result.error && !invalid && !data?.items.length && <Notice title="No saved recommendations on this page" text="Generate recommendations and save the combinations you like." />}
+      {!result.loading && !result.error && !invalid && !data?.items.length && <Notice title="No saved ideas yet" text="Save an outfit idea to find it here." />}
       {(data?.items ?? []).map(item=><View key={item.id} style={ui.card}>
         {item.available && item.recommendation ? <RecommendationLooks items={[item.recommendation]} preview={preview} /> :
           <Notice title="Recommendation unavailable" text="A garment was removed or is no longer available. You can remove this saved entry." />}
@@ -45,7 +45,7 @@ export function SavedRecommendationsScreen() {
       </View>)}
       {data?.nextCursor && <Button label="Next saved recommendations" variant="secondary" disabled={result.loading || Boolean(busy)} onPress={()=>setCursor(data!.nextCursor!)} />}
       {Boolean(cursor) && <Button label="Back to first page" variant="secondary" disabled={Boolean(busy)} onPress={()=>setCursor("")} />}
-      <RouteLink to="/recommendations" preview={preview}>Generate recommendations →</RouteLink>
+      <RouteLink to="/recommendations" preview={preview}>Explore style ideas →</RouteLink>
     </Gate>
   </Screen>;
 }

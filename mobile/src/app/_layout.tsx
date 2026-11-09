@@ -4,6 +4,7 @@ import {SafeAreaProvider} from "react-native-safe-area-context";
 import {ActivityIndicator,Platform,StyleSheet,Text,View} from "react-native";
 import {SessionProvider,useSession} from "../features/session";
 import {guestScreens,publicScreens,personalScreens,adminScreens,accountScreens,routeAccess} from "../features/navigation";
+import {AppearanceProvider} from "../theme/Appearance";
 import {colors} from "../theme/tokens";
 export const unstable_settings={anchor:"login"};
 function AppNavigator(){
@@ -21,11 +22,11 @@ function AppNavigator(){
   {publicScreens.map(name=><Stack.Screen key={name} name={name}/>)}
  </Stack>;
 }
-export default function RootLayout(){return <View style={styles.browser}><View style={styles.app}><SafeAreaProvider><SessionProvider>
+export default function RootLayout(){return <View style={styles.browser}><View style={styles.app}><SafeAreaProvider><AppearanceProvider><SessionProvider>
  <StatusBar style="dark"/><AppNavigator/>
- </SessionProvider></SafeAreaProvider></View></View>;}
+ </SessionProvider></AppearanceProvider></SafeAreaProvider></View></View>;}
 
 const styles=StyleSheet.create({
- browser:{flex:1,backgroundColor:"#E8E3DF"},
- app:{flex:1,width:"100%",alignSelf:"center",backgroundColor:colors.background,...(Platform.OS==="web"?{maxWidth:480}:{})},
+ browser:{flex:1,backgroundColor:colors.canvas},
+ app:{flex:1,width:"100%",alignSelf:"center",backgroundColor:colors.background,...(Platform.OS==="web"?{maxWidth:480,borderLeftWidth:1,borderRightWidth:1,borderColor:colors.border}:{})},
 });

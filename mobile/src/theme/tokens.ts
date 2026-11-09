@@ -1,16 +1,27 @@
 export const colors = {
-  editorial: "#ECE6DB",
-  background: "#F7F5F0",
+  canvas: "#EDEAE4",
+  background: "#FAF8F4",
   surface: "#FFFFFF",
-  ink: "#272923",
-  muted: "#686B60",
-  sage: "#52604C",
-  border: "#DEDCD3",
-  error: "#943F32",
+  editorial: "#F0ECE5",
+  raised: "#F5F1EB",
+  ink: "#171614",
+  muted: "#625E58",
+  accent: "#292521",
+  onAccent: "#FFFFFF",
+  sage: "#4E614E",
+  border: "#DEDAD3",
+  inputBorder: "#888178",
+  error: "#923B31",
+  errorSurface: "#FBECE9",
+  selected: "#EEE9E1",
+  scrim: "rgba(0,0,0,0.72)",
 } as const;
+
 export const typography = {
   editorial: { fontFamily: "serif", color: colors.ink },
+  eyebrow: { fontSize: 10, fontWeight: "700", letterSpacing: 2.3, color: colors.accent },
 } as const;
+
 export const space = {
   xs: 8,
   sm: 12,

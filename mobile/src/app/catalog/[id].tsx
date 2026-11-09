@@ -20,7 +20,7 @@ export default function Detail() {
     preview,
   );
   return (
-    <Screen title={result.data?.name ?? "The garment detail."}>
+    <Screen title={result.data?.name ?? "Catalog item"}>
       <Gate preview={preview}>
         <ResourceState {...result} />
         {preview && (
@@ -48,11 +48,6 @@ export default function Detail() {
             {Boolean(result.data.notes) && (
               <Text style={ui.body}>{result.data.notes}</Text>
             )}
-            <RouteLink
-              to={`/try-on?garmentId=${encodeURIComponent(result.data.id)}&source=catalog`}
-            >
-              Try this piece →
-            </RouteLink>
           </>
         )}
         <RouteLink to="/catalog" preview={preview}>

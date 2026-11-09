@@ -1,9 +1,10 @@
 import { useDraft } from "../hooks/useDraft";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { router, useFocusEffect } from "expo-router";
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Screen, Gate, Notice, RouteLink, ResourceState, usePreview, ui } from "../components/Screen";
 import {WardrobeImage} from "../components/WardrobeImage";
+import { typography } from "../theme/tokens";
 import { Button } from "../components/Button";
 import { Fields } from "../components/Fields";
 import { useResource } from "../hooks/useResource";
@@ -22,10 +23,10 @@ export function RecommendationLooks({items,preview,onSave,onCreateOutfit,saved,s
   items:Recommendation[];preview:boolean;onSave?:(look:Recommendation)=>void;onCreateOutfit?:(look:Recommendation)=>void;saved?:Record<string,string|null>;saving?:string;
 }) {
   return <>{items.map(look=><View key={look.id} style={ui.card}>
-    <Text style={ui.heading}>{look.name}</Text>
-    <Text style={ui.body}>{look.occasion} · Compatibility rule score {look.score}/100</Text>
+    <Text style={typography.eyebrow}>{(look.occasion || "STYLE EDIT").toUpperCase()}</Text>
+    <Text style={styles.lookTitle}>{look.name}</Text>
     <View style={{flexDirection:"row",gap:12,flexWrap:"wrap"}}>
-    {look.items.map(piece=><View key={`${piece.source}:${piece.garmentId}`} style={{flex:1,minWidth:130,gap:10}}>
+    {look.items.map(piece=><View key={`${piece.source}:${piece.garmentId}`} style={{flex:1,minWidth:110,gap:10}}>
       <WardrobeImage id={piece.garmentId} label={piece.name} source={piece.source} preview={preview}/>
       <Text style={ui.body}>{piece.name} · {piece.category}{piece.color ? ` · ${piece.color}` : ""}</Text>
       <RouteLink to={itemRoute(piece)} preview={preview}>View {piece.source} piece →</RouteLink>
@@ -77,7 +78,7 @@ export function RecommendationsScreen() {
       const response=await request<Page<Recommendation>>("/recommendations",{method:"POST",body:{
         occasion:values.occasion,preferences:values.preferences ?? "",wardrobeOnly:values.wardrobeOnly==="My wardrobe only"}});
       const items=recommendationResults(response);setGenerated({owner,items});
-      setMessage(items.length ? "Recommendations generated using your available pieces." : "No compatible pairs were found among the selected pieces.");
+      setMessage(items.length ? "New outfit ideas are ready." : "No compatible pairs were found among the selected pieces.");
       history.retry();
     } catch(e){setMessage(e instanceof Error ? e.message : "Unable to generate recommendations.");}
     finally{setBusy(false);}
@@ -104,23 +105,23 @@ export function RecommendationsScreen() {
       finally{setSaving("");}
     });
   }
-  return <Screen title="Find your next look." subtitle="Thoughtful combinations, made from your available pieces.">
+  return <Screen title="Style ideas" subtitle="Explore combinations from your wardrobe and the catalog.">
     <Gate preview={preview}>
       <Fields fields={fields} values={values} errors={errors} disabled={busy} onChange={(key,value)=>setValues(current=>({...current,[key]:value}))} />
-      <Text style={ui.body}>Uses your saved style text and preference words. Rules pair tops with bottoms or dresses with shoes; scores describe these rules, not fit or sizing.</Text>
       <Button label="Find outfits" onPress={generate} loading={busy} />
-      {Boolean(message) && <Notice title="Recommendation status" text={message} />}
+      {Boolean(message) && <Notice title="Style ideas" text={message} />}
       {looks?.length===0 && <Notice title="No outfits found" text="Add a top and bottoms, or a dress and shoes. You can also include the shared catalog." />}
       {looks && <RecommendationLooks items={looks} preview={preview} onSave={save} onCreateOutfit={saveOutfit} saved={saved} saving={saving} />}
-      <Button label="Refresh recent recommendations" variant="secondary" disabled={busy || history.loading} onPress={history.retry} />
-      <Text style={ui.heading}>Recent recommendations</Text>
+      <Button label="Refresh recent ideas" variant="secondary" disabled={busy || history.loading} onPress={history.retry} />
+      <Text style={ui.heading}>Recent ideas</Text>
       <ResourceState loading={history.loading} error={history.error || historyError} retry={history.retry} />
-      {!history.loading && !history.error && !historyError && !recent.length && <Notice title="No recent recommendations" text="Generate a look to start your history. Unavailable pieces are omitted from history results." />}
-      <RecommendationLooks items={recent} preview={preview} onSave={save} onCreateOutfit={saveOutfit} saved={saved} saving={saving} />
-      <RouteLink to="/recommendations/saved" preview={preview}>View saved recommendations →</RouteLink>
-      <RouteLink to="/outfits/new" preview={preview}>Build an outfit →</RouteLink>
-      <RouteLink to="/outfits" preview={preview}>View saved outfits →</RouteLink>
-      <RouteLink to="/wardrobe/add" preview={preview}>Add a wardrobe piece →</RouteLink>
+      {!history.loading && !history.error && !historyError && !recent.length && <Notice title="No recent ideas" text="Choose an occasion and find outfits to start your history." />}
+      <RecommendationLooks items={recent.filter(item => !looks?.some(look => look.id === item.id))} preview={preview} onSave={save} onCreateOutfit={saveOutfit} saved={saved} saving={saving} />
+      <RouteLink to="/recommendations/saved" preview={preview}>View saved ideas →</RouteLink>
     </Gate>
   </Screen>;
 }
+
+const styles = StyleSheet.create({
+  lookTitle: {...typography.editorial, fontSize: 25, lineHeight: 30},
+});

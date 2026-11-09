@@ -92,9 +92,11 @@ export default function Settings() {
     }
   }
   return (
-    <Screen title="Make it yours.">
+    <Screen title="Account">
       <Gate preview={preview}>
         {session && <Notice title="Your account" text={session.user.email} />}
+        <View style={ui.card}>
+        <Text style={ui.heading}>Profile & preferences</Text>
         <RouteLink to="/profile" preview={preview}>
           Edit personal profile →
         </RouteLink>
@@ -104,6 +106,7 @@ export default function Settings() {
         <RouteLink to="/preferences" preview={preview}>
           Units & email preferences →
         </RouteLink>
+        </View>
         <View style={ui.card}>
           <Text style={ui.heading}>Change password</Text>
           {<Fields
@@ -121,13 +124,13 @@ export default function Settings() {
         <View style={ui.card}>
           <Text style={ui.heading}>Privacy & account</Text>
           <Text style={ui.body}>
-            Photos upload only when you submit a garment or try-on job. Preview forms never upload.
-            Personal photos require authentication. Deletion first blocks account access;
-            a trusted cleanup worker must finish removing stored data.
+            Wardrobe photos upload when you save an item. Access to personal photos requires sign-in.
+            Account deletion blocks access while your data is being removed.
           </Text>
           <Text style={ui.body}>
             Sessions are stored securely on mobile. Web sessions end when you reload the page.
           </Text>
+          <RouteLink to="/try-on">Virtual try-on · Unavailable</RouteLink>
           <Button
             label="Sign out"
             variant="secondary"
@@ -156,6 +159,10 @@ export default function Settings() {
           />
         </View>
         {Boolean(message) && <Notice title="Account status" text={message} />}
+        {session && <Notice
+          title={session.user.role === "admin" ? "Catalog administrator" : "Member account"}
+          text={session.user.role === "admin" ? "You can manage the shared catalog." : "Your wardrobe, outfits and profile are private to your account."}
+        />}
         {(preview || session?.user.role === "admin") && (
           <RouteLink to="/admin" preview={preview}>
             Admin catalog studio →

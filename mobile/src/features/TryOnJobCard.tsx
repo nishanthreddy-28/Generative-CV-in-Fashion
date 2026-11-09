@@ -14,7 +14,7 @@ function InputBytes({job,preview}:{job:TryOnJob;preview:boolean}) {
     reader.onerror=()=>setFailed(true);reader.readAsDataURL(blob);
     return ()=>{reader.onload=null;reader.onerror=null;if(reader.readyState===FileReader.LOADING)reader.abort();};
   },[result.data]);
-  return <><ResourceState {...result}/>{photo?.blob===result.data && <Image source={{uri:photo.uri}} style={ui.image} accessibilityLabel="Private submitted try-on photo"/>}
+  return <><ResourceState {...result}/>{photo && photo.blob===result.data && <Image source={{uri:photo.uri}} style={ui.image} accessibilityLabel="Private submitted try-on photo"/>}
     {failed && <Text style={ui.error}>Input photo could not be displayed.</Text>}</>;
 }
 export function TryOnJobCard({job,preview,busy,onRefresh,onCancel}:{job:TryOnJob;preview:boolean;busy:boolean;onRefresh:()=>void;onCancel:()=>void}) {

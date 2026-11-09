@@ -1,64 +1,48 @@
-import {FramedImage} from "../components/FramedImage";
+import { registrationOrigin, registrationRequest, validBinding, type RegistrationBinding } from "../services/auth/registration";
+import { retainRegistration } from "../services/auth/registrationStorage";
+import {AtelierAccount} from "./AtelierAccount";
+import {SocialSignIn} from "./SocialSignIn";
+import {useAppearance, type Palette} from "../theme/Appearance";
+import {Link, router} from "expo-router";
 import { useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import * as Linking from "expo-linking";
-import { router } from "expo-router";
-import { Screen, RouteLink, Notice, ui } from "../components/Screen";
+import { Screen, ui } from "../components/Screen";
 import { Button } from "../components/Button";
-import { colors, typography } from "../theme/tokens";
-import { passwordChecks, passwordIssue } from "../services/auth/passwordPolicy";
+import { typography } from "../theme/tokens";
 import { Fields } from "../components/Fields";
 import { type Field, validate } from "./validation";
 import { useSession } from "./session";
 import { emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
-import { beginGoogleOAuth, authError } from "../services/auth/contracts";
+import { beginSocialOAuth, type SocialProvider, authError } from "../services/auth/contracts";
+const localPreview = __DEV__ && process.env.EXPO_PUBLIC_LOCAL_PREVIEW === "true";
 const reviewOnly = process.env.EXPO_PUBLIC_REVIEW_ONLY === "true";
-const googleEnabled=process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
+const registrationBase=process.env.EXPO_PUBLIC_REGISTRATION_API_URL ?? "";
+const registrationEnabled=!reviewOnly && !!registrationOrigin(registrationBase, localPreview);
+
 export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
+  const {palette:atelier,mode:appearance}=useAppearance();
+  const styles=makeStyles(atelier);
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
-  const { login, session, ready } = useSession();
+  const { login, session, sessionIssue, ready } = useSession();
   const fields: Field[] = [
     { key: "email", label: "Email", required: true, kind: "email" },
-    ...(mode !== "reset"
-      ? [
-          {
-            key: "password",
-            label: "Password",
-            required: true,
-            kind: "password" as const,
-            passwordPurpose: mode==="signup" ? "new" as const : "current" as const,
-          },
-        ]
-      : []),
-    ...(mode === "signup"
-      ? [
-          {
-            key: "confirm",
-            label: "Confirm password",
-            required: true,
-            kind: "password" as const,
-            passwordPurpose: mode==="signup" ? "new" as const : "current" as const,
-          },
-        ]
-      : []),
+    ...(mode === "login" ? [{
+      key: "password", label: "Password", required: true,
+      kind: "password" as const, passwordPurpose: "current" as const,
+    }] : []),
   ];
   async function submit() {
     const issues = validate(fields, values);
-    if (mode === "signup") {
-      const issue = passwordIssue(values.password ?? "", values.email);
-      if (issue) issues.password = issue;
-    }
-    if (mode === "signup" && values.password !== values.confirm)
-      issues.confirm = "Passwords must match.";
     setErrors(issues);
     setMessage("");
     setSuccess(false);
     if (Object.keys(issues).length) return;
-    if (mode === "signup") {
+    if (mode === "signup" && !registrationEnabled) {
       setMessage("Registration is unavailable while email verification is being configured.");
       return;
     }
@@ -68,7 +52,13 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
     }
     setBusy(true);
     try {
-      if (mode === "login") {
+      if (mode === "signup") {
+        const binding=await registrationRequest<RegistrationBinding>(registrationBase,"start",{email:values.email.trim()},localPreview);
+        if(!validBinding(binding))throw new Error("Unexpected registration response.");
+        await retainRegistration(binding);
+        setValues({});
+        router.push("/verify-registration");
+      } else if (mode === "login") {
         await login(values.email, values.password);
         router.replace("/dashboard");
       } else {
@@ -89,53 +79,38 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
       setBusy(false);
     }
   }
-  async function google(){
+  async function social(provider:SocialProvider){
     if(busy)return;setBusy(true);setMessage("");
     try{
-      const target=await beginGoogleOAuth(requireAuth(),emailRedirect("oauth-callback"));
+      const target=await beginSocialOAuth(requireAuth(),provider,emailRedirect("oauth-callback"));
       const origin=new URL(process.env.EXPO_PUBLIC_SUPABASE_URL ?? "").origin;
       if(target.origin!==origin || !target.pathname.startsWith("/auth/v1/"))throw new Error("Unexpected sign-in destination.");
       if(Platform.OS==="web")window.location.assign(target.href);else await Linking.openURL(target.href);
-    }catch(e){setMessage(e instanceof Error ? e.message : "Unable to start Google sign-in.");}
+    }catch(e){setMessage(e instanceof Error ? e.message : "Unable to start social sign-in.");}
     finally{setBusy(false);}
   }
+  const branded = mode !== "reset";
+  const dark = branded && appearance === "dark";
+  const Surface = branded ? AtelierAccount : Screen;
   return (
-    <Screen
-      title={
-        mode === "login"
-          ? "Your style. Your space."
-          : mode === "signup"
-            ? "Make it personal."
-            : "A fresh start."
-      }
-      subtitle={
-        mode === "reset"
-          ? "Enter your account email to request a reset link."
-          : "A considered wardrobe starts with you."
-      }
+    <Surface
+      title={mode === "login" ? "Sign in" : mode === "signup" ? "Create your wardrobe" : "Reset password"}
+      subtitle={mode === "login" ? "Pick up where you left off." : mode === "signup"
+        ? "We’ll email a verification link and a separate code. Confirm both, then choose your password."
+        : "Enter your account email to request a reset link."}
     >
       <View style={styles.layout}>
-        {mode !== "reset" && (
-          <View style={styles.editorial}>
-            <FramedImage source={require("../../assets/editorial/campaign-daylight.jpg")}
-              ratio={1.8} contain label="Model wearing chocolate tailoring and ivory knitwear" />
-            <View style={styles.caption}>
-              <Text style={styles.eyebrow}>THE PERSONAL EDIT</Text>
-              <Text style={styles.captionTitle}>A place for the pieces you love.</Text>
-            </View>
-          </View>
-        )}
-        <View style={styles.form}>
+        <View style={[styles.form,branded && styles.darkForm]}>
+          {branded && <SocialSignIn busy={busy} onPress={provider=>void social(provider)}/>}
           {session && (
-            <RouteLink to="/dashboard">Continue to your dashboard</RouteLink>
+            <Link href="/dashboard" style={branded ? styles.darkLink : ui.link}>Continue to your dashboard</Link>
           )}
-          {(reviewOnly || !supabase) && mode !== "signup" && (
-            <Notice
-              title={mode === "reset" ? "Password recovery is temporarily unavailable" : "Sign-in is temporarily unavailable"}
-              text="Please try again later. Your account details have not been submitted."
-            />
-          )}
+          {(reviewOnly || !supabase) && mode !== "signup" && <Text style={branded ? styles.feedback : ui.body}>
+            {mode === "reset" ? "Password recovery is temporarily unavailable." : "Sign-in is temporarily unavailable."}
+          </Text>}
+          {!!sessionIssue && <Text accessibilityRole="alert" style={branded ? styles.feedback : ui.error}>{sessionIssue}</Text>}
           <Fields
+            dark={dark}
             fields={fields}
             values={values}
             errors={errors}
@@ -146,69 +121,59 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
               setMessage("");
             }}
           />
-          {mode === "signup" && (
-            <View style={{ gap: 8 }} accessibilityLiveRegion="polite">
-              <Text style={ui.label}>
-                Password strength · {passwordChecks(values.password ?? "", values.email).every(check => check.passed) ? "Requirements met" : "Needs attention"}
-              </Text>
-              {passwordChecks(values.password ?? "", values.email).map(check => (
-                <Text key={check.label} style={check.passed ? ui.body : ui.error}>
-                  {check.passed ? "✓" : "○"} {check.label}
-                </Text>
-              ))}
-              {!!values.confirm && <Text style={values.confirm === values.password ? ui.body : ui.error}>
-                {values.confirm === values.password ? "Passwords match." : "Passwords must match."}
-              </Text>}
-              <Notice title="Registration opens soon"
-                text="New accounts will be available soon." />
-            </View>
-          )}
+          {mode === "signup" && !registrationEnabled &&
+            <Text style={styles.feedback}>Registration opens when email verification is ready.</Text>}
           {Boolean(message) && (
-            <Text accessibilityRole="alert" style={success ? ui.body : ui.error}>
+            <Text accessibilityRole="alert" style={[success ? ui.body : ui.error,branded && {color:success ? atelier.ink : atelier.error}]}>
               {message}
             </Text>
           )}
           <Button
+            dark={dark}
             label={
               mode === "login"
                 ? "Sign in"
                 : mode === "signup"
-                  ? "Registration opens soon"
+                  ? registrationEnabled ? "Send verification email" : "Registration opens soon"
                   : "Send reset instructions"
             }
             loading={busy}
-            disabled={!ready || busy || mode === "signup" || (!reviewOnly && !supabase)}
+            disabled={!ready || busy || (mode === "signup" ? !registrationEnabled : (!reviewOnly && !supabase))}
             onPress={submit}
           />
-          {mode !== "reset" && !reviewOnly && googleEnabled && (
-            <View style={{ gap: 12 }}>
-              <Button
-                label="Continue with Google"
-                variant="secondary"
-                disabled={busy}
-                onPress={google}
-              />
-            </View>
-          )}
+
           {mode === "login" ? (
-            <>
-              <RouteLink to="/signup">Create an account</RouteLink>
-              <RouteLink to="/forgot-password">Forgot password?</RouteLink>
-            </>
+            <View style={styles.accountLinks}>
+              <Link href="/signup" style={styles.darkLink}>Create your wardrobe</Link>
+              <Link href="/forgot-password" style={styles.darkLink}>Forgot password?</Link>
+            </View>
           ) : (
-            <RouteLink to="/login">Back to sign in</RouteLink>
+            <>
+              {mode === "signup" && registrationEnabled &&
+                <Link href="/verify-registration" style={styles.darkLink}>Already received an email? Continue verification →</Link>}
+              <Link href="/login" style={branded ? styles.darkLink : ui.link}>Already have an account? Sign in</Link>
+            </>
           )}
         </View>
+        <View style={styles.editorial}>
+          <Text style={styles.captionTitle}>Good style starts with what you own.</Text>
+          <Text style={styles.footerNote}>Your clothes. Your combinations. Your everyday wardrobe.</Text>
+        </View>
       </View>
-    </Screen>
+    </Surface>
   );
 }
 
-const styles = StyleSheet.create({
-  layout: { gap: 24 },
-  editorial: { backgroundColor: colors.editorial, overflow: "hidden" },
-  caption: { gap: 8, padding: 18 },
-  eyebrow: { fontSize: 11, letterSpacing: 2, color: colors.sage, fontWeight: "700" },
-  captionTitle: { ...typography.editorial, fontSize: 23, lineHeight: 28 },
-  form: { gap: 16 },
+const makeStyles = (atelier:Palette) => StyleSheet.create({
+  layout: { gap: 18 },
+  form: { gap: 13 },
+  feedback:{fontSize:13,lineHeight:20,color:atelier.muted,borderLeftWidth:2,borderColor:atelier.accent,paddingLeft:12},
+  darkForm:{backgroundColor:atelier.background},
+  darkLink:{color:atelier.ink,fontSize:13,paddingVertical:12,minHeight:44,textDecorationLine:"underline"},
+  accountLinks: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", columnGap: 14 },
+  editorial: { borderTopWidth:1,borderColor:atelier.border,paddingTop:22,marginTop:8,gap:8 },
+  footerNote:{fontSize:12,lineHeight:19,color:atelier.muted},
+  portrait: { width: "37%" },
+  caption: { flex: 1, padding: 14, gap: 8 },
+  captionTitle: { ...typography.editorial, color:atelier.ink, fontSize: 22, lineHeight: 27 },
 });

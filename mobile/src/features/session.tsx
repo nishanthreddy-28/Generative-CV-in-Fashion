@@ -5,8 +5,9 @@ import {
 import { AppState } from "react-native";
 import type { Session as AuthSession } from "@supabase/supabase-js";
 import { apiRequest, ApiError, type RequestOptions } from "../services/api/client";
-import { accountRequestAllowed, exchangeOAuth, catalogRole, currentAccessToken, register, signIn } from "../services/auth/contracts";
-import { clearPersistedSession, emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
+import { resolveCustomerAccess } from "../services/auth/customerAccess";
+import { accountRequestAllowed, exchangeOAuth, currentAccessToken, signIn } from "../services/auth/contracts";
+import { clearPersistedSession, requireAuth, supabase } from "../services/auth/supabase";
 import { draftStore } from "./draftStore";
 import type { Session } from "../types/domain";
 
@@ -14,9 +15,9 @@ type Context = {
   session: Session | null;
   ready: boolean;
   accountDeleting: boolean;
+  sessionIssue: string;
   deleteAccount: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   completeOAuth: (code: string, flowId?: string) => Promise<void>;
   request: <T>(path: string, options?: Omit<RequestOptions, "token">) => Promise<T>;
@@ -25,6 +26,8 @@ type Context = {
 const SessionContext = createContext<Context | null>(null);
 
 export function SessionProvider({ children }: PropsWithChildren) {
+  const [candidate,setCandidate]=useState<AuthSession|null>(null);
+  const [sessionIssue,setSessionIssue]=useState("");
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(!supabase);
   const identity = useRef<{ id: string } | null>(null);
@@ -34,6 +37,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [permissionRevision, setPermissionRevision] = useState(0);
 
   const applySession = useCallback((next: AuthSession | null) => {
+    setCandidate(next);
+    setSessionIssue("");
     setPermissionRevision((value) => value + 1);
     const user = next?.user;
     const id = signedOut.current ? undefined : user?.id;
@@ -42,14 +47,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
       deleting.current = false;
       setAccountDeleting(false);
       identity.current = id ? { id } : null;
-    }
-    if (!id || !user) {
       setSession(null);
-      return;
     }
-    setSession((previous) => previous?.user.id === id && previous.user.email === user.email
-      ? previous
-      : { user: { id, email: user.email ?? "", role: "user" } });
+    if (!id) setSession(null);
   }, []);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       if (event === "SIGNED_IN" && !signedOut.current) applySession(next);
       else if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" ||
                event === "SIGNED_OUT" || event === "USER_UPDATED") applySession(next);
-      if (event === "INITIAL_SESSION") setReady(true);
+      if (event === "INITIAL_SESSION" && !next) setReady(true);
     });
     function updateRefresh(state: string) {
       if (state === "active" && !signedOut.current) {
@@ -78,32 +78,36 @@ export function SessionProvider({ children }: PropsWithChildren) {
     };
   }, [applySession]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const auth = requireAuth();
-    const next = await signIn(auth, email, password);
+  const admitSession = useCallback(async (next: AuthSession) => {
     signedOut.current = false;
     applySession(next);
-    if (AppState.currentState === "active") void auth.startAutoRefresh();
+    const caller = identity.current;
+    const access = await resolveCustomerAccess(path => apiRequest(path, {token: next.access_token}), next.user.id);
+    if (identity.current !== caller) throw new Error("Account changed during sign-in.");
+    deleting.current = access.deleting;
+    setAccountDeleting(access.deleting);
+    setSession({user:{id:next.user.id,email:next.user.email ?? "",role:access.role}});
+    if (AppState.currentState === "active") void requireAuth().startAutoRefresh();
   }, [applySession]);
 
-  const signup = useCallback(async (name: string, email: string, password: string) => {
-    const auth = requireAuth();
-    const next = await register(auth, name, email, password, emailRedirect("auth-confirm"));
-    if (next) {
-      signedOut.current = false;
-      applySession(next);
-      if (AppState.currentState === "active") void auth.startAutoRefresh();
-    }
-    return Boolean(next);
-  }, [applySession]);
+  const login = useCallback(async (email: string, password: string) => {
+    await admitSession(await signIn(requireAuth(), email, password));
+  }, [admitSession]);
 
   const completeOAuth = useCallback(async (code: string, flowId?: string) => {
     const auth = requireAuth();
     const next = await exchangeOAuth(auth, code, flowId);
-    signedOut.current = false;
-    applySession(next);
-    if (AppState.currentState === "active") void auth.startAutoRefresh();
-  }, [applySession]);
+    try {
+      await admitSession(next);
+    } catch (error) {
+      if (identity.current?.id === next.user.id) {
+        signedOut.current = true;
+        applySession(null);
+        await auth.signOut({scope:"local"}).catch(() => undefined);
+      }
+      throw error;
+    }
+  }, [admitSession, applySession]);
 
   const logout = useCallback(async () => {
     signedOut.current = true;
@@ -152,24 +156,29 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, [request]);
 
   useEffect(() => {
-    const userId = session?.user.id;
-    if (!userId) return;
-    const controller = new AbortController();
-    // Failure is fail-closed for UI access; no role is read from Auth metadata.
-    void request<unknown>("/admin/catalog/access", { signal: controller.signal })
-      .then((access) => {
-        if (!controller.signal.aborted) setSession((current) => current?.user.id === userId
-          ? { user: { ...current.user, role: catalogRole(access, userId) } } : current);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setSession((current) => current?.user.id === userId
-          ? { user: { ...current.user, role: "user" } } : current);
-      });
-    return () => controller.abort();
-  }, [session?.user.id, permissionRevision, request]);
+    const caller=identity.current;
+    if(!candidate || !caller || !supabase)return;
+    const controller=new AbortController();
+    const read=async (path:string)=>{
+      const token=await currentAccessToken(()=>requireAuth().getSession(),caller.id,
+        ()=>identity.current===caller && !controller.signal.aborted);
+      if(!token)throw new ApiError("Sign in again.",401);
+      return apiRequest<unknown>(path,{token,signal:controller.signal});
+    };
+    void resolveCustomerAccess(read,caller.id).then(access=>{
+      if(controller.signal.aborted || identity.current!==caller)return;
+      deleting.current=access.deleting;setAccountDeleting(access.deleting);
+      setSession({user:{id:caller.id,email:candidate.user.email ?? "",role:access.role}});
+    }).catch(error=>{
+      if(controller.signal.aborted || identity.current!==caller)return;
+      setSession(null);draftStore.clear();
+      setSessionIssue(error instanceof Error ? error.message : "Account access is unavailable.");
+    }).finally(()=>{if(!controller.signal.aborted)setReady(true);});
+    return ()=>controller.abort();
+  },[candidate,permissionRevision]);
 
   return (
-    <SessionContext.Provider value={{ session, ready, accountDeleting, deleteAccount, login, signup, logout, completeOAuth, request }}>
+    <SessionContext.Provider value={{ session, ready, sessionIssue, accountDeleting, deleteAccount, login, logout, completeOAuth, request }}>
       {children}
     </SessionContext.Provider>
   );
