@@ -43,8 +43,14 @@ Remaining acceptance: no signed-in dashboard/collection/admin visual inspection,
 
 ## Mobile campaign landing — 2026-11-09
 
-Added a burgundy/ivory fashion campaign with three generated editorial assets showing fictional adult models. H&M, Zara and Mango were used as visual references for editorial navigation and composition. The original assets are decorative brand imagery, not catalog records or try-on outputs. Optimized JPEG files total approximately 1 MiB and are bundled locally. The landing includes section navigation, product explanation, a style edit, account links and expandable questions. Phone layouts stack, while desktop adds a split hero and three-column feature explanation.
+Added a burgundy/ivory fashion campaign with three generated editorial assets showing fictional adult models. H&M, Zara and Mango were used as visual references for editorial navigation and composition. The original assets are decorative brand imagery, not catalog records or try-on outputs. Optimized JPEG files total approximately 1 MiB and are bundled locally. The landing includes section navigation, product explanation, a style edit, account links and expandable questions. The original checkpoint added a desktop split hero; the phone-only follow-up below replaces that behavior.
 
 Chrome local review covered 320, 375, 390, 430, 768 and 1280 CSS pixels. No document horizontal overflow was detected and all rendered images loaded. Section links, FAQ expansion, email/password page navigation and the paused privacy URL's return to home were exercised. Public privacy links were removed at the owner's request. The existing privacy route is temporarily redirected to home. Existing signed-in account controls and backend security continue to follow their access rules.
 
 The owner chose a real test account after hosted setup approval. No review credentials or sample customer records were created. That account and real persistence acceptance remain dependent on the reviewed migration, independent verification, Auth callbacks and security gates. The local campaign review does not establish those hosted workflows.
+
+## Phone-only browser shell — 2026-11-09
+
+All browser routes now share a centered frame capped at 480 CSS pixels, with a neutral surrounding background. Narrow browsers use their full width. The landing keeps its stacked mobile composition at every browser width, and shared confirmation overlays use the same width boundary. Native screens keep their normal device width. Authentication guards and API contracts are unchanged.
+
+Chrome verified the local landing frame at 480px within a 1280px browser and the sign-in form at both 1280px and 320px browser widths, without document horizontal overflow. Signed-in screens remain unverified because this checkpoint does not bypass authentication. Frontend tests: 71 passed; typecheck, lint and the review-mode production web build passed. Hosted activation and real test-account acceptance remain pending.

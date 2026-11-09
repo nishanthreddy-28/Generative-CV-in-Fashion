@@ -1,6 +1,6 @@
 import { useRef, useState, type ComponentRef } from "react";
 import { Link } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FramedImage } from "../components/FramedImage";
 
@@ -21,8 +21,6 @@ const steps = [
 ];
 
 export default function Introduction() {
-  const { width, fontScale } = useWindowDimensions();
-  const wide = width >= 960 && fontScale < 1.3;
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const sections = useRef<Record<string, number>>({});
   const [openQuestion, setOpenQuestion] = useState<number | null>(null);
@@ -43,15 +41,15 @@ export default function Introduction() {
             </Pressable>
           ))}
         </View>
-        <View style={[styles.hero, wide && styles.heroWide]}>
-          <View style={[styles.heroImage, wide && styles.half]}>
+        <View style={styles.hero}>
+          <View style={styles.heroImage}>
             <FramedImage source={require('../../assets/editorial/campaign-hero.jpg')} ratio={0.78}
               label="Three models in burgundy tailoring and ivory layers in a sunlit architectural courtyard" />
             <Text style={styles.imageCaption}>THE PERSONAL EDIT / VOL. 01</Text>
           </View>
-          <View style={[styles.heroCopy, wide && styles.half]}>
+          <View style={styles.heroCopy}>
             <Text style={styles.eyebrow}>A LITTLE MORE INTENTION</Text>
-            <Text accessibilityRole="header" style={[styles.title, wide && styles.titleWide]}>Your style.{'\n'}Beautifully{'\n'}put together.</Text>
+            <Text accessibilityRole="header" style={styles.title}>Your style.{'\n'}Beautifully{'\n'}put together.</Text>
             <Text style={styles.body}>Rediscover what you own. Create outfits that feel like you. Make every day a little more considered.</Text>
             <Link href="/login" style={styles.primary}>Step inside  →</Link>
             <Link href="/signup" style={styles.textLink}>New here? Discover your personal wardrobe</Link>
@@ -65,8 +63,8 @@ export default function Introduction() {
         <View onLayout={event => { sections.current.experience = event.nativeEvent.layout.y; }} style={styles.section}>
           <View style={styles.sectionHeading}><Text style={styles.eyebrow}>THE EXPERIENCE</Text><Text style={styles.sectionNumber}>01—03</Text></View>
           <Text accessibilityRole="header" style={styles.sectionTitle}>Good style starts{'\n'}with what you own.</Text>
-          <View style={[styles.steps, wide && styles.row]}>
-            {steps.map(step => <View key={step.number} style={[styles.step, wide && styles.third]}>
+          <View style={styles.steps}>
+            {steps.map(step => <View key={step.number} style={styles.step}>
               <Text style={styles.stepNumber}>{step.number}</Text>
               <Text style={styles.stepTitle}>{step.title}</Text>
               <Text style={styles.body}>{step.text}</Text>
@@ -120,7 +118,7 @@ export default function Introduction() {
 
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: palette.paper},
-  page: {width: '100%', maxWidth: 1280, alignSelf: 'center'},
+  page: {width: '100%', maxWidth: 480, alignSelf: 'center'},
   announcement: {backgroundColor: palette.wine, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center'},
   announcementText: {fontSize: 9, letterSpacing: 2, color: palette.white, textAlign: 'center'},
   header: {paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'},
@@ -129,11 +127,11 @@ const styles = StyleSheet.create({
   sectionNav: {flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: 1, borderBottomWidth: 1, borderColor: palette.line, paddingHorizontal: 8, flexWrap: 'wrap'},
   navButton: {minHeight: 44, paddingHorizontal: 8, justifyContent: 'center'},
   navText: {fontSize: 11, color: palette.muted},
-  hero: {backgroundColor: palette.blush}, heroWide: {flexDirection: 'row', alignItems: 'center'},
-  half: {flex: 1, minWidth: 0}, heroImage: {position: 'relative'},
+  hero: {backgroundColor: palette.blush},
+  heroImage: {position: 'relative'},
   imageCaption: {position: 'absolute', bottom: 18, left: 18, backgroundColor: palette.paper, color: palette.ink, padding: 8, fontSize: 9, letterSpacing: 1.2},
   heroCopy: {padding: 26, gap: 18}, eyebrow: {fontSize: 10, fontWeight: '600', letterSpacing: 1.8, color: palette.wine},
-  title: {fontFamily: 'serif', fontSize: 44, lineHeight: 48, color: palette.ink}, titleWide: {fontSize: 64, lineHeight: 68},
+  title: {fontFamily: 'serif', fontSize: 44, lineHeight: 48, color: palette.ink},
   body: {fontSize: 15, lineHeight: 24, color: palette.muted},
   primary: {backgroundColor: palette.wine, color: palette.white, padding: 18, textAlign: 'center', minHeight: 54, fontSize: 14, fontWeight: '600'},
   textLink: {color: palette.ink, fontSize: 13, textDecorationLine: 'underline', paddingVertical: 14, minHeight: 48},
@@ -142,7 +140,7 @@ const styles = StyleSheet.create({
   section: {paddingHorizontal: 22, paddingVertical: 32, gap: 20}, sectionHeading: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap'},
   sectionNumber: {fontSize: 9, letterSpacing: 1, color: palette.muted},
   sectionTitle: {fontFamily: 'serif', fontSize: 32, lineHeight: 38, color: palette.ink},
-  steps: {gap: 20}, row: {flexDirection: 'row', gap: 28}, third: {flex: 1, minWidth: 0},
+  steps: {gap: 20},
   step: {borderTopWidth: 1, borderColor: palette.line, paddingTop: 18, gap: 12}, stepNumber: {fontSize: 11, letterSpacing: 2, color: palette.wine},
   stepTitle: {fontFamily: 'serif', fontSize: 25, lineHeight: 30, color: palette.ink},
   editorials: {flexDirection: 'row', gap: 14, flexWrap: 'wrap'}, editorialCard: {flexGrow: 1, flexBasis: 125, minWidth: 0, gap: 9},
