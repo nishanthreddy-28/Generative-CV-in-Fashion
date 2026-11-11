@@ -7,6 +7,10 @@ export async function resolveCustomerAccess(read: (path: string) => Promise<unkn
     if(access.userId!==userId || typeof access.isCatalogAdmin!=='boolean')throw new Error('Account access could not be verified.');
     return {role:access.isCatalogAdmin ? 'admin' as const : 'user' as const, deleting:false};
   } catch(error) {
+    if (error instanceof Error && (
+      ('kind' in error && ['cancelled', 'timeout', 'network', 'unavailable'].some(kind => kind === error.kind)) ||
+      ('status' in error && error.status === 401)
+    )) throw error;
     if(error && typeof error==='object' && 'status' in error && error.status===403) {
       const value=await read('/account/deletion');
       if(value && typeof value==='object' && 'status' in value && (value.status==='deleting' || value.status==='complete'))

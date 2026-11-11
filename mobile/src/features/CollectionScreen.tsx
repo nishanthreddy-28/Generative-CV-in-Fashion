@@ -1,7 +1,7 @@
 import { colors } from "../theme/tokens";
 import {useCallback} from "react";
 import {Link,useFocusEffect} from "expo-router";
-import { Pressable, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import {
   Screen,
   Gate,
@@ -48,15 +48,12 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
   useFocusEffect(useCallback(()=>{refresh();},[refresh]));
   const list = result.data?.items ?? [];
   return (
-    <Screen title={title} subtitle={subtitle}>
+    <Screen title={title} subtitle={kind === "wardrobe" ? undefined : subtitle}
+      action={kind === "wardrobe" ? <Link href="/wardrobe/add" accessibilityLabel="Add item" style={styles.add}>+</Link> : undefined}>
       <Gate preview={preview} admin={kind === "admin"}>
-        {kind === "wardrobe" && <Link href="/wardrobe/add" style={ui.primaryLink}>+ Add item</Link>}
         {kind === "admin" && <Link href="/admin/catalog/new" style={ui.primaryLink}>+ Add catalog item</Link>}
         {kind === "outfits" && <Link href="/outfits/new" style={ui.primaryLink}>+ Create outfit</Link>}
         <View style={ui.field}>
-          <Text style={ui.label}>
-            Search {kind === "outfits" ? "outfits" : "garments"}
-          </Text>
           <View style={[ui.row,{flexWrap:"nowrap"}]}>
           <TextInput
             accessibilityLabel="Search collection"
@@ -65,7 +62,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
             placeholderTextColor={colors.muted} placeholder="Search by name or brand"
             returnKeyType="search"
             onSubmitEditing={()=>{setApplied(search.trim());setCursor("");}}
-            style={[ui.input,{flex:1,minWidth:0}]}
+            style={[ui.input,styles.search]}
           />
           <Button
             label="Search"
@@ -78,23 +75,23 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
           </View>
         </View>
         {kind !== "outfits" && (
-          <View style={ui.row}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
             {["All", ...categories].map((c) => (
               <Pressable
                 accessibilityRole="radio"
                 accessibilityLabel={`Category: ${c}`}
                 accessibilityState={{ checked: (category || "All") === c }}
                 key={c}
-                style={[ui.chip, (category || "All") === c && ui.selected]}
+                style={[styles.filter, (category || "All") === c && styles.activeFilter]}
                 onPress={() => {
                   setCategory(c === "All" ? "" : c);
                   setCursor("");
                 }}
               >
-                <Text style={ui.chipLabel}>{c}</Text>
+                <Text style={[ui.chipLabel,(category || "All") === c && styles.activeLabel]}>{c}</Text>
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
         )}
         <View style={ui.row}>
           {[
@@ -123,7 +120,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
             text={applied || category ? "Try another search or clear your filters." : kind === "wardrobe"
               ? "Add a photo of a garment to start your collection."
               : kind === "outfits" ? "Create an outfit to keep it here." : "Pieces will appear here when they’re added to the catalog."}
-          />
+          >{kind === "wardrobe" && !applied && !category && <RouteLink to="/wardrobe/add">Add your first piece ›</RouteLink>}</Notice>
         )}
         <View style={{flexDirection:"row",flexWrap:"wrap",gap:12}}>
         {list.map(item=><View key={item.id} style={{flexBasis: columns === 2 ? "48%" : "100%", flexGrow: columns === 2 ? 1 : 0, maxWidth: columns === 2 ? "50%" : "100%"}}>
@@ -162,3 +159,12 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  add:{width:44,height:44,lineHeight:42,textAlign:"center",borderRadius:22,overflow:"hidden",fontSize:25,backgroundColor:colors.ink,color:colors.surface},
+  search:{flex:1,minWidth:0,borderRadius:24,backgroundColor:colors.raised,paddingHorizontal:16},
+  filters:{gap:7,paddingVertical:2},
+  filter:{minHeight:44,borderRadius:22,justifyContent:"center",paddingHorizontal:14,backgroundColor:colors.raised},
+  activeFilter:{backgroundColor:colors.ink},
+  activeLabel:{color:colors.surface},
+});

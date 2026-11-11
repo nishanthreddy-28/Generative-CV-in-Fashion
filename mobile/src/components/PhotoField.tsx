@@ -1,7 +1,7 @@
 import { colors } from "../theme/tokens";
 import {FramedImage} from "./FramedImage";
 import { useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Button } from "./Button";
 import { ui } from "./Screen";
@@ -63,7 +63,11 @@ export function PhotoField({
   return (
     <View style={{ gap: 12 }}>
       <Text style={ui.label}>{label}</Text>
-      {!value && <View style={{aspectRatio:1.5,borderWidth:1,borderStyle:"dashed",borderColor:colors.inputBorder,backgroundColor:colors.surface,alignItems:"center",justifyContent:"center",padding:20,gap:8}}><Text style={ui.heading}>One piece. A clearer picture.</Text><Text style={ui.body}>Choose a clear photo of one piece.</Text></View>}
+      {!value && <View style={[styles.photoArea,camera && styles.captureArea]}>
+        {camera && <Text style={styles.captureMark} accessible={false}>⌑</Text>}
+        <Text style={ui.heading}>Choose a garment photo</Text>
+        <Text style={styles.photoHint}>Frame one piece at a time.</Text>
+      </View>}
       {value && (
         <FramedImage
           label={label}
@@ -102,6 +106,13 @@ export function PhotoField({
     </View>
   );
 }
+const styles = StyleSheet.create({
+  photoArea:{aspectRatio:1.5,borderWidth:1,borderStyle:"dashed",borderColor:colors.inputBorder,
+    backgroundColor:colors.surface,alignItems:"center",justifyContent:"center",padding:16,gap:6,borderRadius:16},
+  captureArea:{backgroundColor:"#FFDBC0",borderColor:"#AC7352"},
+  captureMark:{fontSize:28,lineHeight:32,color:colors.ink},
+  photoHint:{fontSize:13,color:colors.muted,textAlign:"center"},
+});
 export function appendPhoto(form: FormData, key: string, photo: Photo) {
   if (Platform.OS === "web") {
     if (!photo.file)

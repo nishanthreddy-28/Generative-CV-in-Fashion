@@ -59,6 +59,12 @@ test('Auth session alone cannot grant normal or administrative UI access',async(
  await assert.rejects(resolveCustomerAccess(async()=>({role:'admin'}),'a'));
  await assert.rejects(resolveCustomerAccess(async()=>{throw new Error('offline');},'a'));
 });
+test('account access preserves temporary service errors without granting access', async()=>{
+ const timeout=Object.assign(new Error('The service took too long to respond.'),{kind:'timeout'});
+ await assert.rejects(resolveCustomerAccess(async()=>{throw timeout;},'a'),error=>error===timeout);
+ const unauthorized=Object.assign(new Error('Your session has expired.'),{status:401});
+ await assert.rejects(resolveCustomerAccess(async()=>{throw unauthorized;},'a'),error=>error===unauthorized);
+});
 test('restored deleting sessions get only the deletion screen boundary',async()=>{
  const read=async path=>{if(path==='/admin/catalog/access')throw Object.assign(new Error('denied'),{status:403});return {status:'deleting'};};
  assert.deepEqual(await resolveCustomerAccess(read,'a'),{role:'user',deleting:true});

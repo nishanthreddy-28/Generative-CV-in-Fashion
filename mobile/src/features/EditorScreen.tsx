@@ -1,5 +1,5 @@
 import { useDraft } from "../hooks/useDraft";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Text, View } from "react-native";
 import { router, type Href } from "expo-router";
 import { Fields } from "../components/Fields";
@@ -28,7 +28,7 @@ type Props = {
   admin?: boolean;
   afterSave?: string;
   allowDelete?: boolean;
-  wardrobeEntry?: ReactNode;
+  wardrobeEntry?: boolean;
 };
 export function EditorScreen({
   title,
@@ -161,7 +161,6 @@ export function EditorScreen({
             )}
             {admin && result.data?.active === false &&
               <Notice title="Inactive catalog item" text="Hidden from the catalog. Its record and image are retained." />}
-            {wardrobeEntry}
             {wardrobeEntry && photoSection}
             {(!wardrobeEntry || image) && <>
             <View style={ui.card}>

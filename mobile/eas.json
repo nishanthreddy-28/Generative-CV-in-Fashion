@@ -1,14 +1,26 @@
 {
-  "cli": { "appVersionSource": "local" },
+  "cli": {
+    "appVersionSource": "local"
+  },
   "build": {
     "preview": {
       "distribution": "internal",
       "environment": "preview",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://drape-drop-api.onrender.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://xpqhqhpqzkjaycraukrj.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_ZeuE4a7SqStE8jSAQbTN5Q_l2HPt7rW",
+        "EXPO_NO_DOTENV": "1"
+      }
     },
     "production": {
       "environment": "production",
-      "android": { "buildType": "app-bundle" },
+      "android": {
+        "buildType": "app-bundle"
+      },
       "autoIncrement": true
     }
   }

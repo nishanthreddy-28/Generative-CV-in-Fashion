@@ -4,7 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen, Gate, Notice, RouteLink, ResourceState, usePreview, ui } from "../components/Screen";
 import {WardrobeImage} from "../components/WardrobeImage";
-import { typography } from "../theme/tokens";
+import { colors } from "../theme/tokens";
 import { Button } from "../components/Button";
 import { Fields } from "../components/Fields";
 import { useResource } from "../hooks/useResource";
@@ -22,14 +22,13 @@ const fields: Field[] = [
 export function RecommendationLooks({items,preview,onSave,onCreateOutfit,saved,saving}: {
   items:Recommendation[];preview:boolean;onSave?:(look:Recommendation)=>void;onCreateOutfit?:(look:Recommendation)=>void;saved?:Record<string,string|null>;saving?:string;
 }) {
-  return <>{items.map(look=><View key={look.id} style={ui.card}>
-    <Text style={typography.eyebrow}>{(look.occasion || "STYLE EDIT").toUpperCase()}</Text>
+  return <>{items.map(look=><View key={look.id} style={styles.look}>
+    {!!look.occasion && <Text style={styles.occasion}>{look.occasion}</Text>}
     <Text style={styles.lookTitle}>{look.name}</Text>
-    <View style={{flexDirection:"row",gap:12,flexWrap:"wrap"}}>
-    {look.items.map(piece=><View key={`${piece.source}:${piece.garmentId}`} style={{flex:1,minWidth:110,gap:10}}>
+    <View style={styles.pieces}>
+    {look.items.map(piece=><View key={`${piece.source}:${piece.garmentId}`} style={styles.piece}>
       <WardrobeImage id={piece.garmentId} label={piece.name} source={piece.source} preview={preview}/>
-      <Text style={ui.body}>{piece.name} · {piece.category}{piece.color ? ` · ${piece.color}` : ""}</Text>
-      <RouteLink to={itemRoute(piece)} preview={preview}>View {piece.source} piece →</RouteLink>
+      <RouteLink to={itemRoute(piece)} preview={preview}>{piece.name} ›</RouteLink>
     </View>)}
     </View>
     <Text style={ui.label}>Why it works</Text>
@@ -105,10 +104,12 @@ export function RecommendationsScreen() {
       finally{setSaving("");}
     });
   }
-  return <Screen title="Style ideas" subtitle="Explore combinations from your wardrobe and the catalog.">
+  return <Screen title="Outfit suggestions">
     <Gate preview={preview}>
-      <Fields fields={fields} values={values} errors={errors} disabled={busy} onChange={(key,value)=>setValues(current=>({...current,[key]:value}))} />
-      <Button label="Find outfits" onPress={generate} loading={busy} />
+      <View style={styles.filters}>
+        <Fields fields={fields} values={values} errors={errors} disabled={busy} onChange={(key,value)=>setValues(current=>({...current,[key]:value}))} />
+        <Button label="Find outfits" onPress={generate} loading={busy} />
+      </View>
       {Boolean(message) && <Notice title="Style ideas" text={message} />}
       {looks?.length===0 && <Notice title="No outfits found" text="Add a top and bottoms, or a dress and shoes. You can also include the shared catalog." />}
       {looks && <RecommendationLooks items={looks} preview={preview} onSave={save} onCreateOutfit={saveOutfit} saved={saved} saving={saving} />}
@@ -123,5 +124,10 @@ export function RecommendationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  lookTitle: {...typography.editorial, fontSize: 25, lineHeight: 30},
+  filters:{borderRadius:20,padding:16,gap:12,backgroundColor:colors.raised},
+  look:{borderWidth:1,borderColor:colors.border,borderRadius:20,padding:14,gap:10,backgroundColor:colors.surface},
+  lookTitle:{color:colors.ink,fontSize:21,fontWeight:"800"},
+  occasion:{alignSelf:"flex-start",backgroundColor:"#FFDBC0",borderRadius:14,overflow:"hidden",paddingVertical:4,paddingHorizontal:9,color:colors.ink,fontSize:12},
+  pieces:{flexDirection:"row",flexWrap:"wrap",gap:8},
+  piece:{flexBasis:"47%",flexGrow:1,maxWidth:"50%",backgroundColor:colors.raised,borderRadius:12,overflow:"hidden",padding:6},
 });

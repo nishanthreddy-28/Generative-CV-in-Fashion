@@ -1,8 +1,7 @@
-import {Link} from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 import { colors, typography } from "../theme/tokens";
 import { useCallback, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { useFocusEffect } from "expo-router";
 import { Button } from "../components/Button";
 import { Gate, Notice, ResourceState, RouteLink, Screen, ui, usePreview } from "../components/Screen";
 import { useDraft } from "../hooks/useDraft";

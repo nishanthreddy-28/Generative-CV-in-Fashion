@@ -109,9 +109,67 @@ test("cancelled and failed network requests expose actionable errors", async () 
   controller.abort();
   await assert.rejects(
     apiRequest("/wardrobe", { signal: controller.signal }),
-    /cancelled or timed out/,
+    /request was cancelled/,
   );
   await assert.rejects(apiRequest("/wardrobe"), /Unable to connect/);
+});
+test("account access retries once and accepts only the recovered JSON response", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  for (const first of [new Response(null, {status: 503}), new Response("<html>Starting</html>", {
+    headers: {"content-type": "text/html"},
+  })]) {
+    let requests = 0;
+    globalThis.fetch = async (_url, options) => {
+      assert.equal(options.method, "GET");
+      assert.equal(options.headers.Authorization, "Bearer current-token");
+      return ++requests === 1 ? first : Response.json({userId:"owner", isCatalogAdmin:false});
+    };
+    assert.deepEqual(await apiRequest("/admin/catalog/access", {token:"current-token"}), {userId:"owner", isCatalogAdmin:false});
+    assert.equal(requests, 2);
+  }
+});
+test("account access can outlast the first 20-second deadline and stops at 70 seconds", async (t) => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  t.mock.timers.enable({apis:["setTimeout"]});
+  let requests = 0;
+  let startedRecovery;
+  const recovery = new Promise(resolve => { startedRecovery = resolve; });
+  globalThis.fetch = async (_url, {signal}) => new Promise((_, reject) => {
+    signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), {once:true});
+    if (++requests === 2) startedRecovery();
+  });
+  const request = apiRequest("/admin/catalog/access");
+  const rejected = assert.rejects(request, error => error.kind === "timeout");
+  t.mock.timers.tick(20_000);
+  await recovery;
+  t.mock.timers.tick(49_999);
+  assert.equal(requests, 2);
+  t.mock.timers.tick(1);
+  await rejected;
+  assert.equal(requests, 2);
+});
+test("writes and authentication denials are never retried", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  for (const [path, method, status] of [["/wardrobe", "POST", 503], ["/wardrobe/item", "PATCH", 504],
+    ["/account", "DELETE", 503], ["/outfits/id/items", "PUT", 502], ["/admin/catalog/access", "GET", 401],
+    ["/admin/catalog/access", "GET", 403], ["/wardrobe", "GET", 503]]) {
+    let requests = 0;
+    globalThis.fetch = async () => { requests++; return new Response(null, {status}); };
+    await assert.rejects(apiRequest(path, {method}), error => error.status === status);
+    assert.equal(requests, 1);
+  }
+});
+test("caller cancellation stops account access recovery", async () => {
+  process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
+  const controller = new AbortController();
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests++;
+    controller.abort();
+    return new Response(null, {status:503});
+  };
+  await assert.rejects(apiRequest("/admin/catalog/access", {signal:controller.signal}), error => error.kind === "cancelled");
+  assert.equal(requests, 1);
 });
 test("multipart requests let the transport set the content boundary", async () => {
   process.env.EXPO_PUBLIC_API_URL = "https://service.example.invalid";
