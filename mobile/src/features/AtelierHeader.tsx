@@ -1,40 +1,34 @@
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import {useAppearance, type Palette} from "../theme/Appearance";
+import { useAppearance, type Palette } from "../theme/Appearance";
 
-export function AtelierHeader({onDiscover, account = "login"}: {
-  onDiscover?: () => void;
-  account?: "login" | "signup";
-}) {
+export function AtelierHeader({showSignIn = true}: {showSignIn?: boolean}) {
   const {palette,mode,toggle}=useAppearance();
   const styles=makeStyles(palette);
+  const dark=mode==="dark";
   return <View style={styles.header}>
     <Link href="/" accessibilityLabel="Drape and Drop home" style={styles.logo}>DRAPE &amp; DROP</Link>
-    <View style={styles.links}>
-      {onDiscover && <Pressable accessibilityRole="button" onPress={onDiscover} style={styles.discover}>
-        <Text style={styles.link}>Discover</Text>
-      </Pressable>}
-      <Link href={account === "login" ? "/login" : "/signup"} style={styles.link}>
-        {account === "login" ? "Sign in" : "Join"}
-      </Link>
-    </View>
-    <View style={styles.themeRow}>
-      <Text style={styles.themeLabel}>Appearance</Text>
-      <Pressable accessibilityRole="switch" accessibilityLabel="Dark appearance" accessibilityState={{checked:mode==="dark"}} onPress={toggle} style={styles.themeButton}>
-        <Text style={styles.themeText}>{mode === "light" ? "Light · Switch to dark" : "Dark · Switch to light"}</Text>
+    <View style={styles.controls}>
+      {showSignIn && <Link href="/login" style={styles.link}>Sign in</Link>}
+      <Pressable accessibilityRole="button" accessibilityLabel={dark ? "Switch to light theme" : "Switch to dark theme"}
+        onPress={toggle} style={({pressed})=>[styles.themeButton, pressed && styles.pressed]}>
+        <View style={styles.themeDisc}>
+          <Text accessible={false} style={styles.themeIcon}>{dark ? "☀" : "☾"}</Text>
+        </View>
       </Pressable>
     </View>
   </View>;
 }
 
-const makeStyles = (atelier:Palette) => StyleSheet.create({
-  themeRow:{width:"100%",flexDirection:"row",alignItems:"center",justifyContent:"space-between",borderTopWidth:1,borderColor:atelier.border},
-  themeLabel:{fontSize:10,letterSpacing:1,color:atelier.muted,textTransform:"uppercase"},
-  themeButton:{minHeight:44,justifyContent:"center",paddingLeft:16},
-  themeText:{fontSize:12,color:atelier.ink},
-  header:{paddingHorizontal:20,borderBottomWidth:1,borderColor:atelier.border,flexDirection:"row",flexWrap:"wrap",justifyContent:"space-between",alignItems:"center",columnGap:10},
-  logo:{color:atelier.ink,fontSize:13,fontWeight:"700",letterSpacing:2.1,paddingVertical:16},
-  links:{flexDirection:"row",alignItems:"center",gap:16},
-  discover:{justifyContent:"center"},
-  link:{color:atelier.ink,fontSize:13,paddingVertical:15,minHeight:44},
+const makeStyles = (palette:Palette) => StyleSheet.create({
+  header:{minHeight:60,paddingLeft:20,paddingRight:12,borderBottomWidth:1,borderColor:palette.border,
+    flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:8},
+  logo:{color:palette.ink,fontFamily:"serif",fontSize:18,letterSpacing:0.65,paddingVertical:12},
+  controls:{flexDirection:"row",alignItems:"center",gap:8},
+  link:{color:palette.ink,fontSize:13,fontWeight:"600",paddingHorizontal:4,paddingVertical:14,minHeight:44},
+  themeButton:{width:44,height:44,alignItems:"center",justifyContent:"center"},
+  themeDisc:{width:34,height:34,borderRadius:17,borderWidth:1,borderColor:palette.border,backgroundColor:palette.surface,
+    alignItems:"center",justifyContent:"center"},
+  themeIcon:{color:palette.ink,fontSize:19,lineHeight:23},
+  pressed:{opacity:0.65},
 });

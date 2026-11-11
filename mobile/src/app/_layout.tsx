@@ -1,20 +1,22 @@
-import {Stack} from "expo-router";
+import {Stack,usePathname} from "expo-router";
 import {StatusBar} from "expo-status-bar";
 import {SafeAreaProvider} from "react-native-safe-area-context";
 import {ActivityIndicator,Platform,StyleSheet,Text,View} from "react-native";
 import {SessionProvider,useSession} from "../features/session";
 import {guestScreens,publicScreens,personalScreens,adminScreens,accountScreens,routeAccess} from "../features/navigation";
-import {AppearanceProvider} from "../theme/Appearance";
+import {AppearanceProvider,useAppearance} from "../theme/Appearance";
 import {colors} from "../theme/tokens";
 export const unstable_settings={anchor:"login"};
-function AppNavigator(){
+function AppNavigator({publicAccount}: {publicAccount: boolean}){
+ const {palette}=useAppearance();
+ const {background,ink}=publicAccount ? palette : colors;
  const {session,ready,accountDeleting}=useSession();
  const access=routeAccess(ready,session?.user.role,accountDeleting);
- if(!ready)return <View style={{flex:1,alignItems:"center",justifyContent:"center",gap:20,backgroundColor:colors.background}}>
-  <Text style={{color:colors.ink,letterSpacing:3,fontWeight:"600"}}>DRAPE &amp; DROP</Text>
-  <ActivityIndicator accessibilityLabel="Restoring your session" color={colors.ink}/>
+ if(!ready)return <View style={{flex:1,alignItems:"center",justifyContent:"center",gap:20,backgroundColor:background}}>
+  <Text style={{color:ink,letterSpacing:3,fontWeight:"600"}}>DRAPE &amp; DROP</Text>
+  <ActivityIndicator accessibilityLabel="Restoring your session" color={ink}/>
  </View>;
- return <Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.background}}}>
+ return <Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:background}}}>
   <Stack.Protected guard={access.guest}>{guestScreens.map(name=><Stack.Screen key={name} name={name}/>)}</Stack.Protected>
   <Stack.Protected guard={access.personal}>{personalScreens.map(name=><Stack.Screen key={name} name={name}/>)}</Stack.Protected>
   <Stack.Protected guard={access.admin}>{adminScreens.map(name=><Stack.Screen key={name} name={name}/>)}</Stack.Protected>
@@ -22,9 +24,14 @@ function AppNavigator(){
   {publicScreens.map(name=><Stack.Screen key={name} name={name}/>)}
  </Stack>;
 }
-export default function RootLayout(){return <View style={styles.browser}><View style={styles.app}><SafeAreaProvider><AppearanceProvider><SessionProvider>
- <StatusBar style="dark"/><AppNavigator/>
- </SessionProvider></AppearanceProvider></SafeAreaProvider></View></View>;}
+function AppFrame(){
+ const {palette,mode}=useAppearance();
+ const publicAccount=["/","/login","/signup"].includes(usePathname());
+ return <View style={styles.browser}><View style={[styles.app,publicAccount && {backgroundColor:palette.background,borderColor:palette.border}]}><SafeAreaProvider><SessionProvider>
+ <StatusBar style={publicAccount && mode==="dark" ? "light" : "dark"}/><AppNavigator publicAccount={publicAccount}/>
+ </SessionProvider></SafeAreaProvider></View></View>;
+}
+export default function RootLayout(){return <AppearanceProvider><AppFrame/></AppearanceProvider>;}
 
 const styles=StyleSheet.create({
  browser:{flex:1,backgroundColor:colors.canvas},

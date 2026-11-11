@@ -9,7 +9,6 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import * as Linking from "expo-linking";
 import { Screen, ui } from "../components/Screen";
 import { Button } from "../components/Button";
-import { typography } from "../theme/tokens";
 import { Fields } from "../components/Fields";
 import { type Field, validate } from "./validation";
 import { useSession } from "./session";
@@ -91,16 +90,8 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   }
   const branded = mode !== "reset";
   const dark = branded && appearance === "dark";
-  const Surface = branded ? AtelierAccount : Screen;
-  return (
-    <Surface
-      title={mode === "login" ? "Sign in" : mode === "signup" ? "Create your wardrobe" : "Reset password"}
-      subtitle={mode === "login" ? "Pick up where you left off." : mode === "signup"
-        ? "We’ll email a verification link and a separate code. Confirm both, then choose your password."
-        : "Enter your account email to request a reset link."}
-    >
-      <View style={styles.layout}>
-        <View style={[styles.form,branded && styles.darkForm]}>
+  const form = (
+        <View style={[styles.form,branded && styles.editorialForm]}>
           {branded && <SocialSignIn busy={busy} onPress={provider=>void social(provider)}/>}
           {session && (
             <Link href="/dashboard" style={branded ? styles.darkLink : ui.link}>Continue to your dashboard</Link>
@@ -111,6 +102,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
           {!!sessionIssue && <Text accessibilityRole="alert" style={branded ? styles.feedback : ui.error}>{sessionIssue}</Text>}
           <Fields
             dark={dark}
+            editorial={branded}
             fields={fields}
             values={values}
             errors={errors}
@@ -143,37 +135,29 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
           />
 
           {mode === "login" ? (
-            <View style={styles.accountLinks}>
-              <Link href="/signup" style={styles.darkLink}>Create your wardrobe</Link>
-              <Link href="/forgot-password" style={styles.darkLink}>Forgot password?</Link>
-            </View>
+            <Link href="/forgot-password" style={styles.accountLink}>Forgot password?</Link>
           ) : (
             <>
               {mode === "signup" && registrationEnabled &&
-                <Link href="/verify-registration" style={styles.darkLink}>Already received an email? Continue verification →</Link>}
-              <Link href="/login" style={branded ? styles.darkLink : ui.link}>Already have an account? Sign in</Link>
+                <Link href="/verify-registration" style={styles.accountLink}>Already received an email? Continue verification →</Link>}
+              {mode === "reset" && <Link href="/login" style={ui.link}>Back to sign in</Link>}
             </>
           )}
         </View>
-        <View style={styles.editorial}>
-          <Text style={styles.captionTitle}>Good style starts with what you own.</Text>
-          <Text style={styles.footerNote}>Your clothes. Your combinations. Your everyday wardrobe.</Text>
-        </View>
-      </View>
-    </Surface>
   );
+  if (mode === "reset") return <Screen title="Reset password" subtitle="Enter your account email to request a reset link.">{form}</Screen>;
+  return <AtelierAccount accountMode={mode}
+    title={mode === "login" ? "Sign in" : "Create your wardrobe"}
+    subtitle={mode === "login" ? "Your clothes and saved looks are ready when you are." :
+      "Start with your email. We’ll send a link and a separate code before you choose a password."}>
+    {form}
+  </AtelierAccount>;
 }
 
 const makeStyles = (atelier:Palette) => StyleSheet.create({
-  layout: { gap: 18 },
-  form: { gap: 13 },
+  form: { gap: 12 },
   feedback:{fontSize:13,lineHeight:20,color:atelier.muted,borderLeftWidth:2,borderColor:atelier.accent,paddingLeft:12},
-  darkForm:{backgroundColor:atelier.background},
+  editorialForm:{backgroundColor:atelier.surface,borderWidth:1,borderColor:atelier.border,padding:14},
   darkLink:{color:atelier.ink,fontSize:13,paddingVertical:12,minHeight:44,textDecorationLine:"underline"},
-  accountLinks: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", columnGap: 14 },
-  editorial: { borderTopWidth:1,borderColor:atelier.border,paddingTop:22,marginTop:8,gap:8 },
-  footerNote:{fontSize:12,lineHeight:19,color:atelier.muted},
-  portrait: { width: "37%" },
-  caption: { flex: 1, padding: 14, gap: 8 },
-  captionTitle: { ...typography.editorial, color:atelier.ink, fontSize: 22, lineHeight: 27 },
+  accountLink:{color:atelier.ink,fontSize:13,paddingVertical:12,minHeight:44,textDecorationLine:"underline",alignSelf:"flex-start"},
 });

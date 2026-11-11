@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {WardrobeImage} from "../components/WardrobeImage";
 import { Button } from "../components/Button";
 import { Notice, ResourceState, RouteLink, ui } from "../components/Screen";
 import { useResource } from "../hooks/useResource";
 import type { Garment, OutfitItem, Page } from "../types/domain";
 import { itemKey, itemRoute, toggleItem } from "./outfitItems";
+import { colors } from "../theme/tokens";
 
 type Props = {
   items: OutfitItem[];
@@ -18,39 +19,62 @@ export function OutfitItemSelector({ items, onChange, preview, disabled = false 
   const [cursor, setCursor] = useState("");
   const result = useResource<Page<Garment>>(`/${source}?limit=24${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, preview);
   return <>
-    <Text style={ui.heading}>Choose your pieces · {items.length} selected</Text>
-    <Text style={ui.body}>Select 2–100 wardrobe or catalog pieces. Save the selection to apply changes.</Text>
+    <View style={styles.canvas}>
+      <Text style={ui.heading}>Your outfit · {items.length} selected</Text>
+      {items.length===0 && <Text style={ui.body}>Choose at least two pieces to build a look.</Text>}
+      {items.map((item,index)=><View key={itemKey(item)} style={styles.selectedRow}>
+        {index<4 && <View style={styles.thumbnail}>
+          <WardrobeImage id={item.garmentId} source={item.source} label={`Selected piece ${index+1}`}/>
+        </View>}
+        <View style={styles.name}>
+        <RouteLink to={itemRoute(item)} preview={preview}>
+          {item.source === source ? result.data?.items.find(garment=>garment.id===item.garmentId)?.name ?? `Piece ${index+1}` : `Piece ${index+1}`} ›
+        </RouteLink>
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Remove piece ${index+1}`} disabled={disabled}
+          onPress={()=>onChange(items.filter(selected=>itemKey(selected)!==itemKey(item)))} style={styles.remove}>
+          <Text style={styles.mark}>×</Text>
+        </Pressable>
+      </View>)}
+    </View>
+    <Text style={ui.heading}>Choose pieces</Text>
     <View style={ui.row}>
       {(["wardrobe", "catalog"] as const).map((value) => <Button key={value} label={value === "wardrobe" ? "Your wardrobe" : "Shared catalog"}
         variant={source === value ? "primary" : "secondary"} disabled={disabled}
         onPress={() => { setSource(value); setCursor(""); }} />)}
     </View>
     <ResourceState {...result} />
-    {(result.data?.items ?? []).map((garment) => {
+    <View style={styles.grid}>{(result.data?.items ?? []).map((garment) => {
       const item: OutfitItem = { source, garmentId: garment.id };
       const checked = items.some((selected) => itemKey(selected) === itemKey(item));
       return <Pressable key={itemKey(item)} accessibilityRole="checkbox" accessibilityLabel={`${source}: ${garment.name}`}
         accessibilityState={{ checked, disabled }} disabled={disabled || (!checked && items.length >= 100)}
-        onPress={() => onChange(toggleItem(items, item))} style={[ui.chip, checked && ui.selected]}>
-        <View style={{flexDirection:"row",alignItems:"center",gap:12}}>
-         <View style={{width:64}}><WardrobeImage id={garment.id} label={garment.name} source={source}/></View>
-         <View style={{flex:1,gap:6}}><Text style={ui.label}>{garment.name}</Text><Text style={ui.body}>{garment.category}</Text><Text style={ui.body}>{checked ? "Selected" : "Add to outfit"}</Text></View>
+        onPress={() => onChange(toggleItem(items, item))} style={[styles.piece, checked && styles.checked]}>
+        <WardrobeImage id={garment.id} label={garment.name} source={source}/>
+        <View style={styles.pieceLabel}>
+          <Text style={[ui.label,styles.name]} numberOfLines={2}>{garment.name}</Text>
+          <Text style={styles.mark}>{checked ? "✓" : "+"}</Text>
         </View>
       </Pressable>;
-    })}
+    })}</View>
     {!result.loading && !result.error && !result.data?.items.length &&
       <Notice title="No pieces available" text={preview ? "Preview contains no example garments." : `No ${source} pieces are available. Try the other source or add wardrobe garments.`} />}
     {Boolean(result.data?.nextCursor) && <Button label="Next page of pieces" variant="secondary" disabled={disabled || result.loading}
       onPress={() => setCursor(result.data!.nextCursor!)} />}
     {Boolean(cursor) && <Button label="First page of pieces" variant="secondary" disabled={disabled}
       onPress={() => setCursor("")} />}
-    <Text style={ui.heading}>Selected pieces</Text>
-    {items.length === 0 && <Notice title="No selected pieces" text="Choose at least two pieces before saving." />}
-    {items.map((item, index) => <View key={itemKey(item)} style={ui.card}>
-      <RouteLink to={itemRoute(item)} preview={preview}>View {item.source} piece →</RouteLink>
-      <Text style={ui.body}>{item.source === source ? result.data?.items.find((garment) => garment.id === item.garmentId)?.name ?? `Selected piece ${index + 1}` : `Selected piece ${index + 1}`}</Text>
-      <Button label={`Remove ${item.source} piece`} variant="secondary" disabled={disabled}
-        onPress={() => onChange(items.filter((selected) => itemKey(selected) !== itemKey(item)))} />
-    </View>)}
   </>;
 }
+
+const styles = StyleSheet.create({
+  canvas:{backgroundColor:"#F9E5EE",borderRadius:20,padding:16,gap:6},
+  selectedRow:{flexDirection:"row",alignItems:"center",gap:8,borderTopWidth:1,borderColor:colors.border,paddingVertical:4},
+  thumbnail:{width:42},
+  remove:{width:44,height:44,alignItems:"center",justifyContent:"center"},
+  grid:{flexDirection:"row",flexWrap:"wrap",gap:8},
+  piece:{flexBasis:"47%",flexGrow:1,maxWidth:"50%",borderRadius:16,overflow:"hidden",borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},
+  checked:{borderColor:colors.ink,backgroundColor:"#FFDBC0"},
+  pieceLabel:{padding:8,flexDirection:"row",gap:6,alignItems:"center"},
+  name:{flex:1},
+  mark:{fontSize:20,color:colors.ink},
+});

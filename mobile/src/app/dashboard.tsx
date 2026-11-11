@@ -1,65 +1,70 @@
-import { Link } from "expo-router";
-import { Pressable, StyleSheet, Text, View, type PressableProps } from "react-native";
-import { forwardRef, type ElementRef } from "react";
-import { FramedImage } from "../components/FramedImage";
+import { useCallback } from "react";
+import { Link, useFocusEffect } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+import { Gate, ResourceState, Screen, ui } from "../components/Screen";
+import { WardrobeImage } from "../components/WardrobeImage";
+import { useResource } from "../hooks/useResource";
 import { colors } from "../theme/tokens";
-import { Gate, Screen } from "../components/Screen";
-
-const destinations = [
-  { title: "My wardrobe", detail: "See the pieces you own", href: "/wardrobe" },
-  { title: "Saved outfits", detail: "Revisit your favourite combinations", href: "/outfits" },
-  { title: "Browse the catalog", detail: "Find pieces for your next outfit", href: "/catalog" },
-  { title: "Style ideas", detail: "Find new ways to wear your pieces", href: "/recommendations" },
-] as const;
+import type { Outfit, Page } from "../types/domain";
 
 export default function DashboardScreen() {
-  return (
-    <Screen title="The wardrobe edit" subtitle="A place for the pieces you love.">
-      <Gate preview={false}>
-        <FramedImage
-          source={require("../../assets/editorial/campaign-evening.jpg")}
-          label="Two models in evening tailoring in a gallery"
-          ratio={1.45}
-          edgeToEdge
-        />
-        <View style={styles.action}>
-          <Link href="/wardrobe/add" style={styles.add} accessibilityLabel="Add item">+ Add item</Link>
-          <Text style={styles.hint}>Start with a photo of something you wear.</Text>
+  const {data,loading,error,retry}=useResource<Page<Outfit>>("/outfits?limit=4",false);
+  useFocusEffect(useCallback(()=>{retry();},[retry]));
+  return <Screen title="Your wardrobe">
+    <Gate preview={false}>
+      <View style={styles.shortcuts}>
+        <Link href="/wardrobe/add" style={[styles.tile,styles.addTile]}>
+          <Text style={styles.symbol}>＋</Text>{"\n"}Add a piece
+        </Link>
+        <Link href="/wardrobe" style={styles.tile}>
+          <Text style={styles.symbol}>▤</Text>{"\n"}My wardrobe
+        </Link>
+        <Link href="/catalog" style={styles.tile}>
+          <Text style={styles.symbol}>◇</Text>{"\n"}Catalog
+        </Link>
+      </View>
+      <View style={styles.section}>
+        <View style={styles.heading}>
+          <Text accessibilityRole="header" style={ui.heading}>Recent outfits</Text>
+          <Link href="/outfits" style={styles.textLink}>See all ›</Link>
         </View>
-        <View>
-          <Text style={styles.eyebrow}>YOUR COLLECTION</Text>
-          {destinations.map(({title, detail, href}) => (
-            <Link href={href} asChild key={href}>
-              <DashboardRow title={title} detail={detail} />
-            </Link>
-          ))}
-        </View>
-      </Gate>
-    </Screen>
-  );
+        <ResourceState loading={loading} error={error} retry={retry}/>
+        {data?.items.length===0 && <View style={styles.empty}>
+          <Text style={ui.heading}>Put a look together</Text>
+          <Text style={ui.body}>Choose pieces from your wardrobe or the catalog.</Text>
+          <Link href="/outfits/new" style={styles.create}>Create outfit</Link>
+        </View>}
+        {!!data?.items.length && <View style={styles.grid}>
+          {data.items.map(outfit=>{
+            const piece=outfit.items?.[0];
+            return <View key={outfit.id} style={styles.outfit}>
+              {piece && <WardrobeImage id={piece.garmentId} source={piece.source} label={outfit.name}/>}
+              <Link href={`/outfits/${encodeURIComponent(outfit.id)}`} style={styles.outfitName}>{outfit.name} ›</Link>
+            </View>;
+          })}
+        </View>}
+      </View>
+      <View style={styles.suggestions}>
+        <Text style={ui.heading}>Outfit suggestions</Text>
+        <Text style={ui.body}>Find combinations for an occasion.</Text>
+        <Link href="/recommendations" style={styles.textLink}>Find outfits ›</Link>
+      </View>
+    </Gate>
+  </Screen>;
 }
 
-
-const DashboardRow = forwardRef<ElementRef<typeof Pressable>, PressableProps & {title:string;detail:string}>(
-  function DashboardRow({title,detail,...props},ref) {
-    return <Pressable {...props} ref={ref} style={({pressed})=>[styles.row,pressed && styles.pressed]}>
-      <View style={styles.rowCopy}>
-        <Text style={styles.name}>{title}</Text>
-        <Text style={styles.hint}>{detail}</Text>
-      </View>
-      <Text accessible={false} style={styles.arrow}>↗</Text>
-    </Pressable>;
-  },
-);
-
-const styles = StyleSheet.create({
-  action: {alignItems:"center",gap:10,paddingVertical:4},
-  add: {color:colors.onAccent,backgroundColor:colors.accent,textAlign:"center",minWidth:160,minHeight:48,padding:14,fontWeight:"600"},
-  hint: {color:colors.muted,fontSize:13,lineHeight:19},
-  eyebrow: {fontSize:10,letterSpacing:2,fontWeight:"700",color:colors.muted,paddingBottom:10},
-  row: {borderTopWidth:1,borderColor:colors.border,paddingVertical:15,flexDirection:"row",alignItems:"center",gap:12},
-  rowCopy: {flex:1,gap:3},
-  name: {color:colors.ink,fontSize:18,fontFamily:"serif"},
-  arrow: {color:colors.ink,fontSize:19,paddingHorizontal:4},
-  pressed: {opacity:0.62},
+const styles=StyleSheet.create({
+  shortcuts:{flexDirection:"row",gap:8},
+  tile:{flex:1,minWidth:0,textAlign:"center",paddingVertical:12,paddingHorizontal:3,borderRadius:16,overflow:"hidden",backgroundColor:colors.raised,color:colors.ink,fontSize:12,fontWeight:"700",lineHeight:21},
+  addTile:{backgroundColor:"#FFDBC0"},
+  symbol:{fontSize:23,lineHeight:30},
+  section:{gap:10},
+  heading:{flexDirection:"row",justifyContent:"space-between",alignItems:"center"},
+  textLink:{color:colors.ink,fontSize:13,fontWeight:"700",minHeight:44,paddingVertical:12},
+  empty:{borderRadius:20,backgroundColor:colors.raised,padding:16,gap:8},
+  create:{alignSelf:"flex-start",backgroundColor:colors.ink,color:colors.surface,borderRadius:24,overflow:"hidden",paddingHorizontal:16,paddingVertical:13,minHeight:44,fontWeight:"700"},
+  grid:{flexDirection:"row",flexWrap:"wrap",gap:8},
+  outfit:{flexBasis:"47%",flexGrow:1,maxWidth:"50%",borderRadius:16,overflow:"hidden",backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border},
+  outfitName:{padding:11,minHeight:44,color:colors.ink,fontWeight:"700"},
+  suggestions:{backgroundColor:"#F9E5EE",borderRadius:20,padding:16,gap:4},
 });

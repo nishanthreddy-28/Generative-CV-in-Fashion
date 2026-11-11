@@ -12,6 +12,7 @@ export function Fields({
   onChange,
   disabled = false,
   dark = false,
+  editorial = false,
 }: {
   fields: Field[];
   values: Record<string, string>;
@@ -19,6 +20,7 @@ export function Fields({
   onChange: (key: string, value: string) => void;
   disabled?: boolean;
   dark?: boolean;
+  editorial?: boolean;
 }) {
   const labelId=useId();
   const [focused,setFocused]=useState<string|null>(null);
@@ -27,7 +29,7 @@ export function Fields({
     <>
       {fields.map((f) => (
         <View key={f.key} style={ui.field}>
-          <Text nativeID={`${labelId}-${f.key}`} style={[ui.label,dark && {color:atelier.ink}]}>
+          <Text nativeID={`${labelId}-${f.key}`} style={[ui.label,editorial && styles.editorialLabel,dark && {color:atelier.ink}]}>
             {f.label}
             {f.required ? " *" : ""}
           </Text>
@@ -84,6 +86,7 @@ export function Fields({
               style={[
                 ui.input,
                 styles.input,
+                editorial && styles.editorialInput,
                 dark && {backgroundColor:atelier.surface,color:atelier.ink,borderColor:focused===f.key ? atelier.accent : atelier.inputBorder},
                 f.kind === "password" && styles.password,
                 focused===f.key && ui.inputFocused,
@@ -121,6 +124,8 @@ export function Fields({
 const styles = StyleSheet.create({
   inputRow: {position: "relative"},
   input: {width: "100%"},
+  editorialLabel: {fontSize:12,letterSpacing:0.4},
+  editorialInput: {borderRadius:0,minHeight:50,fontSize:16},
   password: {paddingRight: 72},
   toggle: {position: "absolute", top: 0, bottom: 0, right: 0, minWidth: 56, paddingHorizontal: 10, justifyContent: "center", alignItems: "center"},
   toggleText: {color: colors.accent, fontSize: 13, fontWeight: "600"},

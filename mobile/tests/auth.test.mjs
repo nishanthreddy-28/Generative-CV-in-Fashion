@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { test } from "node:test";
 import { createClient } from "@supabase/supabase-js";
 import { accountRequestAllowed, beginGoogleOAuth, exchangeOAuth, reauthenticate, catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";

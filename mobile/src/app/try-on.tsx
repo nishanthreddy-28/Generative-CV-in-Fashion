@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../components/Button";
 import { Gate, Notice, ResourceState, RouteLink, Screen, ui } from "../components/Screen";
 import { TryOnJobCard } from "../features/TryOnJobCard";
 import { useSession } from "../features/session";
 import { useResource } from "../hooks/useResource";
 import type { Page, TryOnJob } from "../types/domain";
+import { colors } from "../theme/tokens";
 
 export default function TryOn() {
   const { request } = useSession();
@@ -34,7 +35,11 @@ export default function TryOn() {
   return (
     <Screen title="Virtual try-on">
       <Gate preview={false}>
-        <Notice title="Currently unavailable" text="New try-ons are unavailable. You can still view or cancel an earlier request." />
+        <View style={styles.availability}>
+          <Text style={ui.heading}>New try-ons are unavailable</Text>
+          <Text style={ui.body}>You can still view or cancel an earlier request.</Text>
+          <RouteLink to="/recommendations">Find outfit suggestions ›</RouteLink>
+        </View>
         <Text style={ui.heading}>Previous requests</Text>
         <ResourceState {...history} />
         {message && <Notice title="Couldn’t cancel request" text={message} tone="error" />}
@@ -48,3 +53,7 @@ export default function TryOn() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  availability:{padding:16,gap:6,borderRadius:20,backgroundColor:colors.raised},
+});

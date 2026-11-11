@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from "react";
+import { Fragment, type PropsWithChildren, type ReactNode } from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {
   ActivityIndicator,
@@ -31,19 +31,21 @@ export function RouteLink({
   );
 }
 const destinationMarks = {"/dashboard":"⌂","/wardrobe":"▤","/catalog":"◇","/outfits":"▱","/settings":"◎"} as const;
+const mainTabs = appDestinations.filter(item => item.path !== "/catalog");
 
 export function Screen({
   title,
   subtitle,
+  action,
   children,
-}: PropsWithChildren<{ title: string; subtitle?: string }>) {
+}: PropsWithChildren<{ title: string; subtitle?: string; action?: ReactNode }>) {
   const {session,accountDeleting}=useSession();
   const path=usePathname();
   const {width}=useWindowDimensions();
   const showNavigation=!!session && !accountDeleting;
   const active=activeDestination(path);
   const accountForm = !session && ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-registration", "/auth-confirm"].includes(path);
-  const section = accountForm ? "MEMBER ACCESS" : showNavigation ? active?.slice(1).toUpperCase() ?? "ATELIER" : undefined;
+  const section = accountForm ? "MEMBER ACCESS" : undefined;
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}} edges={["top","bottom"]}>
     <KeyboardAvoidingView
@@ -54,23 +56,31 @@ export function Screen({
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[ui.screen, accountForm && ui.accountScreen, width < 380 && ui.narrowScreen]}
       >
-        <View style={ui.top}>
+        {!showNavigation && <View style={ui.top}>
           <Link href={session ? "/dashboard" : "/"} style={ui.brand} accessibilityLabel="Drape and Drop home">DRAPE &amp; DROP</Link>
           {!session && <RouteLink to={path==="/login" ? "/signup" : "/login"}>{path==="/login" ? "Join us" : "Sign in"}</RouteLink>}
-          {showNavigation && <Link href="/settings" style={ui.link}>Your account</Link>}
-        </View>
+        </View>}
         <View style={ui.intro}>
           {section && <Text style={typography.eyebrow}>{section}</Text>}
-          <Text accessibilityRole="header" style={ui.title}>{title}</Text>
+          <View style={ui.titleRow}>
+            <Text accessibilityRole="header" style={[ui.title, showNavigation && ui.appTitle]}>{title}</Text>
+            {showNavigation && action}
+          </View>
           {!!subtitle && <Text style={ui.body}>{subtitle}</Text>}
         </View>
         {children}
       </ScrollView>
       {showNavigation && <View style={ui.navigation} accessibilityLabel="Main navigation">
-        {appDestinations.map(item=><Link key={item.path} href={item.path} accessibilityLabel={item.label}
-          accessibilityState={{selected:active===item.path}} style={[ui.navItem,active===item.path && ui.navActive]}>
-          <Text style={ui.navMark}>{destinationMarks[item.path]}</Text>{"\n"}{item.label}
-        </Link>)}
+        {mainTabs.map((item,index)=>{
+          const selected=active===item.path || (active==="/catalog" && item.path==="/wardrobe");
+          return <Fragment key={item.path}>
+            {index===2 && <Link href="/wardrobe/add" accessibilityLabel="Add wardrobe item" style={ui.navAdd}>+</Link>}
+            <Link href={item.path} replace accessibilityLabel={item.label} accessibilityState={{selected}}
+              style={[ui.navItem,selected && ui.navActive]}>
+              <Text style={ui.navMark}>{destinationMarks[item.path]}</Text>{"\n"}{item.label}
+            </Link>
+          </Fragment>;
+        })}
       </View>}
     </KeyboardAvoidingView>
     </SafeAreaView>
@@ -188,11 +198,14 @@ export function Confirm({
 }
 export const ui = StyleSheet.create({
   skeleton: {backgroundColor:colors.border,borderRadius:4},
-  navigation: {flexDirection:"row",backgroundColor:colors.surface,borderTopWidth:1,borderColor:colors.border,paddingHorizontal:8,paddingBottom:12,paddingTop:8,width:"100%",maxWidth:660,alignSelf:"center"},
-  navItem: {flex:1,textAlign:"center",fontSize:11,fontWeight:"600",lineHeight:19,color:colors.muted,paddingVertical:6,minHeight:48,borderBottomWidth:2,borderBottomColor:"transparent"},
-  navActive: {color:colors.ink,borderBottomColor:colors.accent},
-  navMark: {color:colors.accent,fontSize:17},
+  navigation: {flexDirection:"row",alignItems:"center",backgroundColor:colors.surface,borderTopWidth:1,borderColor:colors.border,paddingHorizontal:8,paddingBottom:6,paddingTop:5,width:"100%",maxWidth:660,alignSelf:"center"},
+  navItem: {flex:1,textAlign:"center",fontSize:10,fontWeight:"600",lineHeight:19,color:colors.muted,paddingVertical:6,minHeight:48},
+  navActive: {color:colors.ink,fontWeight:"800"},
+  navMark: {fontSize:19},
+  navAdd: {width:44,height:44,borderRadius:22,overflow:"hidden",backgroundColor:colors.ink,color:colors.surface,fontSize:25,lineHeight:42,textAlign:"center"},
   intro: {gap:8,paddingVertical:4},
+  titleRow: {flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10},
+  appTitle: {fontFamily:"System",fontWeight:"800",fontSize:28,lineHeight:34,flexShrink:1},
   screen: {
     padding: 24,
     paddingBottom: 32,

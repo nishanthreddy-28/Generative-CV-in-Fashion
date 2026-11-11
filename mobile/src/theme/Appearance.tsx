@@ -7,11 +7,11 @@ import {colors} from "./tokens";
 type Mode = "light" | "dark";
 export type Palette = {[K in keyof typeof atelier]: string};
 const light: Palette = {...colors};
-const Appearance = createContext({mode:"light" as Mode, palette:light, toggle:()=>{}});
+const Appearance = createContext({mode:"dark" as Mode, palette:atelier as Palette, toggle:()=>{}});
 const key = "drapedrop.appearance";
 
 export function AppearanceProvider({children}:PropsWithChildren) {
-  const [mode,setMode]=useState<Mode>("light");
+  const [mode,setMode]=useState<Mode>("dark");
   const chosen=useRef(false);
   const writes=useRef<Promise<unknown>>(Promise.resolve());
   useEffect(()=>{

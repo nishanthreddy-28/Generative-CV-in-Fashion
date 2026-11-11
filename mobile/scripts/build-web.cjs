@@ -1,3 +1,4 @@
+/* global __dirname: readonly */
 const { spawnSync } = require("node:child_process");
 const { isIP } = require("node:net");
 const { resolve } = require("node:path");

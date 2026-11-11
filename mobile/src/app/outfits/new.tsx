@@ -61,6 +61,7 @@ export default function NewOutfit() {
   return (
     <Screen title="Create outfit">
       <Gate preview={preview}>
+        <OutfitItemSelector items={items} onChange={setItems} preview={preview} disabled={busy} />
         <Fields
           fields={fields}
           values={values}
@@ -68,7 +69,6 @@ export default function NewOutfit() {
           disabled={busy}
           onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
         />
-        <OutfitItemSelector items={items} onChange={setItems} preview={preview} disabled={busy} />
         <View>
           {Boolean(errors.garments) && (
             <Text accessibilityRole="alert" style={ui.error}>

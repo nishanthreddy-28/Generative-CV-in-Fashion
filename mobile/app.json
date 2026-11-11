@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Drape & Drop",
-    "slug": "drape-drop",
-    "version": "0.4.1",
+    "slug": "drapeanddrop",
+    "version": "0.4.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,7 +18,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.drapedrop.app",
-      "versionCode": 1
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -37,6 +37,12 @@
         }
       ],
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a3438576-3a83-41f1-9143-e5d53fa87e41"
+      }
+    },
+    "owner": "nishanthreddy28s-team"
   }
 }
