@@ -44,7 +44,7 @@ export function Screen({
   const {width}=useWindowDimensions();
   const showNavigation=!!session && !accountDeleting;
   const active=activeDestination(path);
-  const accountForm = !session && ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-registration", "/auth-confirm"].includes(path);
+  const accountForm = !session && ["/login", "/signup", "/forgot-password", "/reset-password", "/auth-confirm"].includes(path);
   const section = accountForm ? "MEMBER ACCESS" : undefined;
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}} edges={["top","bottom"]}>

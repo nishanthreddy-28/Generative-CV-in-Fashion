@@ -3,8 +3,8 @@ import {ActivityIndicator,Image,Pressable,Text,View,StyleSheet} from "react-nati
 import {useResource} from "../hooks/useResource";
 import {colors} from "../theme/tokens";
 // Fetch authenticated bytes; never substitute public URLs for private images.
-export function WardrobeImage({id,label,preview=false,source="wardrobe"}:{id:string;label:string;preview?:boolean;source?:"wardrobe"|"catalog"|"admin/catalog"}){
- const result=useResource<Blob>(`/${source}/${encodeURIComponent(id)}/image`,preview,source==="admin/catalog","image");
+export function WardrobeImage({id,label,preview=false,source="wardrobe",photoId}:{id:string;label:string;preview?:boolean;source?:"wardrobe"|"catalog"|"admin/catalog";photoId?:string}){
+ const result=useResource<Blob>(`/${source}/${encodeURIComponent(id)}/${photoId ? `photos/${encodeURIComponent(photoId)}` : "image"}`,preview,source==="admin/catalog","image");
  const [image,setImage]=useState<{blob:Blob;uri:string}|null>(null);const [failed,setFailed]=useState<Blob|null>(null);
  useEffect(()=>{
   if(!result.data)return;const blob=result.data;const reader=new FileReader();

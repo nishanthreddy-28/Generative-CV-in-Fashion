@@ -8,7 +8,6 @@ const mode = env.DRAPE_WEB_MODE || "connected";
 const apiName = "EXPO_PUBLIC_API_URL";
 const authName = "EXPO_PUBLIC_SUPABASE_URL";
 const keyName = "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY";
-const registrationName = "EXPO_PUBLIC_REGISTRATION_API_URL";
 const providers = ["EXPO_PUBLIC_GOOGLE_AUTH_ENABLED", "EXPO_PUBLIC_APPLE_AUTH_ENABLED"];
 
 function validateOrigin(name) {
@@ -30,13 +29,12 @@ function validateOrigin(name) {
 
 try {
   if (mode === "review") {
-    for (const name of [authName, keyName, ...providers, registrationName]) delete env[name];
+    for (const name of [authName, keyName, ...providers]) delete env[name];
     if (env[apiName]?.trim()) validateOrigin(apiName);
     else delete env[apiName];
   } else if (mode === "connected") {
     validateOrigin(apiName);
     validateOrigin(authName);
-    if (env[registrationName]?.trim()) validateOrigin(registrationName);
     const key = env[keyName]?.trim();
     if (!/^sb_publishable_[A-Za-z0-9_-]+$/.test(key || "")) {
       throw new Error(keyName + " must be a Supabase publishable key.");

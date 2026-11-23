@@ -23,7 +23,6 @@ export type Outfit = {
   id: string;
   name: string;
   description?: string;
-  imageUrl?: string;
   garmentIds: string[];
   items?: OutfitItem[];
   occasion?: string;
@@ -43,6 +42,15 @@ export type SavedRecommendation = {
   savedAt: string;
   available: boolean;
   recommendation: Recommendation | null;
+};
+export type RecommendationFeedback = {
+  id: string;
+  recommendationId: string;
+  sentiment: "like" | "dislike";
+  reasonCode: "matches_style" | "color_pairing" | "occasion_match" | "already_owned" | "not_my_style" | "color_mismatch" | "wrong_occasion" | "not_relevant" | "other";
+  note: string;
+  createdAt: string;
+  updatedAt: string;
 };
 export type Profile = {
   name: string;

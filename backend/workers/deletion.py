@@ -43,7 +43,7 @@ class DeletionWorker:
                     groups={}
                     for item in objects:
                         bucket=item['bucket'];path=item['object']
-                        if bucket not in ('wardrobe-images','tryon-inputs') or not isinstance(path,str) or not path.startswith(subject+'/') or '..' in path:
+                        if bucket not in ('wardrobe-images','tryon-inputs','onboarding-body-images') or not isinstance(path,str) or not path.startswith(subject+'/') or '..' in path:
                             raise CleanupError('Invalid cleanup object boundary.')
                         groups.setdefault(bucket,[]).append(path)
                     for bucket,paths in groups.items():

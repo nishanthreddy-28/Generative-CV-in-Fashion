@@ -227,3 +227,8 @@ async def remove_item(outfit_id:UUID,item_id:UUID,data:Data):
 async def delete_outfit(outfit_id:UUID,data:Data):
     await rpc(data,'delete_outfit',{'p_id':str(outfit_id)},missing_detail='Outfit not found.')
     return Response(status_code=204)
+
+
+@router.post('/outfits/{outfit_id}/duplicate',response_model=OutfitRead,status_code=201)
+async def duplicate_outfit(outfit_id:UUID,data:Data):
+    return record(await rpc(data,'duplicate_outfit',{'p_id':str(outfit_id)},missing_detail='Outfit or source garment unavailable.'))

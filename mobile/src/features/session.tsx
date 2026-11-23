@@ -6,8 +6,8 @@ import { AppState } from "react-native";
 import type { Session as AuthSession } from "@supabase/supabase-js";
 import { apiRequest, ApiError, type RequestOptions } from "../services/api/client";
 import { resolveCustomerAccess } from "../services/auth/customerAccess";
-import { accountRequestAllowed, exchangeOAuth, currentAccessToken, signIn } from "../services/auth/contracts";
-import { clearPersistedSession, requireAuth, supabase } from "../services/auth/supabase";
+import { accountRequestAllowed, exchangeOAuth, currentAccessToken, signIn, verifyEmailLink } from "../services/auth/contracts";
+import { clearPersistedSession, createEmailLinkAuth, requireAuth, supabase } from "../services/auth/supabase";
 import { draftStore } from "./draftStore";
 import type { Session } from "../types/domain";
 
@@ -20,6 +20,7 @@ type Context = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   completeOAuth: (code: string, flowId?: string) => Promise<void>;
+  completeEmailConfirmation: (hash: string) => Promise<void>;
   request: <T>(path: string, options?: Omit<RequestOptions, "token">) => Promise<T>;
 };
 
@@ -87,12 +88,39 @@ export function SessionProvider({ children }: PropsWithChildren) {
     deleting.current = access.deleting;
     setAccountDeleting(access.deleting);
     setSession({user:{id:next.user.id,email:next.user.email ?? "",role:access.role}});
+    setReady(true);
     if (AppState.currentState === "active") void requireAuth().startAutoRefresh();
   }, [applySession]);
 
   const login = useCallback(async (email: string, password: string) => {
     await admitSession(await signIn(requireAuth(), email, password));
   }, [admitSession]);
+
+  const completeEmailConfirmation = useCallback(async (hash: string) => {
+    const auth = requireAuth();
+    const {data: initial, error: initialError} = await auth.getSession();
+    if (initialError) throw new Error("Could not check your session. Try again.");
+    if (initial.session) throw new Error("Sign out before using a signup link.");
+    // Verify in an isolated SDK client. A callback must not replace another session.
+    const verified = await verifyEmailLink(createEmailLinkAuth(), hash, "signup");
+    const {data: latest, error: latestError} = await auth.getSession();
+    if (latestError || latest.session) throw new Error("Email verified. Sign in to continue with this account.");
+    const {data, error} = await auth.setSession({
+      access_token: verified.access_token, refresh_token: verified.refresh_token,
+    });
+    if (error || !data.session || data.session.user.id !== verified.user.id)
+      throw new Error("Email verified. Sign in to continue.");
+    try {
+      await admitSession(data.session);
+    } catch (accessError) {
+      if (identity.current?.id === data.session.user.id) {
+        signedOut.current = true;
+        applySession(null);
+        await auth.signOut({scope:"local"}).catch(() => undefined);
+      }
+      throw accessError;
+    }
+  }, [admitSession, applySession]);
 
   const completeOAuth = useCallback(async (code: string, flowId?: string) => {
     const auth = requireAuth();
@@ -178,7 +206,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   },[candidate,permissionRevision]);
 
   return (
-    <SessionContext.Provider value={{ session, ready, sessionIssue, accountDeleting, deleteAccount, login, logout, completeOAuth, request }}>
+    <SessionContext.Provider value={{ session, ready, sessionIssue, accountDeleting, deleteAccount, login, logout, completeOAuth, completeEmailConfirmation, request }}>
       {children}
     </SessionContext.Provider>
   );

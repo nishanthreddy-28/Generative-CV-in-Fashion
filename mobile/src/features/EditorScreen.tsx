@@ -1,3 +1,5 @@
+import { GarmentGallery } from "./GarmentGallery";
+import { ApiError } from "../services/api/client";
 import { useDraft } from "../hooks/useDraft";
 import { useState } from "react";
 import { Text, View } from "react-native";
@@ -68,7 +70,8 @@ export function EditorScreen({
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useDraft(path + ":dirty", false);
   const [confirm, setConfirm] = useState<"delete" | "discard" | null>(null);
-  async function save() {
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  async function save(allowDuplicate = false) {
     const issues = validate(fields, values);
     if (photo && create && !image) issues.photo = "Choose a garment photo.";
     setErrors(issues);
@@ -83,7 +86,8 @@ export function EditorScreen({
     if (!session) return;
     setBusy(true);
     try {
-      const payload = create ? payloadFor(fields, values) : patchPayload(fields, values, draft);
+      const payload: Record<string, unknown> = create ? payloadFor(fields, values) : patchPayload(fields, values, draft);
+      if (create && wardrobeEntry && allowDuplicate) payload.allowDuplicate = true;
       let body: unknown = payload;
       if (photo) {
         const form = new FormData();
@@ -102,6 +106,7 @@ export function EditorScreen({
       if (afterSave) router.replace(afterSave as Href);
       else result.retry();
     } catch (e) {
+      if (create && wardrobeEntry && e instanceof ApiError && e.status === 409) setDuplicateWarning(true);
       setMessage(
         e instanceof Error
           ? e.message
@@ -159,6 +164,7 @@ export function EditorScreen({
               <WardrobeImage id={result.data.id} label="Current garment photo" preview={preview}
                 source={admin ? "admin/catalog" : "wardrobe"} />
             )}
+            {!create && !admin && photo && typeof result.data?.id === "string" && <GarmentGallery id={result.data.id} preview={preview} />}
             {admin && result.data?.active === false &&
               <Notice title="Inactive catalog item" text="Hidden from the catalog. Its record and image are retained." />}
             {wardrobeEntry && photoSection}
@@ -180,9 +186,16 @@ export function EditorScreen({
             </View>
             {!wardrobeEntry && photoSection}
             {Boolean(message) && <Notice title="Form status" text={message} />}
+            {duplicateWarning && <Confirm
+              visible title="Keep another item with this photo?"
+              text="A matching photo is already in your wardrobe. You can keep another item or go back to check your wardrobe."
+              confirmLabel="Keep another item" busy={busy}
+              onCancel={() => setDuplicateWarning(false)}
+              onConfirm={() => { setDuplicateWarning(false); void save(true); }}
+            />}
             <Button
               label={wardrobeEntry ? "Save item" : create ? "Add garment" : "Save changes"}
-              onPress={save}
+              onPress={() => void save()}
               loading={busy}
             />
             </>}

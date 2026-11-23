@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { test } from "node:test";
 import { createClient } from "@supabase/supabase-js";
-import { accountRequestAllowed, beginGoogleOAuth, exchangeOAuth, reauthenticate, catalogRole, currentAccessToken, protectedScreenState, publicAuthConfig, register, signIn, signupMessage, verifyEmailLink } from "../src/services/auth/contracts.ts";
+import { accountRequestAllowed, beginGoogleOAuth, exchangeOAuth, reauthenticate, catalogRole, currentAccessToken, oauthCallbackIssue, protectedScreenState, publicAuthConfig, register, registrationMessage, resendSignupEmail, signIn, verifyEmailLink } from "../src/services/auth/contracts.ts";
 import { secureSessionStorage } from "../src/services/auth/storage.ts";
 import { apiRequest } from "../src/services/api/client.ts";
 
@@ -40,14 +40,74 @@ test("missing configuration and privileged credentials fail closed", () => {
   assert.deepEqual(publicAuthConfig(url, key), { url, key });
 });
 
-test("signup submits only display metadata and handles confirmation-required signup", async () => {
+test("signup uses Supabase directly and leaves the user waiting for confirmation", async () => {
   const auth = makeAuth(async (url, init) => {
     assert.equal(new URL(url).pathname, "/auth/v1/signup");
-    assert.deepEqual(JSON.parse(init.body).data, { name: "A" });
+    assert.equal(new URL(url).searchParams.get("redirect_to"), "drapedrop://auth-confirm");
+    const body = JSON.parse(init.body);
+    assert.equal(body.email, user.email);
+    assert.equal(body.password, "test-password");
+    assert.deepEqual(body.data, {});
     return response(user);
   });
-  assert.equal(await register(auth, " A ", user.email, "test-password", "drapedrop://auth-confirm"), null);
-  assert.match(signupMessage(false), /confirm your address/i);
+  await register(auth, " " + user.email, "test-password", "drapedrop://auth-confirm");
+  assert.match(registrationMessage, /verification link/i);
+  assert.equal((await auth.getSession()).data.session, null);
+});
+
+test("duplicate registration gets the same neutral messaging and weak passwords fail", async () => {
+  const duplicate = makeAuth(async () => response({error_code:"user_already_exists",msg:"Private details"},422));
+  await register(duplicate, user.email, "test-password", "drapedrop://auth-confirm");
+  const invalid = makeAuth(async () => response({error_code:"weak_password",msg:"Private details"},422));
+  await assert.rejects(register(invalid, user.email, "test-password", "drapedrop://auth-confirm"), /stronger password/);
+});
+
+test("misconfigured auto-confirm signup rejects and discards its isolated session", async () => {
+  let signedOut = false;
+  const auth = makeAuth(async url => {
+    if (new URL(url).pathname.endsWith("/logout")) {
+      signedOut = true;
+      return new Response(null,{status:204});
+    }
+    return response(payload());
+  });
+  await assert.rejects(register(auth, user.email, "test-password", "drapedrop://auth-confirm"), /not configured/);
+  assert.equal(signedOut,true);
+  assert.equal((await auth.getSession()).data.session,null);
+});
+
+test("resend uses the managed signup confirmation endpoint and reports rate limits", async () => {
+  const auth = makeAuth(async (url,init) => {
+    assert.equal(new URL(url).pathname,"/auth/v1/resend");
+    assert.equal(new URL(url).searchParams.get("redirect_to"),"drapedrop://auth-confirm");
+    assert.equal(JSON.parse(init.body).type,"signup");
+    assert.equal(JSON.parse(init.body).email,user.email);
+    return response({error_code:"over_email_send_rate_limit",msg:"Private details"},429);
+  });
+  await assert.rejects(resendSignupEmail(auth,user.email,"drapedrop://auth-confirm"), /Too many requests/);
+});
+
+test("signup confirmation accepts only a confirmed signup session", async () => {
+  const hash = "A".repeat(43);
+  const confirm = makeAuth(async (url,init) => {
+    assert.equal(new URL(url).pathname,"/auth/v1/verify");
+    assert.equal(JSON.parse(init.body).type,"signup");
+    assert.equal(JSON.parse(init.body).token_hash,hash);
+    return response({...payload(),user:{...user,email_confirmed_at:new Date().toISOString()}});
+  });
+  assert.equal((await verifyEmailLink(confirm,hash,"signup")).user.id,user.id);
+  const expired = makeAuth(async () => response({error_code:"otp_expired",msg:"Private details"},403));
+  await assert.rejects(verifyEmailLink(expired,hash,"signup"),/invalid or expired/);
+  const unconfirmed = makeAuth(async () => response(payload()));
+  await assert.rejects(verifyEmailLink(unconfirmed,hash,"signup"),/could not be confirmed/);
+});
+
+test("cancelled and failed OAuth callbacks cannot reach code exchange", () => {
+  assert.equal(oauthCallbackIssue(undefined,undefined,"access_denied",undefined),"Sign-in cancelled");
+  assert.equal(oauthCallbackIssue(undefined,undefined,undefined,"access_denied"),"Sign-in cancelled");
+  assert.equal(oauthCallbackIssue("test-code","flow_1234","server_error",undefined),"Sign-in unavailable");
+  assert.equal(oauthCallbackIssue("test-code","bad",undefined,undefined),"Sign-in unavailable");
+  assert.equal(oauthCallbackIssue("test-code","flow_1234",undefined,undefined),null);
 });
 
 test("login handles invalid credentials and unconfirmed email safely", async () => {

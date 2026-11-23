@@ -21,6 +21,23 @@ async def test_worker_fixed_manifest_storage_then_auth_and_completion():
  assert calls.index('/storage/v1/object/tryon-inputs')<calls.index('/auth/v1/admin/users/'+subject)<len(calls)-1
 
 @pytest.mark.asyncio
+async def test_worker_accepts_onboarding_private_images_for_account_deletion():
+ subject=str(uuid4());lease=str(uuid4());calls=[];manifests=0
+ def receive(req):
+  nonlocal manifests
+  calls.append(req.url.path)
+  if req.url.path.endswith('claim_deletion'):return httpx.Response(200,json={'subject':subject,'lease':lease})
+  if req.url.path.endswith('deletion_manifest'):
+   manifests+=1
+   return httpx.Response(200,json=[{'bucket':'onboarding-body-images','object':subject+'/private.jpg'}] if manifests==1 else [])
+  if req.url.path.endswith('prepare_auth_deletion'):return httpx.Response(200,json=True)
+  if req.url.path.endswith('finish_deletion'):return httpx.Response(204)
+  return httpx.Response(200,json={})
+ worker=DeletionWorker('https://dev.supabase.co','sb_secret_test_worker','dev',httpx.MockTransport(receive))
+ assert await worker.run_once()
+ assert '/storage/v1/object/onboarding-body-images' in calls
+
+@pytest.mark.asyncio
 async def test_worker_never_follows_redirect_or_unsafe_manifest_and_retries():
  subject=str(uuid4());lease=str(uuid4());calls=[]
  def receive(req):

@@ -16,7 +16,7 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 from PIL import Image, ImageOps, UnidentifiedImageError
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictStr, StrictBool, ValidationError, field_validator
 from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartException
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -57,6 +57,7 @@ class GarmentPatch(BaseModel):
 
 
 class GarmentCreate(GarmentPatch):
+    allowDuplicate: StrictBool = False
     name: Annotated[StrictStr, Field(min_length=1,max_length=200)]
     category: Category
 
@@ -107,7 +108,8 @@ def garment(value) -> GarmentRead:
 
 
 async def wardrobe_rpc(data, operation, body):
-    return await rpc(data,operation,body,missing_detail='Garment or image not found.')
+    return await rpc(data,operation,body,missing_detail='Garment or image not found.',
+                     conflict_detail='This photo is already in your wardrobe. Confirm to keep another item.')
 
 
 def normalize_image(content: bytes) -> bytes:
@@ -225,6 +227,7 @@ async def clean_images(data):
 
 async def save(request,data,garment_id=None):
     changes,photo=await fields_and_image(request,garment_id is None)
+    allow_duplicate=changes.pop('allowDuplicate',False)
     image_id=None
     if garment_id is not None:
         await wardrobe_rpc(data,'read_wardrobe',{'p_id':str(garment_id)})
@@ -240,8 +243,12 @@ async def save(request,data,garment_id=None):
             if info.id!=image_id or info.object!=expected_object or info.byteSize!=len(image) or info.sha256!=hashlib.sha256(image).hexdigest():
                 raise DependencyUnavailable()
             await storage(data,'POST','object/'+BUCKET+'/'+object_path(data,info.object),content=image)
-        result=await wardrobe_rpc(data,'write_wardrobe',{'p_changes':changes,'p_id':str(garment_id) if garment_id else None,
-                                                       'p_image_id':str(image_id) if image_id else None})
+        if garment_id is None:
+            result=await wardrobe_rpc(data,'create_wardrobe_checked',{'p_changes':changes,
+                'p_image_id':str(image_id),'p_allow_duplicate':allow_duplicate})
+        else:
+            result=await wardrobe_rpc(data,'write_wardrobe',{'p_changes':changes,
+                'p_id':str(garment_id),'p_image_id':str(image_id) if image_id else None})
     except (DependencyUnavailable,Unauthorized,Forbidden,HTTPException,ValidationError):
         if image_id:
             try: await wardrobe_rpc(data,'abandon_wardrobe_image',{'p_id':str(image_id)})
@@ -308,3 +315,64 @@ async def garment_image(garment_id:UUID,data:Data):
     if len(content)!=info.byteSize or hashlib.sha256(content).hexdigest()!=info.sha256: raise DependencyUnavailable()
     image=await anyio.to_thread.run_sync(normalize_image,content)
     return Response(image,media_type='image/jpeg',headers={'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+
+
+class GalleryPhoto(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    id: UUID
+    primary: StrictBool
+    createdAt: datetime
+
+
+async def gallery(data, garment_id, operation='list', image_id=None):
+    return await rpc(data,'wardrobe_gallery',{'p_garment_id':str(garment_id),
+        'p_operation':operation,'p_image_id':str(image_id) if image_id else None},
+        missing_detail='Garment or photo not found.',
+        conflict_detail='Choose another primary photo before removing this photo.')
+
+
+@router.get('/wardrobe/{garment_id}/photos',response_model=list[GalleryPhoto])
+async def list_photos(garment_id:UUID,data:Data):
+    return await gallery(data,garment_id)
+
+
+@router.post('/wardrobe/{garment_id}/photos',response_model=list[GalleryPhoto],status_code=201)
+async def add_photo(garment_id:UUID,request:Request,data:Data):
+    await gallery(data,garment_id)
+    changes,photo=await fields_and_image(request,False)
+    if changes or photo is None: raise HTTPException(422,'Supply a photo and empty metadata.')
+    image=await anyio.to_thread.run_sync(normalize_image,photo)
+    image_id=uuid4()
+    try:
+        info=ImageInfo.model_validate(await wardrobe_rpc(data,'reserve_wardrobe_image',{
+            'p_id':str(image_id),'p_sha256':hashlib.sha256(image).hexdigest(),'p_byte_size':len(image)}))
+        if info.id!=image_id or info.object!=f'{data.principal.user_id}/{image_id}.jpg' or info.sha256!=hashlib.sha256(image).hexdigest() or info.byteSize!=len(image):
+            raise DependencyUnavailable()
+        await storage(data,'POST','object/'+BUCKET+'/'+object_path(data,info.object),content=image)
+        return await gallery(data,garment_id,'attach',image_id)
+    except (DependencyUnavailable,Unauthorized,Forbidden,HTTPException,ValidationError):
+        try: await wardrobe_rpc(data,'abandon_wardrobe_image',{'p_id':str(image_id)})
+        except (DependencyUnavailable,Unauthorized,Forbidden,HTTPException): pass
+        await clean_images(data)
+        raise
+
+
+@router.put('/wardrobe/{garment_id}/photos/{image_id}/primary',response_model=list[GalleryPhoto])
+async def primary_photo(garment_id:UUID,image_id:UUID,data:Data):
+    return await gallery(data,garment_id,'primary',image_id)
+
+
+@router.delete('/wardrobe/{garment_id}/photos/{image_id}',status_code=204)
+async def remove_photo(garment_id:UUID,image_id:UUID,data:Data):
+    await gallery(data,garment_id,'remove',image_id)
+    await clean_images(data)
+    return Response(status_code=204)
+
+
+@router.get('/wardrobe/{garment_id}/photos/{image_id}')
+async def read_photo(garment_id:UUID,image_id:UUID,data:Data):
+    try: info=ImageInfo.model_validate(await gallery(data,garment_id,'info',image_id))
+    except ValidationError: raise DependencyUnavailable() from None
+    content=await storage(data,'GET','object/authenticated/'+BUCKET+'/'+object_path(data,info.object))
+    if len(content)!=info.byteSize or hashlib.sha256(content).hexdigest()!=info.sha256: raise DependencyUnavailable()
+    return Response(content,media_type='image/jpeg',headers={'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})

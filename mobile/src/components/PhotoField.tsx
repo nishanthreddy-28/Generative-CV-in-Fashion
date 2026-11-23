@@ -12,12 +12,14 @@ export function PhotoField({
   onChange,
   disabled = false,
   camera = false,
+  subject = "garment",
 }: {
   label: string;
   value: Photo | null;
   onChange: (photo: Photo | null) => void;
   disabled?: boolean;
   camera?: boolean;
+  subject?: string;
 }) {
   const [error, setError] = useState("");
   const [picking,setPicking]=useState(false);
@@ -65,8 +67,8 @@ export function PhotoField({
       <Text style={ui.label}>{label}</Text>
       {!value && <View style={[styles.photoArea,camera && styles.captureArea]}>
         {camera && <Text style={styles.captureMark} accessible={false}>⌑</Text>}
-        <Text style={ui.heading}>Choose a garment photo</Text>
-        <Text style={styles.photoHint}>Frame one piece at a time.</Text>
+        <Text style={ui.heading}>Choose a {subject} photo</Text>
+        <Text style={styles.photoHint}>{camera ? `Take or upload a clear ${subject} photo.` : "Frame one piece at a time."}</Text>
       </View>}
       {value && (
         <FramedImage

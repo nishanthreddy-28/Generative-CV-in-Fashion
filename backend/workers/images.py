@@ -18,18 +18,23 @@ class ImageWorker(DeletionWorker):
             items=await rpc('image_cleanup_manifest',{})
             if not isinstance(items,list) or len(items)>100:raise CleanupError('Invalid cleanup manifest.')
             completed=0
+            failed=False
             for item in items:
                 try:
                     ident=str(UUID(item['id']));bucket=item['bucket'];path=item['object']
                     parts=path.split('/')
                     valid=(len(parts)==2 and parts[1]==ident+'.jpg' and
                            ((bucket=='catalog-images' and parts[0]=='catalog') or
-                            (bucket in ('wardrobe-images','tryon-inputs') and str(UUID(parts[0]))==parts[0])))
+                           (bucket in ('wardrobe-images','tryon-inputs','onboarding-body-images') and str(UUID(parts[0]))==parts[0])))
                     if not valid:raise CleanupError('Invalid cleanup boundary.')
                     response=await client.request('DELETE',self.url+'/storage/v1/object/'+bucket,json={'prefixes':[path]})
-                    if response.status_code not in (200,204):continue  # Durable pending state; retry next run.
+                    if response.status_code not in (200,204):
+                        failed=True
+                        continue  # Durable pending state; retry next run.
                     if await rpc('finish_image_cleanup',{'p_bucket':bucket,'p_id':ident}) is True:completed+=1
+                    else:failed=True
                 except (ValueError,KeyError,TypeError,AttributeError):raise CleanupError('Invalid cleanup object.') from None
+            if failed:raise CleanupError('Some image cleanup remains pending for retry.')
             return completed
 
 async def main():

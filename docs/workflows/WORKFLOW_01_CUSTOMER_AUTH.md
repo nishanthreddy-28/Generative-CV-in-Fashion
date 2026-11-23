@@ -74,3 +74,14 @@ The repeat inspection after the reported access restoration still returned Manag
 ### Access recovery update
 
 Read-only hosted inspection now works through the existing saved Supabase CLI session after excluding the rejected process environment token. Hosted api/app_private schemas, application tables, standard migration history, provisioning triggers and Storage buckets are absent. Two existing Auth users are email-confirmed. Hosted Auth uses localhost:3000, an empty redirect allowlist and eight-digit email OTPs. Google is disabled. Exact evidence, local migration hashes and approval requirements are recorded in [access recovery](../backend/access-recovery.md). Browser control remains disabled. These findings supersede the earlier claim that all hosted schema inspection is inaccessible.
+
+
+### Independent migration review
+
+The [migration approval review](WORKFLOW_01_MIGRATION_APPROVAL.md) contains the independently rechecked hosted baseline, exact existing SQL hashes, per-table access matrix, separately validated registration storage draft and recovery rehearsal. Its recommendation is to hold hosted execution until the independent verification protocol, eligibility gate and recovery safeguards are complete. The trusted Admin API finalizer is proposed for review as an alternative to storing/redeeming an encrypted Supabase token.
+
+### Local verification implementation candidate
+
+The isolated coordinator and inbox screen now have a disabled-by-default rollout. The coordinator exposes start, link, verify, status, finalize and resend POST operations. Link and OTP proof checks remain distinct. The status operation returns only the authenticated attempt stage and supports original-tab reload. The frontend requires the trusted API access projection before opening customer routes. A deleting account can restore its deletion progress without opening normal screens.
+
+See the [local protocol candidate and release risks](WORKFLOW_01_MIGRATION_APPROVAL.md#local-protocol-candidate) for the exact SQL and deployment boundary. The proof-first candidate fixes abandoned address reservations locally. Hosted release still depends on recovery readiness, managed Auth grant authority, legacy-account treatment, email acceptance and persistent browser authentication.

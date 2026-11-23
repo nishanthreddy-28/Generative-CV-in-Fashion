@@ -1,6 +1,6 @@
 import { useDraft } from "../../hooks/useDraft";
 import { useState } from "react";
-import { Image, Text } from "react-native";
+import { Text } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   Screen,
@@ -16,7 +16,7 @@ import { Fields } from "../../components/Fields";
 import { Button } from "../../components/Button";
 import { useResource } from "../../hooks/useResource";
 import { useSession } from "../../features/session";
-import { validate, type Field } from "../../features/validation";
+import { patchPayload, validate, type Field } from "../../features/validation";
 import type { Outfit, OutfitItem } from "../../types/domain";
 import { OutfitItemSelector } from "../../features/OutfitItemSelector";
 import { itemError, itemReferences } from "../../features/outfitItems";
@@ -47,6 +47,15 @@ export default function Detail() {
   const [confirmDelete,setConfirmDelete]=useState(false);
   const [itemDraft, setItemDraft] = useDraft<OutfitItem[] | null>(path + ":typed-items", null);
   const items = itemDraft ?? result.data?.items ?? [];
+  async function duplicate() {
+    if (preview || !session || busy) return;
+    setBusy(true);
+    try {
+      const copy = await request<Outfit>(path + "/duplicate", { method: "POST" });
+      router.push(`/outfits/${copy.id}`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to duplicate outfit."); }
+    finally { setBusy(false); }
+  }
   async function mutate() {
     const issues = validate(fields, values);
     setErrors(issues);
@@ -58,7 +67,7 @@ export default function Detail() {
     if (!session) return;
     setBusy(true);
     try {
-      await request(path, { method: "PATCH", body: values });
+      await request(path, { method: "PATCH", body: patchPayload(fields, values, draft) });
       setMessage("Outfit details saved. Any unsaved item selection is retained.");
       setValues({});
       result.retry();
@@ -96,13 +105,6 @@ export default function Detail() {
         <ResourceState {...result} />
         {(result.data || preview) && (
           <>
-            {Boolean(result.data?.imageUrl) && (
-              <Image
-                source={{ uri: result.data?.imageUrl }}
-                accessibilityLabel={result.data?.name}
-                style={ui.image}
-              />
-            )}
             <Fields
               fields={fields}
               values={values}
@@ -121,9 +123,11 @@ export default function Detail() {
               label="Save outfit details"
               onPress={mutate}
               loading={busy}
+              disabled={Object.keys(draft).length === 0}
             />
           </>
         )}
+        <Button label="Duplicate saved outfit" variant="secondary" disabled={busy || preview || !result.data} onPress={() => void duplicate()} />
         <Button label="Delete outfit" variant="danger" disabled={busy || (!preview && !result.data)} onPress={()=>setConfirmDelete(true)}/>
         <Confirm confirmLabel="Delete outfit" visible={confirmDelete} title="Delete this outfit?" text="Only this outfit and its item associations are removed. Garments and recommendations remain." busy={busy} onCancel={()=>setConfirmDelete(false)} onConfirm={()=>{void removeOutfit();}}/>
         <RouteLink to="/outfits" preview={preview}>

@@ -4,11 +4,12 @@ import { StyleSheet, Text, View } from "react-native";
 import { Gate, ResourceState, Screen, ui } from "../components/Screen";
 import { WardrobeImage } from "../components/WardrobeImage";
 import { useResource } from "../hooks/useResource";
+import { readPage } from "../services/api/readResponse";
 import { colors } from "../theme/tokens";
 import type { Outfit, Page } from "../types/domain";
 
 export default function DashboardScreen() {
-  const {data,loading,error,retry}=useResource<Page<Outfit>>("/outfits?limit=4",false);
+  const {data,loading,error,retry}=useResource<Page<Outfit>>("/outfits?limit=4",false,false,undefined,readPage);
   useFocusEffect(useCallback(()=>{retry();},[retry]));
   return <Screen title="Your wardrobe">
     <Gate preview={false}>

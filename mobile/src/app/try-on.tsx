@@ -5,6 +5,7 @@ import { Gate, Notice, ResourceState, RouteLink, Screen, ui } from "../component
 import { TryOnJobCard } from "../features/TryOnJobCard";
 import { useSession } from "../features/session";
 import { useResource } from "../hooks/useResource";
+import { readPage } from "../services/api/readResponse";
 import type { Page, TryOnJob } from "../types/domain";
 import { colors } from "../theme/tokens";
 
@@ -16,6 +17,9 @@ export default function TryOn() {
   const history = useResource<Page<TryOnJob>>(
     `/try-on/jobs?limit=24${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
     false,
+    false,
+    undefined,
+    readPage,
   );
 
   async function cancel(id: string) {

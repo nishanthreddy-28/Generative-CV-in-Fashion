@@ -45,7 +45,7 @@ def main():
                 return result
             # Extend only the disposable Auth interface; never alter managed hosted Auth.
             subprocess.run(['psql','-X','-q','-v','ON_ERROR_STOP=1','-h',temporary,'-d','postgres','-c',
-                "ALTER TABLE auth.users ADD COLUMN email text, ADD COLUMN email_confirmed_at timestamptz, ADD COLUMN raw_user_meta_data jsonb DEFAULT '{}', ADD COLUMN raw_app_meta_data jsonb DEFAULT '{}', ADD COLUMN deleted_at timestamptz, ADD COLUMN banned_until timestamptz; CREATE UNIQUE INDEX local_auth_email_unique ON auth.users(lower(email)); ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;"
+                "ALTER TABLE auth.users ADD COLUMN email text, ADD COLUMN email_confirmed_at timestamptz, ADD COLUMN raw_user_meta_data jsonb DEFAULT '{}', ADD COLUMN raw_app_meta_data jsonb DEFAULT '{}', ADD COLUMN deleted_at timestamptz, ADD COLUMN banned_until timestamptz, ADD COLUMN is_anonymous boolean NOT NULL DEFAULT false, ADD COLUMN confirmation_token text, ADD COLUMN confirmation_sent_at timestamptz; CREATE UNIQUE INDEX local_auth_email_unique ON auth.users(lower(email)); ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY; CREATE TABLE auth.identities(user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE, provider text NOT NULL, identity_data jsonb NOT NULL, PRIMARY KEY (user_id,provider));"
                 ],check=True)
             for name in ['202611090008_registration_storage.sql','202611090009_registration_protocol.sql']:
                 subprocess.run(['psql','-X','-q','-v','ON_ERROR_STOP=1','-h',temporary,'-d','postgres','-f',str(registration/name)],check=True)
@@ -53,7 +53,9 @@ def main():
                 if path.name not in ['202611090008_registration_storage.sql','202611090009_registration_protocol.sql']:
                     subprocess.run(['psql','-X','-q','-v','ON_ERROR_STOP=1','-h',temporary,'-d','postgres','-f',str(path)],check=True)
             environment['DD_TEST_REGISTRATION_PROTOCOL']='1'
-            return subprocess.call([sys.executable,'-m','pytest','-q','tests/test_registration_database.py'],cwd=ROOT/'backend',env=environment)
+            return subprocess.call([sys.executable,'-m','pytest','-q','tests/test_registration_database.py',
+                                    'tests/test_direct_auth_database.py','tests/test_onboarding_database.py',
+                                    'tests/test_personalization_database.py','tests/test_wardrobe_duplicates_database.py','tests/test_wardrobe_gallery_database.py','tests/test_outfit_duplication_database.py'],cwd=ROOT/'backend',env=environment)
         finally:
             if started:
                 subprocess.run(['pg_ctl','-D',data,'-m','immediate','-w','stop'],check=True,stdout=subprocess.DEVNULL)

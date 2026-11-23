@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "../features/session";
-export function useResource<T>(path: string, preview: boolean, admin = false, responseType?: "image") {
+import { readRecord } from "../services/api/readResponse";
+export function useResource<T>(path: string, preview: boolean, admin = false, responseType?: "image", read: (value: T) => T = readRecord) {
   const { session, request, accountDeleting } = useSession();
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{
@@ -17,7 +18,7 @@ export function useResource<T>(path: string, preview: boolean, admin = false, re
     const controller = new AbortController();
     request<T>(path, { signal: controller.signal, responseType })
       .then((data) => {
-        if (!controller.signal.aborted) setState({ key, data, error: "" });
+        if (!controller.signal.aborted) setState({ key, data: read(data), error: "" });
       })
       .catch((error) => {
         if (controller.signal.aborted) return;
@@ -31,7 +32,7 @@ export function useResource<T>(path: string, preview: boolean, admin = false, re
         });
       });
     return () => controller.abort();
-  }, [path, key, skip, request, responseType]);
+  }, [path, key, skip, request, responseType, read]);
   return {
     data: !skip && state.key === key ? state.data : null,
     error: !skip && state.key === key ? state.error : "",

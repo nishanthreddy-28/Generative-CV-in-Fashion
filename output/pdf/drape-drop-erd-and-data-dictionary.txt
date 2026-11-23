@@ -1,0 +1,233 @@
+DRAPE & DROP — ENTITY RELATIONSHIPS AND DATA DICTIONARY
+
+Scope: 22 application tables declared by the Supabase migrations in the repository.
+All application tables are in app_private. Supabase manages auth.users and storage.objects.
+PK = primary key. FK = foreign key. UK = unique key or constraint.
+In the relationships below, [1] means exactly one, [0..1] means optional one, and
+[0..*] means zero or more. Each label describes the entity next to it.
+
+1. ENTITY RELATIONSHIPS
+
+Wardrobe, catalog, and outfits
+
+auth.users [1] — owns — [0..*] wardrobe_garments
+auth.users [1] — owns — [0..*] wardrobe_images
+auth.users [1] — owns — [0..*] saved_outfits
+saved_outfits [1] — contains — [0..*] outfit_items
+wardrobe_garments [0..1] — referenced by — [0..*] outfit_items
+catalog_garments [0..1] — referenced by — [0..*] outfit_items
+wardrobe_images [1] — attached to — [0..1] wardrobe_garments
+catalog_images [1] — attached to — [0..1] catalog_garments
+
+Each outfit item references exactly one wardrobe or catalog garment. The wardrobe FK
+also matches owner_id, preventing a link to another customer's garment. The current
+manual-create API requires at least two distinct items. Each saved garment points to
+one image metadata row. An image can be staged before a garment references it.
+The corresponding private Supabase Storage object holds the file bytes.
+
+Recommendations
+
+auth.users [1] — owns — [0..*] recommendation_requests
+recommendation_requests [1] — produces — [0..*] recommendation_results
+recommendation_results [1] — bookmarked as — [0..1] saved_recommendations
+recommendation_results [0..1] — recorded as origin of — [0..1] saved_outfits
+
+The result's items JSONB contains ordered garment references checked by database logic.
+Those references have no individual garment FKs. A saved recommendation is a bookmark.
+A saved outfit can also record its source recommendation.
+
+Try-on
+
+auth.users [1] — owns — [0..*] tryon_jobs
+auth.users [1] — owns — [0..*] tryon_images
+tryon_jobs [0..1] — has input — [1] tryon_images
+tryon_jobs [0..*] — has output — [0..1] tryon_images
+
+The input image is required and unique per job. The output reference is optional.
+Both image FKs include owner_id. A job may retain a live wardrobe or catalog reference.
+It keeps original_garment_id after garment removal. The current checkout supports job
+tracking and input images. The schema reserves output support for future inference.
+
+Accounts and registration
+
+One Auth user can have at most one user_profiles, body_profiles, user_preferences,
+account_lifecycle, development_preview_access, and registration_receipts row.
+An administrator membership is keyed by user_id and permission.
+A registration receipt binds a verified user to its matching registration challenge.
+Deletion tasks and tombstones retain UUIDs without a live Auth foreign key.
+
+2. TABLES AND ATTRIBUTES
+
+ACCOUNTS AND ACCESS
+
+user_profiles
+Personal profile and style information.
+Columns user_id (uuid), name (varchar(200)), style (varchar(2000)), location (varchar(200)), bio (varchar(2000)),
+created_at (timestamptz), updated_at (timestamptz)
+PK user_id
+FK user_id -> auth.users (id)
+
+body_profiles
+Measurements, units and fit or appearance fields.
+Columns user_id (uuid), units (text), height (numeric(10,4)), chest (numeric(10,4)), waist (numeric(10,4)), hips
+(numeric(10,4)), inseam (numeric(10,4)), body_shape (varchar(200)), skin_tone (varchar(200)), undertone (text),
+fit (text), updated_at (timestamptz)
+PK user_id
+FK user_id -> auth.users (id)
+
+user_preferences
+Units and email notification preference.
+Columns user_id (uuid), units (text), email_notifications (boolean), updated_at (timestamptz)
+PK user_id
+FK user_id -> auth.users (id)
+
+account_lifecycle
+Account access state.
+Columns user_id (uuid), state (text), state_changed_at (timestamptz)
+PK user_id
+FK user_id -> auth.users (id)
+
+account_deletion_tombstones
+Deletion evidence retained independently of Auth.
+Columns former_subject_id (uuid), deletion_started_at (timestamptz), cleanup_stage (text), auth_deleted_at
+(timestamptz), cleanup_completed_at (timestamptz)
+PK former_subject_id
+
+administrator_memberships
+Trusted catalog permissions.
+Columns user_id (uuid), permission (text), granted_at (timestamptz)
+PK user_id, permission
+FK user_id -> auth.users (id)
+
+development_preview_access
+Time-limited review access.
+Columns user_id (uuid), approved_at (timestamptz), expires_at (timestamptz), purpose (text)
+PK user_id
+FK user_id -> auth.users (id)
+
+
+WARDROBE, CATALOG AND OUTFITS
+
+wardrobe_garments
+A garment owned by a customer.
+Columns id (uuid), owner_id (uuid), name (varchar(200)), category (text), color (varchar(200)), brand
+(varchar(200)), size (varchar(200)), material (varchar(200)), notes (varchar(2000)), image_id (uuid), created_at
+(timestamptz), updated_at (timestamptz)
+PK id | UK image_id / id,owner_id
+FK owner_id -> auth.users (id) | (image_id,owner_id) -> app_private.wardrobe_images (id,owner_id)
+
+wardrobe_images
+Private wardrobe image metadata.
+Columns id (uuid), owner_id (uuid), object_name (text), sha256 (text), byte_size (integer), state (text), created_at
+(timestamptz)
+PK id | UK object_name / id,owner_id
+FK owner_id -> auth.users (id)
+
+catalog_garments
+Shared garment with active state and optional price.
+Columns id (uuid), name (varchar(200)), category (text), color (varchar(200)), brand (varchar(200)), size
+(varchar(200)), material (varchar(200)), notes (varchar(2000)), price (numeric), active (boolean), image_id (uuid),
+created_at (timestamptz), updated_at (timestamptz)
+PK id | UK image_id
+FK (image_id) -> app_private.catalog_images (id)
+
+catalog_images
+Private catalog image metadata.
+Columns id (uuid), object_name (text), sha256 (text), byte_size (integer), state (text), created_at (timestamptz)
+PK id | UK object_name
+
+saved_outfits
+Owned outfit with optional recommendation provenance.
+Columns id (uuid), owner_id (uuid), name (varchar(200)), description (varchar(2000)), occasion (varchar(200)),
+created_at (timestamptz), updated_at (timestamptz), origin_recommendation_id (uuid)
+PK id | UK id,owner_id / owner_id, origin_recommendation_id (non-null origin only)
+FK owner_id -> auth.users (id) | (origin_recommendation_id,owner_id) -> app_private.recommendation_results
+(id,owner_id)
+
+outfit_items
+Ordered link to one garment source.
+Columns outfit_id (uuid), owner_id (uuid), position (integer), wardrobe_garment_id (uuid), catalog_garment_id
+(uuid), id (uuid)
+PK outfit_id, position | UK outfit_id,wardrobe_garment_id / outfit_id,catalog_garment_id / id
+FK (outfit_id,owner_id) -> app_private.saved_outfits (id,owner_id) | (wardrobe_garment_id,owner_id) ->
+app_private.wardrobe_garments (id,owner_id) | (catalog_garment_id) -> app_private.catalog_garments (id)
+
+
+RECOMMENDATIONS AND JOBS
+
+recommendation_requests
+Inputs and limits for a rules-based request.
+Columns id (uuid), owner_id (uuid), occasion (text), preferences (varchar(2000)), wardrobe_only (boolean),
+result_limit (integer), engine_version (text), created_at (timestamptz)
+PK id | UK id,owner_id
+FK owner_id -> auth.users (id)
+
+recommendation_results
+Ranked combinations with reasons.
+Columns id (uuid), request_id (uuid), owner_id (uuid), rank (integer), items (jsonb), score (integer), reasons
+(text[])
+PK id | UK request_id,rank / id, owner_id
+FK (request_id,owner_id) -> app_private.recommendation_requests (id,owner_id)
+
+saved_recommendations
+Owner-specific bookmarks.
+Columns id (uuid), owner_id (uuid), recommendation_id (uuid), saved_at (timestamptz)
+PK id | UK owner_id,recommendation_id
+FK owner_id -> auth.users (id) | (recommendation_id,owner_id) -> app_private.recommendation_results
+(id,owner_id)
+
+tryon_images
+Input or reserved output photo metadata.
+Columns id (uuid), owner_id (uuid), object_name (text), sha256 (text), byte_size (integer), state (text), created_at
+(timestamptz), purpose (text)
+PK id | UK object_name / id,owner_id
+FK owner_id -> auth.users (id)
+
+tryon_jobs
+Garment reference, consent, job state and input photo.
+Columns id (uuid), owner_id (uuid), status (text), garment_source (text), original_garment_id (uuid),
+wardrobe_garment_id (uuid), catalog_garment_id (uuid), input_image_id (uuid), output_image_id (uuid),
+consent_version (text), consent_at (timestamptz), created_at (timestamptz), updated_at (timestamptz),
+finished_at (timestamptz), failure_code (text)
+PK id | UK input_image_id
+FK owner_id -> auth.users (id) | (wardrobe_garment_id,owner_id) -> app_private.wardrobe_garments
+(id,owner_id) | (catalog_garment_id) -> app_private.catalog_garments (id) | (input_image_id,owner_id) ->
+app_private.tryon_images (id,owner_id) | (output_image_id,owner_id) -> app_private.tryon_images (id,owner_id)
+
+deletion_tasks
+Account cleanup phase and retry lease.
+Columns subject_id (uuid), requested_at (timestamptz), phase (text), lease (uuid), lease_until (timestamptz),
+attempts (integer), last_error (text), updated_at (timestamptz)
+PK subject_id
+
+
+REGISTRATION SUPPORT
+
+registration_challenges
+Time-bound verification attempt with separate link and code proof state.
+Columns id (uuid), user_id (uuid), email_binding_mac (bytea), session_binding_hash (bytea), link_hash (bytea),
+otp_mac (bytea), state (text), issued_at (timestamptz), expires_at (timestamptz), link_verified_at (timestamptz),
+otp_verified_at (timestamptz), finalization_started_at (timestamptz), auth_confirmed_at (timestamptz),
+completed_at (timestamptz), invalid_attempts (integer), superseded_at (timestamptz), email_address (text)
+PK id | UK id,user_id
+FK user_id -> auth.users (id)
+
+registration_receipts
+Evidence linking a verified user to the challenge.
+Columns user_id (uuid), challenge_id (uuid), method (text), verified_at (timestamptz)
+PK user_id | UK challenge_id
+FK user_id -> auth.users (id) | (challenge_id,user_id) -> app_private.registration_challenges (id,user_id)
+
+registration_rate_windows
+Persistent counters used to limit verification attempts.
+Columns scope (text), key_mac (bytea), window_started_at (timestamptz), window_ends_at (timestamptz),
+attempts (integer)
+PK scope, key_mac, window_started_at
+
+Schema sources and boundaries
+Source: supabase/migrations/202611060001_foundation.sql through
+202611090010_development_preview_access.sql. Column and key lists include the additive migrations.
+This reference describes the repository schema. Supabase-managed auth.users and storage.objects are
+referenced where relevant, outside the 22 application tables.
+The planned classifier, chatbot integration, admin web dashboard, payments and product notifications
+are architecture features. Their own database entities are outside the verified migration inventory.
