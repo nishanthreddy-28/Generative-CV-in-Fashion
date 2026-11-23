@@ -32,7 +32,11 @@ export async function loadOutfitPages(request: Request, filters: OutfitFilters, 
   do {
     const page=await request<Page<Outfit>>(outfitQuery(filters,cursor),{signal});
     if(signal?.aborted)throw new Error("Request cancelled.");
-    if(!page || !Array.isArray(page.items) || (page.nextCursor!=null && typeof page.nextCursor!=="string"))throw new Error("Invalid outfit page.");
+    if (!page || !Array.isArray(page.items) ||
+        page.items.some(item => !item || typeof item.id !== "string" || !item.id) ||
+        (page.nextCursor != null && typeof page.nextCursor !== "string")) {
+      throw new Error("The server returned an unexpected outfit list. Try again.");
+    }
     items=mergeOutfits(items,page.items);loaded++;
     cursor=page.nextCursor || undefined;
     if(cursor && seen.has(cursor))throw new Error("The outfit cursor did not advance. Refresh the list.");

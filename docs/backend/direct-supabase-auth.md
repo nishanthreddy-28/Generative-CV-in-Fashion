@@ -1,0 +1,29 @@
+# Direct Supabase Auth rollout
+
+Email signup now uses the app's Supabase SDK. The app sends the email and password to Supabase Auth and shows an enumeration-safe inbox message. The confirmation link opens `/auth-confirm` on web or `drapedrop://auth-confirm` on native. An explicit confirmation action redeems the signup proof through Supabase Auth. Only after the API's account-access check succeeds does the app send the user to the existing body-profile screen. No new body-photo onboarding gate is part of this change.
+
+Google and Apple continue through Supabase OAuth using the existing PKCE callback, native deep link and account-access check. Supabase handles identity linking. The app does not match existing accounts by email, link identities manually or issue its own tokens. The provider buttons require both explicit rollout flags and matching enabled providers in the project's Auth settings.
+
+Expo SecureStore persists sessions on native devices. The Supabase SDK restores and refreshes those sessions. Web access and refresh tokens stay in memory, so a full browser reload requires sign-in again. The short-lived PKCE verifier can survive a same-tab provider redirect.
+
+## Forward migration
+
+`202611230001_direct_supabase_auth.sql` extends `registration_receipts` with email-bound proof methods for direct signup and provider-verified Google and Apple identities. Existing dual-proof receipts keep their challenge references. A trusted Auth-row trigger consumes authoritative Auth state and moves only pending accounts to active. Email signup requires confirmation-token consumption rather than immediate autoconfirmation. OAuth requires the matching verified email in Supabase's managed provider identity. No values in client-editable user metadata determine eligibility or permission.
+
+Existing active accounts keep their prior receipt or expiring development-preview access. The migration does not backfill older confirmations into new receipts, reactivate disabled or deleting accounts, or grant catalog membership. An authoritative email change that no longer matches the recorded proof requires a separately reviewed account recovery or re-verification process. Normal FastAPI requests still carry the caller's JWT into PostgREST and enforce account eligibility and RLS.
+
+`backend/registration/` is a deprecated compatibility service for old builds or outstanding legacy attempts. It is disabled by default and outside the new mobile workflow. Its source, tests and historical migrations are retained while legacy dependencies are evaluated. The new build does not use the old coordinator URL, capability storage or code screen.
+
+## Hosted configuration and release order
+
+1. On an isolated Supabase staging project, confirm the migration identity can install the trigger on `auth.users` and read the required managed `auth.identities` fields. Apply the forward migration through the reviewed deployment process and verify existing-account access, eligible new signup, duplication, RLS, and disabled/deleting accounts.
+2. Enable email signups and **Confirm email** in Supabase Auth. Configure an authorized SMTP sender, server-side password policy and email rate limits. Configure the **Confirm signup** template from `supabase/templates/confirm-signup.html`. It uses the allowlisted redirect and the Supabase signup token hash. Keep confirmation links out of access logs and telemetry and disable email link tracking. Leave password-recovery templates and redirects intact. Local configuration uses the checked confirmation template and 60-second email cooldown.
+3. Add exact allowed app redirects for the intended web origins and native scheme. Include `/auth-confirm`, `/oauth-callback` and the existing recovery callback on the right origins. In each external OAuth provider console, the callback registered for Supabase is the project's `/auth/v1/callback` URL. The app callback is configured separately in Supabase.
+4. For Google, configure the consent screen and OAuth client, register the Supabase callback, and enable the provider in Supabase with its private credentials. For Apple, configure the App ID, Services ID, return URL and signing credentials in Apple Developer and Supabase. Keep the Apple OAuth secret rotated. Require a provider email. Keep provider credentials out of the client build.
+5. Verify a real test inbox, an expired and resent link, Google and Apple success and cancellation, returning and linked users, native deep links, session reload and protected API access. Enable `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED` / `EXPO_PUBLIC_APPLE_AUTH_ENABLED` for the accepted environments. Publish only after actual provider and database behavior is confirmed.
+
+Supabase documents the password flow, confirmation templates, and provider-specific credentials. [Password authentication](https://supabase.com/docs/guides/auth/passwords), [email templates](https://supabase.com/docs/guides/auth/auth-email-templates), [Google setup](https://supabase.com/docs/guides/auth/social-sign-in/auth-google), [Apple setup](https://supabase.com/docs/guides/auth/social-sign-in/auth-apple).
+
+## Local verification
+
+An isolated Supabase stack applied all 19 migrations. Mailpit captured the real confirmation message. In the Expo browser app, signup and confirmation reached the body-profile screen, sign-out cleared access, password sign-in reached the dashboard, and a full reload required sign-in again. The local API smoke test confirmed denial before verification, the resend cooldown, duplicate signup rejection, protected profile access, admin denial for an ordinary user, and rejection of a reused confirmation link. The disposable PostgreSQL suite separately exercised receipt creation, lifecycle gates, ownership and verified-provider records. Google and Apple provider callbacks, public email delivery, and native deep links need release-environment verification.

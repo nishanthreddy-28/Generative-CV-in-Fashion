@@ -5,7 +5,6 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { Button } from "../components/Button";
 import { Gate, Notice, ResourceState, RouteLink, Screen, ui, usePreview } from "../components/Screen";
 import { useDraft } from "../hooks/useDraft";
-import { ApiError } from "../services/api/client";
 import type { Outfit } from "../types/domain";
 import { categories } from "./schema";
 import { useSession } from "./session";
@@ -16,26 +15,26 @@ export function OutfitCollectionScreen() {
   const [draft,setDraft]=useDraft<OutfitFilters>("outfit-list:filters",emptyOutfitFilters);
   const [applied,setApplied]=useDraft<OutfitFilters>("outfit-list:applied",emptyOutfitFilters);
   const [pages,setPages]=useDraft("outfit-list:page-count",1);
-  const [cache,setCache]=useDraft<{key:string;items:Outfit[];nextCursor:string|null}|null>("outfit-list:cache",null);
+  const [result,setResult]=useState<{key:string;items:Outfit[];nextCursor:string|null}|null>(null);
   const [loading,setLoading]=useState(false);const [error,setError]=useState("");
   const [validation,setValidation]=useState("");
   const [filtersOpen,setFiltersOpen]=useState(false);
-  const key=JSON.stringify(applied);const userId=session?.user.id;
-  const visible=cache?.key===key ? cache : null;
+  const userId=session?.user.id;const key=JSON.stringify([userId,applied]);
+  const visible=result?.key===key ? result : null;
   useFocusEffect(useCallback(()=>{
     if(preview || !userId)return;
     const controller=new AbortController();setLoading(true);setError("");
     void loadOutfitPages(request,applied,pages,controller.signal)
-      .then(result=>{if(!controller.signal.aborted)setCache({key,...result});})
+      .then(page=>{if(!controller.signal.aborted)setResult({key,...page});})
       .catch(e=>{
         if(!controller.signal.aborted) {
-          if(e instanceof ApiError && (e.status===401 || e.status===403))setCache(null);
+          setResult(null);
           setError(e instanceof Error ? e.message : "Unable to load outfits.");
         }
       })
       .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
     return ()=>controller.abort();
-  },[applied,key,pages,preview,userId,request,setCache]));
+  },[applied,key,pages,preview,userId,request]));
   function apply(next:OutfitFilters) {
     try {outfitQuery(next);setApplied({...next,search:next.search.trim()});setPages(1);setValidation("");return true;}
     catch(e){setValidation(e instanceof Error ? e.message : "Invalid filters.");return false;}
@@ -71,9 +70,8 @@ export function OutfitCollectionScreen() {
       {Boolean(applied.search || applied.source || applied.category || applied.from || applied.through || applied.sort!=="newest") && <Button label="Clear filters" variant="secondary" onPress={()=>{setDraft(emptyOutfitFilters);apply(emptyOutfitFilters);}} />}
       {Boolean(validation) && <Notice title="Check filters" text={validation} />}
       <ResourceState loading={loading} error={error} retry={()=>setApplied(current=>({...current}))} />
-      {Boolean(error && visible) && <Text style={ui.body}>Previously loaded outfits remain visible. Retry to refresh them.</Text>}
-      {!loading && !error && (!visible || !visible.items.length) && <Notice title="No matching outfits"
-        text={preview ? "Preview contains no example outfits." : "Create an outfit or adjust the filters."} />}
+      {!loading && !error && visible?.items.length === 0 && <Notice title="No matching outfits"
+        text="Create an outfit or adjust the filters." />}
       {(visible?.items ?? []).map(item=><View key={item.id} style={ui.card}>
         <Text style={typography.eyebrow}>{(item.occasion || "SAVED LOOK").toUpperCase()}</Text>
         <Text style={[typography.editorial,{fontSize:24,lineHeight:30}]}>{item.name}</Text>

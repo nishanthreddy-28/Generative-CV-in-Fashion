@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore", hide_input_in_errors=True)
+    local_preview: bool = False
     supabase_url: str
     supabase_publishable_key: SecretStr
     jwt_audience: str = "authenticated"
@@ -27,9 +28,12 @@ class Settings(BaseSettings):
 
     @field_validator("supabase_url")
     @classmethod
-    def secure_url(cls, value: str) -> str:
+    def secure_url(cls, value: str, info) -> str:
         parsed = urlparse(value)
-        if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
+        local = info.data.get("local_preview") is True
+        if local and (parsed.scheme != "http" or parsed.hostname != "127.0.0.1" or parsed.port != 54321):
+            raise ValueError("Local preview requires the isolated Supabase loopback endpoint")
+        if (not local and parsed.scheme != "https") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
             raise ValueError("SUPABASE_URL must be an HTTPS project origin")
         return value.rstrip("/")
 

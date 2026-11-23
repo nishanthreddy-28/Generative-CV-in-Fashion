@@ -293,3 +293,15 @@ def test_whole_outfit_delete_and_recommendation_conversion_http(outfits_client):
  result=client.post('/outfits',json={'recommendationId':ident})
  assert result.status_code==201 and result.json()['items']==row['items']
  assert client.post('/outfits',json={'recommendationId':ident,'name':'Override'}).status_code==422
+
+
+def test_duplicate_routes_current_identity_and_validates_response(outfits_client):
+    client,wardrobe,catalog,calls,faults,app,principal=outfits_client
+    ident=str(uuid4())
+    faults['duplicate_outfit']=httpx.Response(200,json={'id':str(uuid4()),'name':'Copy','description':'','occasion':'',
+        'garmentIds':[wardrobe],'items':[{'id':str(uuid4()),'source':'wardrobe','garmentId':wardrobe},{'id':str(uuid4()),'source':'catalog','garmentId':catalog}]})
+    response=client.post('/outfits/'+ident+'/duplicate')
+    assert response.status_code==201
+    assert json.loads(calls[-1].content)=={'p_id':ident}
+    faults['duplicate_outfit']=httpx.Response(400,json={'code':'P0002'})
+    assert client.post('/outfits/'+ident+'/duplicate').status_code==404

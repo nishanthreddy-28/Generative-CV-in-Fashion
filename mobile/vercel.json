@@ -6,5 +6,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "headers": [
+    { "source": "/auth-confirm", "headers": [
+      { "key": "Referrer-Policy", "value": "no-referrer" },
+      { "key": "Cache-Control", "value": "no-store" }
+    ] }
+  ],
   "rewrites": [{ "source": "/:path*", "destination": "/" }]
 }

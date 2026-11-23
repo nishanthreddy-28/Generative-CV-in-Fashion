@@ -29,11 +29,6 @@ export function AtelierAccount({title,subtitle,accountMode="login",children}:Pro
           <Text accessibilityRole="header" style={styles.title}>{title}</Text>
           {!!subtitle && <Text style={styles.body}>{subtitle}</Text>}
         </View>
-        {signup && <View style={styles.steps}>
-          <View style={styles.step}><Text style={styles.stepNumber}>01</Text><Text style={styles.stepLabel}>Verify email</Text></View>
-          <View style={styles.stepDivider}/>
-          <View style={styles.step}><Text style={styles.stepNumber}>02</Text><Text style={styles.stepLabel}>Choose password</Text></View>
-        </View>}
         {children}
         <View style={styles.editorial}>
           <View style={styles.portrait}><FramedImage edgeToEdge ratio={2/3}
@@ -59,11 +54,6 @@ const makeStyles = (palette:Palette) => StyleSheet.create({
   kicker:{fontSize:10,fontWeight:"700",letterSpacing:1.5,color:palette.muted},
   title:{fontFamily:"serif",fontSize:39,lineHeight:42,letterSpacing:-0.9,color:palette.ink},
   body:{color:palette.muted,fontSize:14,lineHeight:21},
-  steps:{minHeight:48,flexDirection:"row",alignItems:"center",borderWidth:1,borderColor:palette.border},
-  step:{flex:1,flexDirection:"row",flexWrap:"wrap",paddingHorizontal:10,paddingVertical:10,alignItems:"center",gap:5},
-  stepNumber:{color:palette.muted,fontSize:10,fontWeight:"700"},
-  stepLabel:{color:palette.ink,fontSize:12,fontWeight:"600"},
-  stepDivider:{width:1,alignSelf:"stretch",backgroundColor:palette.border},
   editorial:{flexDirection:"row",alignItems:"center",borderTopWidth:1,borderColor:palette.border,paddingTop:14,gap:14},
   portrait:{width:66},
   caption:{flex:1,gap:4},

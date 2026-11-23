@@ -4,6 +4,7 @@ import {WardrobeImage} from "../components/WardrobeImage";
 import { Button } from "../components/Button";
 import { Notice, ResourceState, RouteLink, ui } from "../components/Screen";
 import { useResource } from "../hooks/useResource";
+import { readPage } from "../services/api/readResponse";
 import type { Garment, OutfitItem, Page } from "../types/domain";
 import { itemKey, itemRoute, toggleItem } from "./outfitItems";
 import { colors } from "../theme/tokens";
@@ -14,10 +15,21 @@ type Props = {
   preview: boolean;
   disabled?: boolean;
 };
+
+function SelectedGarmentName({ item, name, preview }: { item: OutfitItem; name?: string; preview: boolean }) {
+  const path = itemRoute(item);
+  const result = useResource<Garment>(path, preview || Boolean(name));
+  const garmentName = name || result.data?.name;
+  if (garmentName) return <RouteLink to={path} preview={preview}>{garmentName} ›</RouteLink>;
+  if (result.loading) return <Text style={ui.body}>Loading garment…</Text>;
+  if (result.error) return <ResourceState {...result} />;
+  return <Text style={ui.body}>Garment details unavailable</Text>;
+}
+
 export function OutfitItemSelector({ items, onChange, preview, disabled = false }: Props) {
   const [source, setSource] = useState<"wardrobe" | "catalog">("wardrobe");
   const [cursor, setCursor] = useState("");
-  const result = useResource<Page<Garment>>(`/${source}?limit=24${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, preview);
+  const result = useResource<Page<Garment>>(`/${source}?limit=24${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, preview, false, undefined, readPage);
   return <>
     <View style={styles.canvas}>
       <Text style={ui.heading}>Your outfit · {items.length} selected</Text>
@@ -27,9 +39,8 @@ export function OutfitItemSelector({ items, onChange, preview, disabled = false 
           <WardrobeImage id={item.garmentId} source={item.source} label={`Selected piece ${index+1}`}/>
         </View>}
         <View style={styles.name}>
-        <RouteLink to={itemRoute(item)} preview={preview}>
-          {item.source === source ? result.data?.items.find(garment=>garment.id===item.garmentId)?.name ?? `Piece ${index+1}` : `Piece ${index+1}`} ›
-        </RouteLink>
+          <SelectedGarmentName item={item} preview={preview}
+            name={item.source === source ? result.data?.items.find(garment=>garment.id===item.garmentId)?.name : undefined} />
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel={`Remove piece ${index+1}`} disabled={disabled}
           onPress={()=>onChange(items.filter(selected=>itemKey(selected)!==itemKey(item)))} style={styles.remove}>
@@ -57,8 +68,8 @@ export function OutfitItemSelector({ items, onChange, preview, disabled = false 
         </View>
       </Pressable>;
     })}</View>
-    {!result.loading && !result.error && !result.data?.items.length &&
-      <Notice title="No pieces available" text={preview ? "Preview contains no example garments." : `No ${source} pieces are available. Try the other source or add wardrobe garments.`} />}
+    {result.data?.items.length === 0 &&
+      <Notice title="No pieces available" text={`No ${source} pieces are available. Try the other source or add wardrobe garments.`} />}
     {Boolean(result.data?.nextCursor) && <Button label="Next page of pieces" variant="secondary" disabled={disabled || result.loading}
       onPress={() => setCursor(result.data!.nextCursor!)} />}
     {Boolean(cursor) && <Button label="First page of pieces" variant="secondary" disabled={disabled}

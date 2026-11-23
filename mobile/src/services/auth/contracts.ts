@@ -23,15 +23,12 @@ export function authError(code?: string) {
   if (code === "email_not_confirmed") return "Confirm your email before signing in.";
   if (code === "invalid_credentials") return "Email or password is incorrect.";
   if (code === "weak_password") return "Choose a stronger password.";
+  if (code === "email_address_invalid" || code === "validation_failed")
+    return "Check the email address and try again.";
+  if (code === "signup_disabled") return "Registration is currently unavailable.";
   if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit")
     return "Too many requests. Try again later.";
   return "Authentication could not be completed. Try again.";
-}
-
-export function signupMessage(hasSession: boolean) {
-  return hasSession
-    ? "You’re signed in. Application access depends on account setup."
-    : "Check your email to confirm your address before signing in.";
 }
 
 type TokenSession = { user: { id: string }; access_token: string; expires_at?: number };
@@ -51,6 +48,17 @@ export async function currentAccessToken(
 
 type Auth = SupabaseClient["auth"];
 
+export const registrationMessage =
+  "If this address can be registered, you’ll receive a verification link. If you already have an account, sign in or reset your password.";
+
+export async function resendSignupEmail(auth: Pick<Auth,"resend">, email: string, redirect: string) {
+  const { error } = await auth.resend({
+    type: "signup", email: email.trim(), options: { emailRedirectTo: redirect },
+  });
+  if (error && !["user_not_found","user_already_exists","email_exists"].includes(error.code ?? ""))
+    throw new Error(authError(error.code));
+}
+
 export async function signIn(auth: Pick<Auth, "signInWithPassword">, email: string, password: string) {
   const { data, error } = await auth.signInWithPassword({ email: email.trim(), password });
   if (error || !data.session) throw new Error(authError(error?.code));
@@ -58,23 +66,29 @@ export async function signIn(auth: Pick<Auth, "signInWithPassword">, email: stri
 }
 
 export async function register(
-  auth: Pick<Auth, "signUp">, name: string, email: string, password: string, redirect: string,
+  auth: Pick<Auth, "signUp" | "signOut">, email: string, password: string, redirect: string,
 ) {
   const { data, error } = await auth.signUp({
     email: email.trim(), password,
-    options: { data: { name: name.trim() }, emailRedirectTo: redirect },
+    options: { emailRedirectTo: redirect },
   });
-  if (error) throw new Error(authError(error.code));
-  return data.session;
+  if (error && !["user_already_exists","email_exists"].includes(error.code ?? ""))
+    throw new Error(authError(error.code));
+  if (data.session) {
+    await auth.signOut({scope:"local"}).catch(() => undefined);
+    throw new Error("Email verification is not configured correctly. Please contact support.");
+  }
 }
 
 export async function verifyEmailLink(
-  auth: Pick<Auth, "verifyOtp">, value: unknown, type: "email" | "recovery",
+  auth: Pick<Auth, "verifyOtp">, value: unknown, type: "email" | "signup" | "recovery",
 ) {
   const hash = emailLinkHash(value);
   if (!hash) throw new Error("Invalid email link.");
   const { data, error } = await auth.verifyOtp({ token_hash: hash, type });
   if (error || !data.session) throw new Error("This email link is invalid or expired.");
+  if (type === "signup" && !data.session.user.email_confirmed_at)
+    throw new Error("This email could not be confirmed. Request a fresh link.");
   return data.session;
 }
 
@@ -113,6 +127,14 @@ export async function exchangeOAuth(
 }
 
 export type SocialProvider = "google" | "apple";
+
+export function oauthCallbackIssue(code: unknown, flowId: unknown, error: unknown, errorCode: unknown) {
+  if (error === "access_denied" || errorCode === "access_denied") return "Sign-in cancelled";
+  if (error || errorCode || typeof code !== "string" || !code || code.length > 2048 ||
+      typeof flowId !== "string" || !/^[a-zA-Z0-9_-]{8,64}$/.test(flowId))
+    return "Sign-in unavailable";
+  return null;
+}
 
 export async function beginSocialOAuth(auth: Pick<Auth,"signInWithOAuth">, provider: SocialProvider, redirectTo: string) {
   const {data,error}=await auth.signInWithOAuth({provider,options:{redirectTo,skipBrowserRedirect:true}});

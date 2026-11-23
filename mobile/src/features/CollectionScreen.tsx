@@ -16,6 +16,7 @@ import {GarmentCard} from "../components/GarmentCard";
 import {useDraft} from "../hooks/useDraft";
 import {collectionColumns} from "./presentation";
 import { useResource } from "../hooks/useResource";
+import { readPage } from "../services/api/readResponse";
 import { categories } from "./schema";
 import type { Garment, Outfit, Page } from "../types/domain";
 type Props = {
@@ -43,6 +44,8 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
     `${base}?${params}`,
     preview,
     kind === "admin",
+    undefined,
+    readPage,
   );
   const refresh=result.retry;
   useFocusEffect(useCallback(()=>{refresh();},[refresh]));
@@ -114,7 +117,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
           ))}
         </View>
         <ResourceState {...result} />
-        {!result.loading && !result.error && list.length === 0 && (
+        {result.data && list.length === 0 && (
           <Notice
             title={applied || category ? "No matching pieces" : kind === "wardrobe" ? "Your wardrobe is empty" : kind === "outfits" ? "No saved outfits" : "No catalog items yet"}
             text={applied || category ? "Try another search or clear your filters." : kind === "wardrobe"

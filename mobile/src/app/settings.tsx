@@ -103,8 +103,14 @@ export default function Settings() {
         <RouteLink to="/profile/body" preview={preview}>
           Edit body & fit details →
         </RouteLink>
+        <RouteLink to="/profile/onboarding" preview={preview}>
+          Body profile photo & review →
+        </RouteLink>
         <RouteLink to="/preferences" preview={preview}>
           Units & email preferences →
+        </RouteLink>
+        <RouteLink to="/personalization" preview={preview}>
+          Personal style, fit & budget →
         </RouteLink>
         </View>
         <View style={ui.card}>

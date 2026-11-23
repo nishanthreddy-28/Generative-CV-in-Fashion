@@ -1,10 +1,8 @@
-import { registrationOrigin, registrationRequest, validBinding, type RegistrationBinding } from "../services/auth/registration";
-import { retainRegistration } from "../services/auth/registrationStorage";
 import {AtelierAccount} from "./AtelierAccount";
 import {SocialSignIn} from "./SocialSignIn";
 import {useAppearance, type Palette} from "../theme/Appearance";
 import {Link, router} from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import * as Linking from "expo-linking";
 import { Screen, ui } from "../components/Screen";
@@ -12,12 +10,10 @@ import { Button } from "../components/Button";
 import { Fields } from "../components/Fields";
 import { type Field, validate } from "./validation";
 import { useSession } from "./session";
-import { emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
-import { beginSocialOAuth, type SocialProvider, authError } from "../services/auth/contracts";
-const localPreview = __DEV__ && process.env.EXPO_PUBLIC_LOCAL_PREVIEW === "true";
+import { createEmailLinkAuth, emailRedirect, requireAuth, supabase } from "../services/auth/supabase";
+import { beginSocialOAuth, type SocialProvider, authError, register, registrationMessage, resendSignupEmail } from "../services/auth/contracts";
 const reviewOnly = process.env.EXPO_PUBLIC_REVIEW_ONLY === "true";
-const registrationBase=process.env.EXPO_PUBLIC_REGISTRATION_API_URL ?? "";
-const registrationEnabled=!reviewOnly && !!registrationOrigin(registrationBase, localPreview);
+const registrationEnabled = !reviewOnly && !!supabase;
 
 export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const {palette:atelier,mode:appearance}=useAppearance();
@@ -27,15 +23,18 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
+  const [resendAfter, setResendAfter] = useState(0);
   const { login, session, sessionIssue, ready } = useSession();
   const fields: Field[] = [
     { key: "email", label: "Email", required: true, kind: "email" },
-    ...(mode === "login" ? [{
+    ...(mode !== "reset" ? [{
       key: "password", label: "Password", required: true,
-      kind: "password" as const, passwordPurpose: "current" as const,
+      kind: "password" as const, passwordPurpose: mode === "signup" ? "new" as const : "current" as const,
     }] : []),
   ];
   async function submit() {
+    if (submitting.current) return;
     const issues = validate(fields, values);
     setErrors(issues);
     setMessage("");
@@ -49,14 +48,15 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
       setMessage(mode === "reset" ? "Password recovery is temporarily unavailable. Please try again later." : "Sign-in is temporarily unavailable. Please try again later.");
       return;
     }
+    submitting.current = true;
     setBusy(true);
     try {
       if (mode === "signup") {
-        const binding=await registrationRequest<RegistrationBinding>(registrationBase,"start",{email:values.email.trim()},localPreview);
-        if(!validBinding(binding))throw new Error("Unexpected registration response.");
-        await retainRegistration(binding);
-        setValues({});
-        router.push("/verify-registration");
+        await register(createEmailLinkAuth(), values.email, values.password, emailRedirect("auth-confirm"));
+        setValues({ email: values.email });
+        setResendAfter(Date.now() + 60_000);
+        setMessage(registrationMessage);
+        setSuccess(true);
       } else if (mode === "login") {
         await login(values.email, values.password);
         router.replace("/dashboard");
@@ -75,18 +75,50 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
         e instanceof Error ? e.message : "Unable to complete this request.",
       );
     } finally {
+      submitting.current = false;
+      setBusy(false);
+    }
+  }
+  async function resend() {
+    if (submitting.current || !registrationEnabled) return;
+    const issues = validate(fields.slice(0, 1), values);
+    setErrors(issues);
+    setSuccess(false);
+    if (Object.keys(issues).length) return;
+    const remaining = Math.ceil((resendAfter - Date.now()) / 1000);
+    if (remaining > 0) {
+      setMessage(`Wait ${remaining}s before requesting another link.`);
+      return;
+    }
+    submitting.current = true;
+    setBusy(true);
+    try {
+      await resendSignupEmail(requireAuth(), values.email, emailRedirect("auth-confirm"));
+      setResendAfter(Date.now() + 60_000);
+      setMessage("If verification is pending for this address, you’ll receive a fresh link.");
+      setSuccess(true);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to resend verification.");
+    } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
   async function social(provider:SocialProvider){
-    if(busy)return;setBusy(true);setMessage("");
+    if (submitting.current) return;
+    submitting.current = true;
+    setBusy(true);
+    setMessage("");
     try{
       const target=await beginSocialOAuth(requireAuth(),provider,emailRedirect("oauth-callback"));
       const origin=new URL(process.env.EXPO_PUBLIC_SUPABASE_URL ?? "").origin;
       if(target.origin!==origin || !target.pathname.startsWith("/auth/v1/"))throw new Error("Unexpected sign-in destination.");
       if(Platform.OS==="web")window.location.assign(target.href);else await Linking.openURL(target.href);
     }catch(e){setMessage(e instanceof Error ? e.message : "Unable to start social sign-in.");}
-    finally{setBusy(false);}
+    finally{
+      submitting.current = false;
+      setBusy(false);
+    }
   }
   const branded = mode !== "reset";
   const dark = branded && appearance === "dark";
@@ -126,7 +158,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
               mode === "login"
                 ? "Sign in"
                 : mode === "signup"
-                  ? registrationEnabled ? "Send verification email" : "Registration opens soon"
+                  ? registrationEnabled ? "Create account" : "Registration unavailable"
                   : "Send reset instructions"
             }
             loading={busy}
@@ -139,7 +171,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
           ) : (
             <>
               {mode === "signup" && registrationEnabled &&
-                <Link href="/verify-registration" style={styles.accountLink}>Already received an email? Continue verification →</Link>}
+                <Button dark={dark} label="Resend verification email" disabled={busy} onPress={resend} />}
               {mode === "reset" && <Link href="/login" style={ui.link}>Back to sign in</Link>}
             </>
           )}
@@ -149,7 +181,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
   return <AtelierAccount accountMode={mode}
     title={mode === "login" ? "Sign in" : "Create your wardrobe"}
     subtitle={mode === "login" ? "Your clothes and saved looks are ready when you are." :
-      "Start with your email. We’ll send a link and a separate code before you choose a password."}>
+      "Use your email and a password. Check your inbox for a link to confirm your address."}>
     {form}
   </AtelierAccount>;
 }

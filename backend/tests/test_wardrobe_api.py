@@ -43,7 +43,8 @@ def wardrobe_client():
             if operation=='reserve_wardrobe_image':
                 image_id=body['p_id'];images[image_id]={'id':image_id,'object':f'{principal.user_id}/{image_id}.jpg','sha256':body['p_sha256'],'byteSize':body['p_byte_size'],'state':'pending'}
                 return httpx.Response(200,json={k:v for k,v in images[image_id].items() if k!='state'})
-            if operation=='write_wardrobe':
+            if operation in ('write_wardrobe','create_wardrobe_checked'):
+                body.setdefault('p_id',None)
                 row_id=body['p_id'] or str(uuid4())
                 if body['p_id'] and row_id not in garments: return httpx.Response(404,json={'code':'P0002'})
                 old=garments.get(row_id,{});old_image=old.get('_image')
@@ -195,7 +196,7 @@ def test_create_requires_image_and_valid_required_fields(wardrobe_client):
 
 def test_failed_attachment_cleans_unreferenced_uploaded_image(wardrobe_client):
     client,_,images,objects,_,faults,_=wardrobe_client
-    faults['write_wardrobe']=httpx.Response(400,json={'code':'23514','message':'private details'})
+    faults['create_wardrobe_checked']=httpx.Response(400,json={'code':'23514','message':'private details'})
     response=create(client)
     assert response.status_code==422 and 'private details' not in response.text
     assert not objects and all(i['state']=='removed' for i in images.values())
@@ -297,3 +298,37 @@ def test_metadata_only_patch_keeps_image_bytes_and_omitted_attributes(wardrobe_c
     assert objects==before
     row=client.get('/wardrobe/'+ident).json()
     assert row['brand']=='Maker' and row['color']=='Blue' and row['name']=='Blue shirt'
+
+
+def test_duplicate_warning_and_explicit_confirmation(wardrobe_client):
+    client,_,images,objects,calls,faults,_=wardrobe_client
+    faults['create_wardrobe_checked']=httpx.Response(400,json={'code':'DD001'})
+    response=create(client)
+    assert response.status_code==409 and 'already in your wardrobe' in response.text
+    assert not objects
+    del faults['create_wardrobe_checked']
+    response=client.post('/wardrobe',data={'metadata':json.dumps({'name':'Another','category':'Tops','allowDuplicate':True})},files={'image':('piece.png',picture(),'image/png')})
+    assert response.status_code==201
+    body=json.loads(next(r.content for r in reversed(calls) if r.url.path.endswith('/create_wardrobe_checked')))
+    assert body['p_allow_duplicate'] is True and 'allowDuplicate' not in body['p_changes']
+
+
+def test_gallery_requires_authentication(wardrobe_client):
+    client,_,_,_,calls,_,_=wardrobe_client
+    client.app.dependency_overrides.clear()
+    response=client.get('/wardrobe/'+str(uuid4())+'/photos')
+    assert response.status_code==401
+
+
+def test_gallery_rejects_foreign_or_missing_garment(wardrobe_client):
+    client,_,_,_,_,faults,_=wardrobe_client
+    faults['wardrobe_gallery']=httpx.Response(400,json={'code':'P0002'})
+    response=client.get('/wardrobe/'+str(uuid4())+'/photos')
+    assert response.status_code==404
+
+
+def test_gallery_maps_primary_delete_conflict(wardrobe_client):
+    client,_,_,_,_,faults,_=wardrobe_client
+    faults['wardrobe_gallery']=httpx.Response(400,json={'code':'DD001'})
+    response=client.delete('/wardrobe/'+str(uuid4())+'/photos/'+str(uuid4()))
+    assert response.status_code==409 and 'primary photo' in response.text

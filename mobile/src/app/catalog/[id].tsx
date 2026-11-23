@@ -3,7 +3,6 @@ import { useLocalSearchParams } from "expo-router";
 import {
   Screen,
   Gate,
-  Notice,
   ResourceState,
   RouteLink,
   usePreview,
@@ -23,12 +22,6 @@ export default function Detail() {
     <Screen title={result.data?.name ?? "Catalog item"}>
       <Gate preview={preview}>
         <ResourceState {...result} />
-        {preview && (
-          <Notice
-            title="No catalog record selected"
-            text="Garment imagery and details are rendered only from the catalog API."
-          />
-        )}
         {result.data && (
           <>
             {Boolean(result.data.imageUrl) && (
