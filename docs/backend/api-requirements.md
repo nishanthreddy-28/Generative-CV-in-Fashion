@@ -7,7 +7,7 @@ Inspected November 5, 2026. Source baseline: commit `d61b780` (`v0.4.0-frontend-
 Inspected all route files under `mobile/src/app`, shared screens/features, components, hooks, types, API client/services, app configuration and environment example. Principal sources:
 
 - [`client.ts`](../../mobile/src/services/api/client.ts): sole `fetch` transport, HTTP handling, timeout.
-- [`resources.ts`](../../mobile/src/services/api/resources.ts): authentication functions and generic resource wrapper.
+- `resources.ts` (historical source; removed from the current app): authentication functions and generic resource wrapper.
 - [`session.tsx`](../../mobile/src/features/session.tsx): login result checks, bearer requests, expiry and logout.
 - [`domain.ts`](../../mobile/src/types/domain.ts): compile-time result types.
 - [`schema.ts`](../../mobile/src/features/schema.ts), [`validation.ts`](../../mobile/src/features/validation.ts): form fields and payload conversion.

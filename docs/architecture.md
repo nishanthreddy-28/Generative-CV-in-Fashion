@@ -38,4 +38,4 @@ Local cryptographic/mock-HTTP tests and real disposable PostgreSQL tests are dis
 
 Outstanding design gates include measurement units/precision, mixed wardrobe/catalog outfit references, image delivery/revocation/retention, recommendation expiry/idempotency, trusted bootstrap, job lifecycle and account deletion cleanup. The current Outfit shape cannot express mixed sources honestly; do not copy old IDs, add mock results or bypass RLS to hide that mismatch.
 
-The [master workflow status](WORKFLOW_STATUS.md) records code/history, tests, missing functions and next acceptance steps. Production deployment, native build and Play release have not been accepted.
+The [master workflow status](archive/WORKFLOW_STATUS.md) records code/history, tests, missing functions and next acceptance steps. Production deployment, native build and Play release have not been accepted.

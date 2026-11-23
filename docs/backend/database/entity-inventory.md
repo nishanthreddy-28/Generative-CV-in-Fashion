@@ -4,7 +4,7 @@
 
 Preliminary logical inventory created November 5, 2026; resumed and reviewed November 6, 2026 against commit `bb46044`. No entities are deployed by this document. Names and attributes are conceptual, not final tables, types or SQL.
 
-Inspected [API requirements](../api-requirements.md), [approved security architecture](../authentication-and-security.md), [backend setup](../../../backend/README.md), [security checkpoint](../checkpoint-001-security-foundation.md), backend/app security/config/dependencies/data_api/main, mobile/src/types/domain.ts, mobile/src/services/api resources/client, shared form schemas and screens (EditorScreen, CollectionScreen, RecommendationsScreen, outfit builder/detail, settings and try-on), and original docs/PRD.md, docs/architecture.md and README.md.
+Inspected [API requirements](../api-requirements.md), [approved security architecture](../authentication-and-security.md), [backend setup](../../../backend/README.md), [security checkpoint](../../archive/backend/checkpoint-001-security-foundation.md), backend/app security/config/dependencies/data_api/main, mobile/src/types/domain.ts, mobile/src/services/api resources/client, shared form schemas and screens (EditorScreen, CollectionScreen, RecommendationsScreen, outfit builder/detail, settings and try-on), and original docs/PRD.md, docs/architecture.md and README.md.
 
 The original PRD/architecture describe Next.js/Node/server actions; those technology assumptions are superseded by the approved Expo/FastAPI/Supabase baseline. Their wardrobe, outfit and try-on goals remain product context. They do not authorize extra ecommerce, social or avatar entities.
 
@@ -12,7 +12,7 @@ The original PRD/architecture describe Next.js/Node/server actions; those techno
 
 ### Source references and precedence
 
-- [Frontend domain types](../../../mobile/src/types/domain.ts), [API resources](../../../mobile/src/services/api/resources.ts), [API transport](../../../mobile/src/services/api/client.ts) and [form schemas](../../../mobile/src/features/schema.ts) establish current field/request evidence.
+- [Frontend domain types](../../../mobile/src/types/domain.ts), API resources (historical source; removed from the current app), [API transport](../../../mobile/src/services/api/client.ts) and [form schemas](../../../mobile/src/features/schema.ts) establish current field/request evidence.
 - [Backend security verifier](../../../backend/app/security.py), [user-scoped adapter](../../../backend/app/data_api.py), [eligibility dependency](../../../backend/app/dependencies.py) and [app setup](../../../backend/app/main.py) establish implementation boundaries, not a database schema.
 - [Original PRD](../../PRD.md), [original architecture](../../architecture.md) and [project README](../../../README.md) provide context; approved security decisions and the current API audit take precedence where older technology descriptions conflict.
 

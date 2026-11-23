@@ -14,7 +14,7 @@ Repository evidence:
 
 - [API requirements](api-requirements.md) inventories 35 existing method/endpoint contracts. It remains unchanged.
 - [Session provider](../../mobile/src/features/session.tsx) currently calls custom `/auth/login` and `/auth/logout`, accepts `{accessToken,user}`, holds tokens only in memory, and clears drafts on expiry/sign-out.
-- [Auth services](../../mobile/src/services/api/resources.ts) implement custom signup/reset requests; `/auth/me` is declared but unused.
+- Auth services (historical source; removed from the current app) implement custom signup/reset requests; `/auth/me` is declared but unused.
 - [API transport](../../mobile/src/services/api/client.ts) sends bearer access tokens, uses a 20-second deadline, ignores error bodies, and has no refresh/retry integration.
 - [Domain types](../../mobile/src/types/domain.ts) contain application role `user | admin`; [settings](../../mobile/src/app/settings.tsx) calls password change and account deletion.
 - [Recovery screen](../../mobile/src/app/reset-password.tsx) expects a query `token` sent with a password to FastAPI. [App config](../../mobile/app.json) declares `drapedrop` scheme but no completed auth callback integration.

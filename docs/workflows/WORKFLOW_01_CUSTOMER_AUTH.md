@@ -51,7 +51,7 @@ Web tokens currently live in memory and a full page reload ends the session. Nat
 
 The latest authorized read-only migration-history attempt returned HTTP 401. Failed access does not establish an empty database. Browser control subsequently reported disabled in Work settings. Hosted Auth settings, templates, confirmation expiry, SMTP sender, Google configuration, callbacks, actual grants and existing customer compatibility remain unknown.
 
-Before approval, restore accepted read access and inspect migrations, Auth settings, schema, constraints, policies, grants, buckets and backups. Compare the fifteen local migration versions and hashes in the [hosted handoff](../backend/hosted-integration-handoff.md). Review the proposed challenge schema, least-privilege hook/finalizer grants, dual-verification eligibility, existing-account treatment, mail delivery provider, breach-screening source, rate limits, retention and rollback plan. Then prepare the exact additive SQL and dashboard changes for explicit approval.
+Before approval, restore accepted read access and inspect migrations, Auth settings, schema, constraints, policies, grants, buckets and backups. Compare the fifteen local migration versions and hashes in the [hosted handoff](../archive/backend/hosted-integration-handoff.md). Review the proposed challenge schema, least-privilege hook/finalizer grants, dual-verification eligibility, existing-account treatment, mail delivery provider, breach-screening source, rate limits, retention and rollback plan. Then prepare the exact additive SQL and dashboard changes for explicit approval.
 
 Do not enable DATABASE_FOUNDATION_ENABLED before hosted acceptance. Keep ordinary backend SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY separate from any future hook signing secret, HMAC pepper, encryption key or trusted finalizer credential. Proposed secret names and provider-specific configuration will be finalized with the approved implementation.
 
@@ -73,7 +73,7 @@ The repeat inspection after the reported access restoration still returned Manag
 
 ### Access recovery update
 
-Read-only hosted inspection now works through the existing saved Supabase CLI session after excluding the rejected process environment token. Hosted api/app_private schemas, application tables, standard migration history, provisioning triggers and Storage buckets are absent. Two existing Auth users are email-confirmed. Hosted Auth uses localhost:3000, an empty redirect allowlist and eight-digit email OTPs. Google is disabled. Exact evidence, local migration hashes and approval requirements are recorded in [access recovery](../backend/access-recovery.md). Browser control remains disabled. These findings supersede the earlier claim that all hosted schema inspection is inaccessible.
+Read-only hosted inspection now works through the existing saved Supabase CLI session after excluding the rejected process environment token. Hosted api/app_private schemas, application tables, standard migration history, provisioning triggers and Storage buckets are absent. Two existing Auth users are email-confirmed. Hosted Auth uses localhost:3000, an empty redirect allowlist and eight-digit email OTPs. Google is disabled. Exact evidence, local migration hashes and approval requirements are recorded in [access recovery](../archive/backend/access-recovery.md). Browser control remains disabled. These findings supersede the earlier claim that all hosted schema inspection is inaccessible.
 
 
 ### Independent migration review
