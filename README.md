@@ -25,6 +25,15 @@ Hosted database history was last verified through migration `202611090010`; six 
 - [Authentication/security architecture](docs/backend/authentication-and-security.md)
 - [Direct Supabase Auth rollout](docs/backend/direct-supabase-auth.md)
 - [Latest saved preview checkpoint](docs/checkpoints/2026-11-23-full-stack-preview.md)
-- [Documentation index](docs/README.md)
+- [Use-case, activity, sequence and architecture diagrams](docs/architecture/diagrams/index.md)
+- [Documentation index](docs/INDEX.md)
 
 `main` is the only branch. Historical branch tips and the full preview checkpoint are preserved in Git tags. Private environment files, credentials, dependency folders and build outputs are excluded from Git.
+
+## Setup guides
+
+- [Frontend setup](docs/frontend/setup.md)
+- [Backend setup](docs/backend/setup.md)
+- [Database setup](docs/backend/database/setup.md)
+
+This root file is the repository's only README. Detailed guides, diagram indexes and historical records live under `docs/`.

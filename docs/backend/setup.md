@@ -1,0 +1,54 @@
+# Drape & Drop — backend foundation
+
+Version 0.2.0 adds a versioned database migration and protected profile/settings APIs to the asymmetric JWT security foundation. It is implemented locally; it is not deployed to Supabase.
+
+## Setup
+
+Use Python 3.12+ (verified locally with 3.13):
+
+```sh
+cd backend
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.lock
+cp .env.example .env
+# Configure development project details privately.
+.venv/bin/uvicorn app.main:app --reload
+```
+
+Only HTTPS Supabase project origins, publishable keys and configured asymmetric signing algorithms are accepted. Never supply privileged keys to the ordinary adapter. Leave `DATABASE_FOUNDATION_ENABLED=false` until the migration, schema exposure and live integration checks in [database setup](database/setup.md) pass. The env template is not real project configuration.
+
+## Implemented boundary
+
+- Cached fixed-origin JWKS signature/issuer/audience/expiry/claim validation, immutable principal and per-request current-user Data API JWT; no privileged fallback or shared auth state.
+- GET/PATCH `/profile` and GET/PATCH `/settings` (existing API contracts 10/11/14/15). PATCH returns 204. Full-form clearing, input validation and protected-field rejection; no auth contract is changed.
+- Database integration is opt-in and fail-closed by default. When enabled, eligibility is fetched using the same JWT, and its reported subject must match FastAPI's verified subject. Inactive accounts are denied; missing/malformed/dependency data never authorizes access. Database operations independently enforce eligibility so a change after the FastAPI check is still denied.
+- Six private RLS tables, least-privilege execution roles, trusted bootstrap/membership/lifecycle operations, post-Auth tombstone survival and a restrictive Storage eligibility gate. See [migration/setup](database/setup.md).
+- The frontend now uses Supabase Auth directly; see [Auth integration](frontend-supabase-auth-integration.md). FastAPI does not duplicate signup/login/recovery/refresh endpoints.
+- GET/PATCH `/profile/body` are implemented locally with a new additive migration, current numeric bounds, precision protection and atomic partial updates. Existing body editor wiring is reused. Hosted deployment is pending; the flag remains false. See [body API](body-profile-api.md).
+- Wardrobe list/detail/create/partial-update/delete and authenticated image retrieval are implemented locally with an additive migration; hosted Storage/RLS acceptance remains pending. See [wardrobe API](wardrobe-api.md).
+- Catalog browsing and trusted administrator create/edit/deactivate, private image upload/retrieval and frontend access projection are implemented locally. See [catalog management](admin-catalog-management.md). No hosted migration or security acceptance is claimed.
+- Owner-only manual outfit creation/list/detail and typed wardrobe/catalog item relationships are implemented locally. See [outfit foundation](outfit-creation-foundation.md). Metadata edits, atomic item replacement/add/removal and mixed-source creation/editing screens are implemented locally; see [outfit editing](outfit-editing.md). Outfit search, source/category/date filters, stable cursor pagination and a state-preserving list are implemented locally; see [outfit filtering](outfit-filtering.md). Saved recommendation bookmarks, provenance, availability checks and cursor pagination are implemented locally; see [saved recommendations](saved-recommendations.md).
+- Deterministic rules-v1 recommendation generation and recent owned history are implemented locally; see [recommendations](recommendation-generation.md). No external AI/ML is used. Saving generated results as owner-scoped bookmarks is implemented locally; converting a recommendation into a saved outfit remains out of scope.
+- Try-on job submission/status/history/cancellation and private input-photo infrastructure are implemented locally, with no inference worker or generated outputs; see [try-on job infrastructure](tryon-job-infrastructure.md).
+- No try-on inference, full account deletion, privileged backend client or production configuration.
+
+## Verification
+
+From `backend`:
+
+```sh
+.venv/bin/python -m pytest -q
+.venv/bin/python -m compileall -q app
+```
+
+Database tests skip in this command unless an isolated test socket is supplied. From repository root, run the full disposable PostgreSQL suite:
+
+```sh
+backend/.venv/bin/python backend/tests/database/run_local.py
+```
+
+Database tests use test-only minimal Auth/Storage interfaces, real PostgreSQL grants/RLS and separate connections for disable/mutation races. They do not certify Supabase JWT gateway, PostgREST schema exposure, hosted role privileges, Storage HTTP/signing or physical-device workflows. Those remain required before activation/release. Existing Starlette TestClient deprecation warning is unchanged; no production behavior depends on that test transport.
+
+Backend CI runs both the ordinary pytest suite and this dedicated PostgreSQL runner. The ordinary suite's database skips do not replace the dedicated job step. The updated workflow must still pass on the remote runner after a separately approved push.
+
+See [checkpoint 002](../archive/backend/checkpoint-002-database-foundation.md), [security architecture](authentication-and-security.md) and [35-contract audit](api-requirements.md).

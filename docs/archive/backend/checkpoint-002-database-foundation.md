@@ -13,7 +13,7 @@ Following approval of the physical proposal's foundation milestone, this checkpo
 - [Foundation routes](../../../backend/app/foundation.py): GET/PATCH /profile and GET/PATCH /settings, existing API contracts 10/11/14/15. Input/response validation, extra-field rejection, full-form clearing and 204 mutation success. Preference boolean storage is projected as the existing Enabled/Disabled/empty strings. Empty bootstrap profile remains editable.
 - [Eligibility dependency](../../../backend/app/dependencies.py): when explicitly enabled, same-user Data API eligibility must confirm active and match the verified FastAPI subject. Malformed/unknown dependency results fail closed. The adapter forwards the current user's JWT and publishable key with the api schema header, without privileged fallback.
 - Profile/settings mutations lock eligibility until transaction completion and repeat checks inside the database. Restrictive Storage policy requires current active eligibility in addition to any existing permissive object authorization; it creates no bucket or permissive object access.
-- Backend version metadata is 0.2.0. Setup and default-disabled environment flag are documented in [backend README](../../../backend/README.md) and [database setup](../../../supabase/README.md).
+- Backend version metadata is 0.2.0. Setup and default-disabled environment flag are documented in [backend README](../../backend/setup.md) and [database setup](../../backend/database/setup.md).
 
 ## Verification and evidence limits
 

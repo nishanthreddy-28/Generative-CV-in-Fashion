@@ -4,7 +4,7 @@
 
 Preliminary logical inventory created November 5, 2026; resumed and reviewed November 6, 2026 against commit `bb46044`. No entities are deployed by this document. Names and attributes are conceptual, not final tables, types or SQL.
 
-Inspected [API requirements](../api-requirements.md), [approved security architecture](../authentication-and-security.md), [backend setup](../../../backend/README.md), [security checkpoint](../../archive/backend/checkpoint-001-security-foundation.md), backend/app security/config/dependencies/data_api/main, mobile/src/types/domain.ts, mobile/src/services/api resources/client, shared form schemas and screens (EditorScreen, CollectionScreen, RecommendationsScreen, outfit builder/detail, settings and try-on), and original docs/PRD.md, docs/architecture.md and README.md.
+Inspected [API requirements](../api-requirements.md), [approved security architecture](../authentication-and-security.md), [backend setup](../setup.md), [security checkpoint](../../archive/backend/checkpoint-001-security-foundation.md), backend/app security/config/dependencies/data_api/main, mobile/src/types/domain.ts, mobile/src/services/api resources/client, shared form schemas and screens (EditorScreen, CollectionScreen, RecommendationsScreen, outfit builder/detail, settings and try-on), and original docs/PRD.md, docs/architecture.md and README.md.
 
 The original PRD/architecture describe Next.js/Node/server actions; those technology assumptions are superseded by the approved Expo/FastAPI/Supabase baseline. Their wardrobe, outfit and try-on goals remain product context. They do not authorize extra ecommerce, social or avatar entities.
 

@@ -17,3 +17,8 @@ Start with the [workflow tracker](workflows/SADD_IMPLEMENTATION_TRACKER.md) and 
 - `architecture/exports/` contains preserved PDF and text architecture/design documents. Proposed diagrams do not prove that a schema is deployed.
 
 Canonical executable database changes belong in `supabase/migrations/`. Historical SQL review stubs remain under `workflows/sql/` because the verification tooling still references them.
+
+## Diagrams and setup
+
+- [Use-case, activity, sequence and high-level architecture diagrams](architecture/diagrams/index.md).
+- [Backend setup](backend/setup.md), [frontend setup](frontend/setup.md) and [database setup](backend/database/setup.md).
