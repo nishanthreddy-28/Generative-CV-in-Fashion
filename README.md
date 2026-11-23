@@ -8,7 +8,6 @@ Android-first wardrobe application built with React Native + Expo, FastAPI, Supa
 - `backend/` — business APIs, authorization, maintenance workers and backend/database tests. The legacy registration coordinator remains for compatibility.
 - `supabase/` — versioned migrations, local configuration, email templates and verification tools.
 - `docs/` — current API/security specifications, workflow tracker, setup guides and checkpoints.
-- `docs/archive/` — historical audit reports; these describe earlier states.
 - `docs/architecture/exports/` — preserved architecture and database design PDFs/text.
 - `.github/workflows/` — backend, database and frontend CI.
 
@@ -25,8 +24,6 @@ Hosted database history was last verified through migration `202611090010`; six 
 - [Authentication/security architecture](docs/backend/authentication-and-security.md)
 - [Direct Supabase Auth rollout](docs/backend/direct-supabase-auth.md)
 - [Latest saved preview checkpoint](docs/checkpoints/2026-11-23-full-stack-preview.md)
-- [Use-case, activity, sequence and architecture diagrams](docs/architecture/diagrams/index.md)
-- [Documentation index](docs/INDEX.md)
 
 `main` is the only branch. Historical branch tips and the full preview checkpoint are preserved in Git tags. Private environment files, credentials, dependency folders and build outputs are excluded from Git.
 
@@ -36,4 +33,13 @@ Hosted database history was last verified through migration `202611090010`; six 
 - [Backend setup](docs/backend/setup.md)
 - [Database setup](docs/backend/database/setup.md)
 
-This root file is the repository's only README. Detailed guides, diagram indexes and historical records live under `docs/`.
+This root file is the repository's only README. Detailed setup guides and current specifications live under `docs/`.
+
+## Diagrams
+
+- [Use-case diagrams](docs/architecture/diagrams/use-case/)
+- [Activity diagrams](docs/architecture/diagrams/activity/)
+- [Sequence diagrams](docs/architecture/diagrams/sequence/)
+- [High-level architecture](docs/architecture/diagrams/high-level/)
+
+Supplied diagrams are design references; planned ML, conversational and payment-dispute flows do not establish implemented functionality. Historical audits and old preview notes remain recoverable from Git history.

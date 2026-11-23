@@ -61,7 +61,7 @@ Paths in this section refer to FastAPI unless prefixed by `/auth/v1` or `/auth/r
 
 - Render `GET /healthz` returned HTTP 200 in 0.44 seconds. Unauthenticated requests to dashboard, wardrobe, catalog, outfits, recommendations, saved recommendations, profile, body profile, settings, try-on history, catalog access, and deletion status all returned 401.
 - Read-only metadata on `drape-drop-dev` (`xpqhqhpqzkjaycraukrj`) showed 18 recorded migrations through `202611090010`, all 22 application tables with enabled and forced RLS, and private `wardrobe-images`, `catalog-images`, and `tryon-inputs` buckets. This run checked the flags and migration count, without a new comparison of every stored SQL statement.
-- Earlier authenticated hosted evidence is recorded in [Hosted Android login verification](../archive/backend/hosted-android-login-verification.md). This run did not sign in to hosted accounts, recheck authenticated hosted CRUD, exercise hosted SMTP/OAuth, or write hosted data.
+- Earlier authenticated hosted evidence is recorded in [Hosted Android login verification — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/backend/hosted-android-login-verification.md). This run did not sign in to hosted accounts, recheck authenticated hosted CRUD, exercise hosted SMTP/OAuth, or write hosted data.
 
 ### Local application and automated checks
 

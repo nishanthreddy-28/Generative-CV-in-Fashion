@@ -26,5 +26,5 @@ Backend checkpoints:
 ## Current integration line
 
 - Auth source checkpoint: `bbccff9aee3255bd6b37a8f9d68129dcef199052`, `chore(auth): checkpoint authentication integration`; 24 approved paths, local frontend checks passed. No Auth tag was created. Hosted/native acceptance remains pending.
-- Main source consolidation: fast-forward from `e70b2f9` to `bbccff9`, preserving ten mobile/backend/database/Auth commits. Legacy web demo branch/tags remain archived, not merged over the Expo app. See [workflow status](archive/WORKFLOW_STATUS.md).
+- Main source consolidation: fast-forward from `e70b2f9` to `bbccff9`, preserving ten mobile/backend/database/Auth commits. Legacy web demo branch/tags remain archived, not merged over the Expo app. See [workflow status — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/WORKFLOW_STATUS.md).
 - Tags, package versions and historical checkpoint documents retain their original meaning. No automatic tag, push or release follows consolidation; each requires the user's approval.

@@ -51,4 +51,4 @@ Database tests use test-only minimal Auth/Storage interfaces, real PostgreSQL gr
 
 Backend CI runs both the ordinary pytest suite and this dedicated PostgreSQL runner. The ordinary suite's database skips do not replace the dedicated job step. The updated workflow must still pass on the remote runner after a separately approved push.
 
-See [checkpoint 002](../archive/backend/checkpoint-002-database-foundation.md), [security architecture](authentication-and-security.md) and [35-contract audit](api-requirements.md).
+See [checkpoint 002 — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/backend/checkpoint-002-database-foundation.md), [security architecture](authentication-and-security.md) and [35-contract audit](api-requirements.md).

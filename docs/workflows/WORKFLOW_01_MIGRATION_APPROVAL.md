@@ -14,7 +14,7 @@ The restored Supabase CLI 3.0.0 session accessed drape-drop-dev / xpqhqhpqzkjayc
 
 The project is hosted PostgreSQL 17.11. Reinspection returned zero application tables, columns, constraints and indexes in public/api/app_private, zero dd_* roles, zero Auth provisioning triggers and zero application/Storage policies. api and app_private and the standard migration-history relation are absent. Storage has zero buckets. Auth still has two users, both email-confirmed. These aggregate checks match the recovery report. No customer identity or account state was altered.
 
-The recovered schema list and extension inventory match [access recovery](../archive/backend/access-recovery.md). Application functions and trusted executor roles do not yet exist. public.rls_auto_enable is the existing public function. Managed Storage tables have RLS enabled but not forced. Managed schema owners and default role memberships must be preserved.
+The recovered schema list and extension inventory match [access recovery — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/backend/access-recovery.md). Application functions and trusted executor roles do not yet exist. public.rls_auto_enable is the existing public function. Managed Storage tables have RLS enabled but not forced. Managed schema owners and default role memberships must be preserved.
 
 There is no standard history record for version 202611060001 or any other local version. Foundation objects are also absent. This verifies current state, rather than proving that no manual SQL ever ran historically. There are no remote-only, duplicate or mismatched rows to enumerate because the history relation does not exist.
 

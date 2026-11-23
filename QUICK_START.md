@@ -50,6 +50,6 @@ The first pytest command skips database tests without an explicitly supplied dis
 
 ## Hosted and release boundaries
 
-Do not apply hosted migrations, change Auth/Data API/Storage settings or enable the flag without separate approval. See [database prerequisites](docs/backend/database/setup.md) and [integration acceptance plan](docs/archive/backend/supabase-integration-verification.md). Native build, physical-device, signed AAB and Play internal testing remain separate gates. No ML integration has been started.
+Do not apply hosted migrations, change Auth/Data API/Storage settings or enable the flag without separate approval. See [database prerequisites](docs/backend/database/setup.md) and [integration acceptance plan — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/backend/supabase-integration-verification.md). Native build, physical-device, signed AAB and Play internal testing remain separate gates. No ML integration has been started.
 
-Use [WORKFLOW_STATUS.md](docs/archive/WORKFLOW_STATUS.md) for the actual missing work and blockers. Historical audits remain snapshots; they do not override the current source.
+Use [WORKFLOW_STATUS.md — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/WORKFLOW_STATUS.md) for the actual missing work and blockers. Historical audits remain snapshots; they do not override the current source.
