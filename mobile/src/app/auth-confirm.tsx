@@ -31,14 +31,19 @@ export default function ConfirmEmail() {
   }
 
   return (
-    <Screen title="Confirm your email.">
+    <Screen title={hash ? "Confirm your email." : "Continue to your wardrobe."}>
       {session ? (
         <RouteLink to={accountDeleting ? "/account-deletion" : "/dashboard"}>Continue</RouteLink>
       ) : supabase && hash ? (
         <Button label="Confirm email" loading={busy} disabled={!ready || busy} onPress={confirm} />
+      ) : supabase && !error ? (
+        <>
+          <Notice title="Finish signing in" text="If you opened the confirmation link from your email, sign in with your email and password to continue. Your account will open only after Supabase confirms your email." />
+          <RouteLink to="/login">Sign in to continue</RouteLink>
+        </>
       ) : (
         <Notice title="Confirmation unavailable" text={supabase
-          ? "Open a fresh confirmation link from your email."
+          ? "This confirmation link could not be accepted. Request a fresh email."
           : "Supabase sign-in is not configured."} />
       )}
       {!!message && <Notice title="Confirmation status" text={message} />}

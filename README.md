@@ -15,7 +15,7 @@ Android-first wardrobe application built with React Native + Expo, FastAPI, Supa
 
 The repository contains authentication, profiles, onboarding, wardrobe/images, catalog/admin, outfit management, deterministic recommendations and feedback, and try-on job infrastructure. All ten workflows are not complete; ML remains deferred. Local test success does not establish hosted readiness.
 
-Hosted database history was last verified through migration `202611090010`; six `20261123` migrations remain local candidates. Hosted signup is disabled, and the legacy eligibility gate currently blocks the reviewed account. Recovery backup verification and the direct-auth rollout are required before registration and signed-in workflows can be accepted end to end. Do not bypass eligibility or weaken RLS.
+On 2026-11-23, all 24 migrations were verified in the development project after an encrypted backup and isolated Auth-data restore preserved both existing accounts. Email-verified signup and exact localhost/Android callbacks are enabled. The existing review account has approved seven-day development access. End-to-end browser sign-in and email delivery remain acceptance checks; custom SMTP is not configured, so public email delivery is not production-ready. Do not bypass eligibility or weaken RLS.
 
 - [Current workflow implementation tracker](docs/workflows/SADD_IMPLEMENTATION_TRACKER.md)
 - [Production readiness checklist](docs/PRODUCTION_READINESS_CHECKLIST.md)

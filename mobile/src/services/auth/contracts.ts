@@ -25,6 +25,7 @@ export function authError(code?: string) {
   if (code === "weak_password") return "Choose a stronger password.";
   if (code === "email_address_invalid" || code === "validation_failed")
     return "Check the email address and try again.";
+  if (code === "email_address_not_authorized") return "Email delivery is not yet configured for this address. Please contact support.";
   if (code === "signup_disabled") return "Registration is currently unavailable.";
   if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit")
     return "Too many requests. Try again later.";
