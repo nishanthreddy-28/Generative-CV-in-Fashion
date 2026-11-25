@@ -38,7 +38,7 @@ Update completed checks with actual commands/counts and dates below. Do not mark
 - Local Expo returned 200 for /verify-registration and its JavaScript bundle contained the new inbox screen. Local FastAPI /healthz returned 200 and signed-out /profile returned 401. Existing review servers were left running.
 - Vercel returned 200 for home, login, the wardrobe deep link and all three first-party entry scripts. Render returned 200 for /healthz and 401 for signed-out /profile. Production-origin CORS returned 200 with the matching origin. An unapproved origin returned 400 with no matching header.
 - Supabase read-only aggregate inspection showed zero application tables in api/app_private, no migration history relation, zero Storage buckets and two confirmed Auth users. No hosted writes, user changes or feature-flag changes occurred.
-- Review [the exact local SQL and rollout blockers](workflows/WORKFLOW_01_MIGRATION_APPROVAL.md#local-protocol-candidate). A real test account, live mail, hosted isolation, workers and Android device tests remain pending.
+- Review [the exact local SQL and rollout blockers — historical reference](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/20a3b10dbb98f0a1dae0c23698d29983559f3f4c/docs/workflows/WORKFLOW_01_MIGRATION_APPROVAL.md#local-protocol-candidate). A real test account, live mail, hosted isolation, workers and Android device tests remain pending.
 
 ### Local test evidence
 

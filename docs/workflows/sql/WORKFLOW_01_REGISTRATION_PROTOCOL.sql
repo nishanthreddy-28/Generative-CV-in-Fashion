@@ -1,3 +1,0 @@
--- Historical review path. Canonical executable SQL is now in:
--- supabase/migrations/202611090009_registration_protocol.sql
--- This file intentionally contains no executable migration.

@@ -50,3 +50,6 @@ supabase/.branches/
 # OS metadata and diagnostic logs
 .DS_Store
 *.log
+
+# Laptop-specific assistant preferences
+mobile/.claude/

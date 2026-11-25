@@ -1,45 +1,44 @@
 # Drape & Drop
 
-Android-first wardrobe application built with React Native + Expo, FastAPI, Supabase Auth, PostgreSQL and private Supabase Storage.
+A personal wardrobe application built with React Native + Expo, FastAPI, Supabase Auth, PostgreSQL and private Supabase Storage. Android is the first target platform.
 
-## Repository
+## Project structure
 
-- `mobile/` — application screens, authenticated API integration and frontend tests.
-- `backend/` — business APIs, authorization, maintenance workers and backend/database tests. The legacy registration coordinator remains for compatibility.
-- `supabase/` — versioned migrations, local configuration, email templates and verification tools.
-- `docs/` — current API/security specifications, workflow tracker, setup guides and checkpoints.
-- `docs/architecture/exports/` — preserved architecture and database design PDFs/text.
-- `.github/workflows/` — backend, database and frontend CI.
+- `mobile/` — application screens, API integration and frontend tests.
+- `backend/` — business APIs, authorization, maintenance workers and backend/database tests.
+- `supabase/` — migrations, local configuration, email templates and verification tools.
+- `docs/` — requirements, architecture diagrams, API/security specifications and setup guides.
+- `.github/workflows/` — automated backend, database and frontend checks.
 
-## Current status
+## Development
 
-The repository contains authentication, profiles, onboarding, wardrobe/images, catalog/admin, outfit management, deterministic recommendations and feedback, and try-on job infrastructure. All ten workflows are not complete; ML remains deferred. Local test success does not establish hosted readiness.
+Start with the [local setup guide](docs/setup.md). Detailed guides cover the [frontend](docs/frontend/setup.md), [backend](docs/backend/setup.md) and [database](docs/backend/database/setup.md).
 
-On 2026-11-23, all 24 migrations were verified in the development project after an encrypted backup and isolated Auth-data restore preserved both existing accounts. Email-verified signup and exact localhost/Android callbacks are enabled. The existing review account has approved seven-day development access. End-to-end browser sign-in and email delivery remain acceptance checks; custom SMTP is not configured, so public email delivery is not production-ready. Do not bypass eligibility or weaken RLS.
+Private `.env` files and credentials are excluded from Git. Configure them privately on each laptop using the tracked `.env.example` templates. Install dependencies locally; do not copy dependency or build folders through Git.
 
-- [Current workflow implementation tracker](docs/workflows/SADD_IMPLEMENTATION_TRACKER.md)
-- [Production readiness checklist](docs/PRODUCTION_READINESS_CHECKLIST.md)
-- [Local setup](QUICK_START.md)
+## Architecture and requirements
+
+- [Product requirements](docs/PRD.md)
+- [System architecture](docs/architecture.md)
 - [API design](docs/backend/api-design.md)
-- [Authentication/security architecture](docs/backend/authentication-and-security.md)
-- [Direct Supabase Auth rollout](docs/backend/direct-supabase-auth.md)
-- [Latest saved preview checkpoint](docs/checkpoints/2026-11-23-full-stack-preview.md)
-
-`main` is the only branch. Historical branch tips and the full preview checkpoint are preserved in Git tags. Private environment files, credentials, dependency folders and build outputs are excluded from Git.
-
-## Setup guides
-
-- [Frontend setup](docs/frontend/setup.md)
-- [Backend setup](docs/backend/setup.md)
-- [Database setup](docs/backend/database/setup.md)
-
-This root file is the repository's only README. Detailed setup guides and current specifications live under `docs/`.
+- [Authentication and security](docs/backend/authentication-and-security.md)
+- [Direct Supabase authentication](docs/backend/direct-supabase-auth.md)
+- [Database model](docs/backend/database/relational-model.md)
+- [Database specification](docs/backend/database/physical-schema-specification.md)
 
 ## Diagrams
 
-- [Use-case diagrams](docs/architecture/diagrams/use-case/)
-- [Activity diagrams](docs/architecture/diagrams/activity/)
-- [Sequence diagrams](docs/architecture/diagrams/sequence/)
+- [Use cases](docs/architecture/diagrams/use-case/)
+- [Activities](docs/architecture/diagrams/activity/)
+- [Sequences](docs/architecture/diagrams/sequence/)
 - [High-level architecture](docs/architecture/diagrams/high-level/)
 
-Supplied diagrams are design references; planned ML, conversational and payment-dispute flows do not establish implemented functionality. Historical audits and old preview notes remain recoverable from Git history.
+The supplied diagrams include planned features and are design references, not proof of implemented functionality.
+
+## Current status
+
+See the [workflow tracker](docs/workflows/SADD_IMPLEMENTATION_TRACKER.md) and [release checklist](docs/PRODUCTION_READINESS_CHECKLIST.md) for remaining work. All ten workflows are not complete. ML inference and external model integration remain deferred.
+
+The development project has 24 recorded migrations. Email-confirmed signup and local/Android callbacks are configured; custom SMTP delivery and full new-account acceptance remain pending. The approved existing account uses time-limited development access. Installed Android verification and production acceptance are separate from local tests.
+
+`main` is the only branch. Earlier checkpoints and removed reports remain recoverable through [Git history](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/commits/main/) and [tags](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/tags).

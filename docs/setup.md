@@ -11,7 +11,7 @@ cp .env.example .env
 npm run web -- --localhost --port 8082
 ```
 
-If dependencies already exist, no reinstall is necessary for normal checks. Configure only the API origin, Supabase project origin and publishable key privately in `mobile/.env`. Expo public variables are bundled; never place Management tokens, service-role keys, passwords or refresh tokens there. See [Auth setup](docs/backend/frontend-supabase-auth-integration.md) for callbacks/email templates and native SecureStore/development-build requirements.
+If dependencies already exist, no reinstall is necessary for normal checks. Configure only the API origin, Supabase project origin and publishable key privately in `mobile/.env`. Expo public variables are bundled; never place Management tokens, service-role keys, passwords or refresh tokens there. See [Auth setup — historical reference](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/20a3b10dbb98f0a1dae0c23698d29983559f3f4c/docs/backend/frontend-supabase-auth-integration.md) for callbacks/email templates and native SecureStore/development-build requirements.
 
 Open the printed local origin to inspect the public landing and authentication screens. Personal routes require authenticated backend eligibility. Native Android needs an API address reachable from the device/emulator; `localhost` in the template identifies that device, not automatically the laptop. Production HTTPS and package/deep-link configuration remain pending. Web authenticated business requests also need a reviewed FastAPI CORS configuration; no permissive CORS workaround is installed here.
 
@@ -50,6 +50,6 @@ The first pytest command skips database tests without an explicitly supplied dis
 
 ## Hosted and release boundaries
 
-Do not apply hosted migrations, change Auth/Data API/Storage settings or enable the flag without separate approval. See [database prerequisites](docs/backend/database/setup.md) and [integration acceptance plan — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/backend/supabase-integration-verification.md). Native build, physical-device, signed AAB and Play internal testing remain separate gates. No ML integration has been started.
+Do not apply hosted migrations, change Auth/Data API/Storage settings or enable the flag without separate approval. See [database prerequisites](backend/database/setup.md) and [integration acceptance plan — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/backend/supabase-integration-verification.md). Native build, physical-device, signed AAB and Play internal testing remain separate gates. No ML integration has been started.
 
 Use [WORKFLOW_STATUS.md — historical version](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/2fbcc7a61525547d082918f2eef6aeafe58875c8/docs/archive/WORKFLOW_STATUS.md) for the actual missing work and blockers. Historical audits remain snapshots; they do not override the current source.
