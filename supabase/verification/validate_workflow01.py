@@ -67,7 +67,7 @@ with tempfile.TemporaryDirectory(prefix="dd-approval-", dir="/tmp") as temporary
         assert sql("SELECT count(*) FROM app_private.user_profiles", "restored") == "2"
         print("Synthetic full-database dump/restore passed in a second local database. Hosted recovery not certified.", flush=True)
 
-        # Canonical registration migrations were applied in the migration loop above.
+        file(root / "docs/workflows/sql/WORKFLOW_01_REGISTRATION_STORAGE.sql")
         subject = users[0]
         challenge = str(uuid.uuid4())
         sql(f"""INSERT INTO app_private.registration_challenges(

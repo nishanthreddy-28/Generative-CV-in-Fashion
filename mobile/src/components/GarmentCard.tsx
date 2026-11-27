@@ -8,7 +8,7 @@ export function GarmentCard({item,source}:{item:Garment;source:'wardrobe'|'catal
  const summary=garmentSummary(item);
  const price=source==='wardrobe' ? null : priceLabel(item.price);
  return <View style={styles.card}>
-  {item.imageUrl ? <WardrobeImage id={item.id} label={item.name} source={source}/> : <View style={styles.placeholder} accessibilityLabel="No garment photo"><Text style={styles.caption}>Photo unavailable</Text></View>}
+  {item.imageUrl ? <WardrobeImage id={item.id} label={item.name} source={source} size="thumbnail"/> : <View style={styles.placeholder} accessibilityLabel="No garment photo"><Text style={styles.caption}>Photo unavailable</Text></View>}
   <View style={styles.details}>
    <Text style={styles.category}>{item.category}</Text>
    <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
@@ -19,4 +19,4 @@ export function GarmentCard({item,source}:{item:Garment;source:'wardrobe'|'catal
   </View>
  </View>;
 }
-const styles=StyleSheet.create({card:{borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,borderRadius:16,overflow:'hidden',height:'100%'},details:{padding:12,gap:5},category:{fontSize:11,color:colors.muted},name:{fontSize:16,fontWeight:'700',color:colors.ink,lineHeight:21},caption:{fontSize:12,color:colors.muted,lineHeight:18},price:{fontSize:14,fontWeight:'600',color:colors.ink},placeholder:{aspectRatio:0.8,backgroundColor:colors.editorial,alignItems:'center',justifyContent:'center',padding:16}});
+const styles=StyleSheet.create({card:{borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,borderRadius:16,overflow:'hidden'},details:{padding:12,gap:5},category:{fontSize:11,color:colors.muted},name:{fontSize:16,fontWeight:'700',color:colors.ink,lineHeight:21},caption:{fontSize:12,color:colors.muted,lineHeight:18},price:{fontSize:14,fontWeight:'600',color:colors.ink},placeholder:{aspectRatio:0.8,backgroundColor:colors.editorial,alignItems:'center',justifyContent:'center',padding:16}});

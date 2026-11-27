@@ -1,3 +1,4 @@
+import {File as NativeFile} from "expo-file-system";
 import { colors } from "../theme/tokens";
 import {FramedImage} from "./FramedImage";
 import { useState } from "react";
@@ -120,10 +121,13 @@ export function appendPhoto(form: FormData, key: string, photo: Photo) {
     if (!photo.file)
       throw new Error("Choose this photo again before uploading.");
     form.append(key, photo.file, photo.name);
-  } else
-    form.append(key, {
-      uri: photo.uri,
-      name: photo.name,
-      type: photo.type,
-    } as unknown as Blob);
+  } else {
+    // SDK 58 fetch serializes File bytes, not the old React Native URI object.
+    const file = new NativeFile(photo.uri);
+    if (!file.exists || file.size <= 0)
+      throw new Error("This photo is no longer available. Choose it again before uploading.");
+    if (file.size > 10 * 1024 * 1024)
+      throw new Error("Choose an image smaller than 10 MB.");
+    form.append(key, file);
+  }
 }

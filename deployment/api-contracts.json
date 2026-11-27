@@ -1,0 +1,5785 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Drape & Drop API",
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/profile": {
+      "get": {
+        "summary": "Read Profile",
+        "operationId": "read_profile_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileRead"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Profile",
+        "operationId": "update_profile_profile_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "summary": "Read Preferences",
+        "operationId": "read_preferences_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Preferences",
+        "operationId": "update_preferences_settings_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Preferences"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile/body": {
+      "get": {
+        "summary": "Read Body Profile",
+        "operationId": "read_body_profile_profile_body_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyRead"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Body Profile",
+        "operationId": "update_body_profile_profile_body_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BodyPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wardrobe": {
+      "post": {
+        "summary": "Create Garment",
+        "operationId": "create_garment_wardrobe_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__wardrobe__GarmentRead"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Garments",
+        "operationId": "list_garments_wardrobe_get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": "",
+              "title": "Search"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "Tops",
+                    "Bottoms",
+                    "Outerwear",
+                    "Dresses",
+                    "Shoes",
+                    "Accessories"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "const": "",
+                  "type": "string"
+                }
+              ],
+              "default": "",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "newest",
+                "name"
+              ],
+              "type": "string",
+              "default": "newest",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 24,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__wardrobe__GarmentPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wardrobe/{garment_id}": {
+      "patch": {
+        "summary": "Patch Garment",
+        "operationId": "patch_garment_wardrobe__garment_id__patch",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Garment",
+        "operationId": "get_garment_wardrobe__garment_id__get",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__wardrobe__GarmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Garment",
+        "operationId": "delete_garment_wardrobe__garment_id__delete",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wardrobe/{garment_id}/image": {
+      "get": {
+        "summary": "Garment Image",
+        "operationId": "garment_image_wardrobe__garment_id__image_get",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wardrobe/{garment_id}/photos": {
+      "get": {
+        "summary": "List Photos",
+        "operationId": "list_photos_wardrobe__garment_id__photos_get",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GalleryPhoto"
+                  },
+                  "title": "Response List Photos Wardrobe  Garment Id  Photos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add Photo",
+        "operationId": "add_photo_wardrobe__garment_id__photos_post",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GalleryPhoto"
+                  },
+                  "title": "Response Add Photo Wardrobe  Garment Id  Photos Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wardrobe/{garment_id}/photos/{image_id}/primary": {
+      "put": {
+        "summary": "Primary Photo",
+        "operationId": "primary_photo_wardrobe__garment_id__photos__image_id__primary_put",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          },
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GalleryPhoto"
+                  },
+                  "title": "Response Primary Photo Wardrobe  Garment Id  Photos  Image Id  Primary Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wardrobe/{garment_id}/photos/{image_id}": {
+      "delete": {
+        "summary": "Remove Photo",
+        "operationId": "remove_photo_wardrobe__garment_id__photos__image_id__delete",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          },
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Read Photo",
+        "operationId": "read_photo_wardrobe__garment_id__photos__image_id__get",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          },
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/catalog/access": {
+      "get": {
+        "summary": "Access",
+        "operationId": "access_admin_catalog_access_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/catalog": {
+      "post": {
+        "summary": "Create Garment",
+        "operationId": "create_garment_admin_catalog_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__catalog__GarmentRead"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Admin List Items",
+        "operationId": "admin_list_items_admin_catalog_get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": "",
+              "title": "Search"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "Tops",
+                    "Bottoms",
+                    "Outerwear",
+                    "Dresses",
+                    "Shoes",
+                    "Accessories"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "const": "",
+                  "type": "string"
+                }
+              ],
+              "default": "",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "newest",
+                "name"
+              ],
+              "type": "string",
+              "default": "newest",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 24,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__catalog__GarmentPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/catalog/{garment_id}": {
+      "patch": {
+        "summary": "Patch Garment",
+        "operationId": "patch_garment_admin_catalog__garment_id__patch",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Garment",
+        "operationId": "delete_garment_admin_catalog__garment_id__delete",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Admin Read Item",
+        "operationId": "admin_read_item_admin_catalog__garment_id__get",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__catalog__GarmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog/{garment_id}": {
+      "get": {
+        "summary": "Read Item",
+        "operationId": "read_item_catalog__garment_id__get",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__catalog__GarmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog/{garment_id}/image": {
+      "get": {
+        "summary": "Read Image",
+        "operationId": "read_image_catalog__garment_id__image_get",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/catalog/{garment_id}/image": {
+      "get": {
+        "summary": "Admin Read Image",
+        "operationId": "admin_read_image_admin_catalog__garment_id__image_get",
+        "parameters": [
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog": {
+      "get": {
+        "summary": "List Items",
+        "operationId": "list_items_catalog_get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": "",
+              "title": "Search"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "Tops",
+                    "Bottoms",
+                    "Outerwear",
+                    "Dresses",
+                    "Shoes",
+                    "Accessories"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "const": "",
+                  "type": "string"
+                }
+              ],
+              "default": "",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "newest",
+                "name"
+              ],
+              "type": "string",
+              "default": "newest",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 24,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__catalog__GarmentPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outfits": {
+      "post": {
+        "summary": "Create Outfit",
+        "operationId": "create_outfit_outfits_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/OutfitCreate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RecommendationSave"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Outfits",
+        "operationId": "list_outfits_outfits_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 24,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": "",
+              "title": "Search"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "Tops",
+                    "Bottoms",
+                    "Outerwear",
+                    "Dresses",
+                    "Shoes",
+                    "Accessories"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "const": "",
+                  "type": "string"
+                }
+              ],
+              "default": "",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "",
+                "wardrobe",
+                "catalog"
+              ],
+              "type": "string",
+              "default": "",
+              "title": "Source"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "newest",
+                "name"
+              ],
+              "type": "string",
+              "default": "newest",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created From"
+            }
+          },
+          {
+            "name": "created_before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outfits/{outfit_id}": {
+      "get": {
+        "summary": "Read Outfit",
+        "operationId": "read_outfit_outfits__outfit_id__get",
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Patch Outfit",
+        "operationId": "patch_outfit_outfits__outfit_id__patch",
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutfitPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Outfit",
+        "operationId": "delete_outfit_outfits__outfit_id__delete",
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outfits/{outfit_id}/items": {
+      "put": {
+        "summary": "Replace Items",
+        "operationId": "replace_items_outfits__outfit_id__items_put",
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutfitReplacement"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add Item",
+        "operationId": "add_item_outfits__outfit_id__items_post",
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutfitItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outfits/{outfit_id}/items/{item_id}": {
+      "delete": {
+        "summary": "Remove Item",
+        "operationId": "remove_item_outfits__outfit_id__items__item_id__delete",
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Outfit Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outfits/{outfit_id}/duplicate": {
+      "post": {
+        "summary": "Duplicate Outfit",
+        "operationId": "duplicate_outfit_outfits__outfit_id__duplicate_post",
+        "parameters": [
+          {
+            "name": "outfit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Outfit Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations": {
+      "post": {
+        "summary": "Generate",
+        "operationId": "generate_recommendations_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Recent",
+        "operationId": "recent_recommendations_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/{recommendation_id}/save": {
+      "post": {
+        "summary": "Save",
+        "operationId": "save_recommendations__recommendation_id__save_post",
+        "parameters": [
+          {
+            "name": "recommendation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recommendation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SaveBody"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedRecommendation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/saved": {
+      "get": {
+        "summary": "Saved",
+        "operationId": "saved_recommendations_saved_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 24,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/saved/{saved_id}": {
+      "delete": {
+        "summary": "Remove",
+        "operationId": "remove_recommendations_saved__saved_id__delete",
+        "parameters": [
+          {
+            "name": "saved_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Saved Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/try-on/jobs": {
+      "post": {
+        "summary": "Submit",
+        "operationId": "submit_try_on_jobs_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "History",
+        "operationId": "history_try_on_jobs_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 24,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/try-on/jobs/{job_id}": {
+      "get": {
+        "summary": "Detail",
+        "operationId": "detail_try_on_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/try-on/jobs/{job_id}/cancel": {
+      "post": {
+        "summary": "Cancel",
+        "operationId": "cancel_try_on_jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/try-on/jobs/{job_id}/input": {
+      "get": {
+        "summary": "Input Image",
+        "operationId": "input_image_try_on_jobs__job_id__input_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account": {
+      "delete": {
+        "summary": "Delete Account",
+        "operationId": "delete_account_account_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/deletion": {
+      "get": {
+        "summary": "Status",
+        "operationId": "status_account_deletion_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Dashboard",
+        "operationId": "dashboard_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/body-analysis": {
+      "post": {
+        "tags": [
+          "inference"
+        ],
+        "summary": "Analyse Body",
+        "operationId": "analyse_body_ml_body_analysis_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BodyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyEstimateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/body-analysis/confirm": {
+      "post": {
+        "tags": [
+          "inference"
+        ],
+        "summary": "Confirm Body",
+        "operationId": "confirm_body_ml_body_analysis_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmBodyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedBodyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/body-analysis/{image_id}": {
+      "get": {
+        "tags": [
+          "inference"
+        ],
+        "summary": "Read Confirmed Body",
+        "operationId": "read_confirmed_body_ml_body_analysis__image_id__get",
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedBodyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/garments/{source}/{garment_id}/analysis": {
+      "post": {
+        "tags": [
+          "inference"
+        ],
+        "summary": "Analyse Garment",
+        "operationId": "analyse_garment_ml_garments__source___garment_id__analysis_post",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "wardrobe",
+                "catalog"
+              ],
+              "type": "string",
+              "title": "Source"
+            }
+          },
+          {
+            "name": "garment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Garment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GarmentAnalysisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/garments/analyse-upload": {
+      "post": {
+        "tags": [
+          "inference"
+        ],
+        "summary": "Analyse Upload",
+        "operationId": "analyse_upload_ml_garments_analyse_upload_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GarmentAnalysis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/stylist": {
+      "post": {
+        "tags": [
+          "session inference"
+        ],
+        "summary": "Stylist",
+        "operationId": "stylist_ml_stylist_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StylistRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StylistResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/history": {
+      "get": {
+        "tags": [
+          "session inference"
+        ],
+        "summary": "History",
+        "operationId": "history_ml_history_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "bookmarked",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Bookmarked"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionHistoryPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/history/{result_id}": {
+      "patch": {
+        "tags": [
+          "session inference"
+        ],
+        "summary": "Update History",
+        "operationId": "update_history_ml_history__result_id__patch",
+        "parameters": [
+          {
+            "name": "result_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Result Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HistoryUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/capabilities": {
+      "get": {
+        "tags": [
+          "session inference"
+        ],
+        "summary": "Capabilities",
+        "operationId": "capabilities_ml_capabilities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/session-tryon": {
+      "post": {
+        "tags": [
+          "session try-on"
+        ],
+        "summary": "Session Tryon",
+        "operationId": "session_tryon_ml_session_tryon_post",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "weshop",
+                "idm"
+              ],
+              "type": "string",
+              "default": "weshop",
+              "title": "Provider"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionTryOnResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ml/history/{result_id}/image": {
+      "get": {
+        "tags": [
+          "session try-on"
+        ],
+        "summary": "Generated Image",
+        "operationId": "generated_image_ml_history__result_id__image_get",
+        "parameters": [
+          {
+            "name": "result_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Result Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/onboarding": {
+      "get": {
+        "summary": "Read Onboarding",
+        "operationId": "read_onboarding_onboarding_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/onboarding/body-photo/{upload_id}": {
+      "post": {
+        "summary": "Upload Body Photo",
+        "operationId": "upload_body_photo_onboarding_body_photo__upload_id__post",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Upload Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/onboarding/body-photo/{image_id}": {
+      "get": {
+        "summary": "Read Body Photo",
+        "operationId": "read_body_photo_onboarding_body_photo__image_id__get",
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Discard Onboarding",
+        "operationId": "discard_onboarding_onboarding_body_photo__image_id__delete",
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/onboarding/body-photo/{image_id}/review": {
+      "post": {
+        "summary": "Review Onboarding",
+        "operationId": "review_onboarding_onboarding_body_photo__image_id__review_post",
+        "parameters": [
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Image Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Review"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/personalization/preferences": {
+      "get": {
+        "summary": "Read Personalization Preferences",
+        "operationId": "read_personalization_preferences_personalization_preferences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenceRead"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Personalization Preferences",
+        "operationId": "update_personalization_preferences_personalization_preferences_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenceRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/feedback": {
+      "get": {
+        "summary": "List Feedback",
+        "operationId": "list_feedback_recommendations_feedback_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recommendations/{recommendation_id}/feedback": {
+      "put": {
+        "summary": "Upsert Feedback",
+        "operationId": "upsert_feedback_recommendations__recommendation_id__feedback_put",
+        "parameters": [
+          {
+            "name": "recommendation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recommendation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Feedback",
+        "operationId": "delete_feedback_recommendations__recommendation_id__feedback_delete",
+        "parameters": [
+          {
+            "name": "recommendation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recommendation Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BodyAnalysis": {
+        "properties": {
+          "shoulder_hip_ratio": {
+            "type": "number",
+            "exclusiveMaximum": 4.0,
+            "exclusiveMinimum": 0.3,
+            "title": "Shoulder Hip Ratio"
+          },
+          "shoulder_landmark_span_cm": {
+            "type": "number",
+            "exclusiveMaximum": 110.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Shoulder Landmark Span Cm"
+          },
+          "clothed_waist_front_width_cm": {
+            "type": "number",
+            "exclusiveMaximum": 150.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Clothed Waist Front Width Cm"
+          },
+          "torso_landmark_length_cm": {
+            "type": "number",
+            "exclusiveMaximum": 120.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Torso Landmark Length Cm"
+          },
+          "source": {
+            "type": "string",
+            "const": "mediapipe_pose_server_v1",
+            "title": "Source"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": false,
+            "title": "Confirmed"
+          },
+          "reference_height_cm": {
+            "type": "number",
+            "maximum": 250.0,
+            "minimum": 80.0,
+            "title": "Reference Height Cm"
+          },
+          "image_width": {
+            "type": "integer",
+            "maximum": 12000.0,
+            "minimum": 128.0,
+            "title": "Image Width"
+          },
+          "image_height": {
+            "type": "integer",
+            "maximum": 12000.0,
+            "minimum": 128.0,
+            "title": "Image Height"
+          },
+          "landmark_visibility": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.6,
+            "title": "Landmark Visibility"
+          },
+          "original_estimates": {
+            "$ref": "#/components/schemas/PoseEstimates"
+          },
+          "edited_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 0,
+            "title": "Edited Fields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "shoulder_hip_ratio",
+          "shoulder_landmark_span_cm",
+          "clothed_waist_front_width_cm",
+          "torso_landmark_length_cm",
+          "source",
+          "confirmed",
+          "reference_height_cm",
+          "image_width",
+          "image_height",
+          "landmark_visibility",
+          "original_estimates",
+          "edited_fields"
+        ],
+        "title": "BodyAnalysis"
+      },
+      "BodyEstimateResponse": {
+        "properties": {
+          "imageId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Imageid"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/BodyAnalysis"
+          },
+          "receipt": {
+            "type": "string",
+            "title": "Receipt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "imageId",
+          "analysis",
+          "receipt"
+        ],
+        "title": "BodyEstimateResponse"
+      },
+      "BodyPatch": {
+        "properties": {
+          "units": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "cm",
+                  "in"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "chest": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chest"
+          },
+          "waist": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waist"
+          },
+          "hips": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hips"
+          },
+          "inseam": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inseam"
+          },
+          "bodyShape": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bodyshape"
+          },
+          "skinTone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skintone"
+          },
+          "undertone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Warm",
+                  "Cool",
+                  "Neutral",
+                  "Not sure"
+                ]
+              },
+              {
+                "type": "string",
+                "const": ""
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Undertone"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Fitted",
+                  "Regular",
+                  "Relaxed",
+                  "Oversized"
+                ]
+              },
+              {
+                "type": "string",
+                "const": ""
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fit"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BodyPatch"
+      },
+      "BodyRead": {
+        "properties": {
+          "units": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "cm",
+                  "in"
+                ]
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ],
+            "title": "Units"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "chest": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chest"
+          },
+          "waist": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waist"
+          },
+          "hips": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hips"
+          },
+          "inseam": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inseam"
+          },
+          "bodyShape": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Bodyshape"
+          },
+          "skinTone": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Skintone"
+          },
+          "undertone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Warm",
+                  "Cool",
+                  "Neutral",
+                  "Not sure"
+                ]
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ],
+            "title": "Undertone"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Fitted",
+                  "Regular",
+                  "Relaxed",
+                  "Oversized"
+                ]
+              },
+              {
+                "type": "string",
+                "const": ""
+              }
+            ],
+            "title": "Fit"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "units",
+          "height",
+          "chest",
+          "waist",
+          "hips",
+          "inseam",
+          "bodyShape",
+          "skinTone",
+          "undertone",
+          "fit"
+        ],
+        "title": "BodyRead"
+      },
+      "BodyRequest": {
+        "properties": {
+          "imageId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Imageid"
+          },
+          "referenceHeightCm": {
+            "type": "number",
+            "maximum": 250.0,
+            "minimum": 80.0,
+            "title": "Referenceheightcm"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "imageId",
+          "referenceHeightCm"
+        ],
+        "title": "BodyRequest"
+      },
+      "ConfirmBodyRequest": {
+        "properties": {
+          "imageId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Imageid"
+          },
+          "receipt": {
+            "type": "string",
+            "maxLength": 16384,
+            "minLength": 1,
+            "title": "Receipt"
+          },
+          "reviewed": {
+            "$ref": "#/components/schemas/PoseEstimates"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirmed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "imageId",
+          "receipt",
+          "reviewed",
+          "confirmed"
+        ],
+        "title": "ConfirmBodyRequest"
+      },
+      "Dashboard": {
+        "properties": {
+          "wardrobeCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Wardrobecount"
+          },
+          "savedOutfitCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Savedoutfitcount"
+          },
+          "recommendationCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Recommendationcount"
+          },
+          "savedRecommendationCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Savedrecommendationcount"
+          },
+          "tryOnJobCount": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Tryonjobcount"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "wardrobeCount",
+          "savedOutfitCount",
+          "recommendationCount",
+          "savedRecommendationCount",
+          "tryOnJobCount"
+        ],
+        "title": "Dashboard"
+      },
+      "DeletionRequest": {
+        "properties": {
+          "confirmation": {
+            "type": "string",
+            "const": "DELETE",
+            "title": "Confirmation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "confirmation"
+        ],
+        "title": "DeletionRequest"
+      },
+      "FeedbackPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FeedbackRead"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "FeedbackPage"
+      },
+      "FeedbackRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "recommendationId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recommendationid"
+          },
+          "sentiment": {
+            "type": "string",
+            "enum": [
+              "like",
+              "dislike"
+            ],
+            "title": "Sentiment"
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "matches_style",
+              "color_pairing",
+              "occasion_match",
+              "already_owned",
+              "not_my_style",
+              "color_mismatch",
+              "wrong_occasion",
+              "not_relevant",
+              "other"
+            ],
+            "title": "Reasoncode"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "recommendationId",
+          "sentiment",
+          "reasonCode",
+          "note",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "FeedbackRead"
+      },
+      "FeedbackWrite": {
+        "properties": {
+          "sentiment": {
+            "type": "string",
+            "enum": [
+              "like",
+              "dislike"
+            ],
+            "title": "Sentiment"
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "matches_style",
+              "color_pairing",
+              "occasion_match",
+              "already_owned",
+              "not_my_style",
+              "color_mismatch",
+              "wrong_occasion",
+              "not_relevant",
+              "other"
+            ],
+            "title": "Reasoncode"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "sentiment",
+          "reasonCode"
+        ],
+        "title": "FeedbackWrite"
+      },
+      "GalleryPhoto": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "primary": {
+            "type": "boolean",
+            "title": "Primary"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "primary",
+          "createdAt"
+        ],
+        "title": "GalleryPhoto"
+      },
+      "GarmentAnalysis": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Category"
+          },
+          "slot": {
+            "type": "string",
+            "enum": [
+              "top",
+              "outer",
+              "bottom",
+              "full",
+              "shoes"
+            ],
+            "title": "Slot"
+          },
+          "attributes": {
+            "$ref": "#/components/schemas/GarmentAttributes"
+          },
+          "colors": {
+            "items": {
+              "$ref": "#/components/schemas/GarmentColor"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Colors"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "margin": {
+            "type": "number",
+            "title": "Margin"
+          },
+          "alternatives": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 23,
+            "title": "Alternatives"
+          },
+          "route": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "review",
+              "ask"
+            ],
+            "title": "Route"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Warnings"
+          },
+          "cutoutUsed": {
+            "type": "boolean",
+            "title": "Cutoutused"
+          },
+          "cutoutMime": {
+            "type": "string",
+            "const": "image/webp",
+            "title": "Cutoutmime"
+          },
+          "cutoutBase64": {
+            "type": "string",
+            "maxLength": 4194304,
+            "title": "Cutoutbase64"
+          },
+          "model": {
+            "type": "string",
+            "const": "Marqo/marqo-fashionSigLIP",
+            "title": "Model"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "category",
+          "slot",
+          "attributes",
+          "colors",
+          "confidence",
+          "margin",
+          "alternatives",
+          "route",
+          "warnings",
+          "cutoutUsed",
+          "cutoutMime",
+          "cutoutBase64",
+          "model"
+        ],
+        "title": "GarmentAnalysis"
+      },
+      "GarmentAnalysisResponse": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "wardrobe",
+              "catalog"
+            ],
+            "title": "Source"
+          },
+          "garmentId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Garmentid"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/GarmentAnalysis"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "garmentId",
+          "analysis"
+        ],
+        "title": "GarmentAnalysisResponse"
+      },
+      "GarmentAttributes": {
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "enum": [
+              "solid",
+              "striped",
+              "checked",
+              "floral",
+              "graphic",
+              "patterned"
+            ],
+            "title": "Pattern"
+          },
+          "formality": {
+            "type": "string",
+            "enum": [
+              "casual",
+              "smart_casual",
+              "formal",
+              "athletic"
+            ],
+            "title": "Formality"
+          },
+          "season": {
+            "type": "string",
+            "enum": [
+              "warm",
+              "mild",
+              "cold"
+            ],
+            "title": "Season"
+          },
+          "fit": {
+            "type": "string",
+            "enum": [
+              "slim",
+              "regular",
+              "oversized"
+            ],
+            "title": "Fit"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pattern",
+          "formality",
+          "season",
+          "fit"
+        ],
+        "title": "GarmentAttributes"
+      },
+      "GarmentColor": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Name"
+          },
+          "hex": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "title": "Hex"
+          },
+          "share": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Share"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "hex",
+          "share"
+        ],
+        "title": "GarmentColor"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryUpdate": {
+        "properties": {
+          "bookmarked": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bookmarked"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "like",
+                  "dislike",
+                  ""
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HistoryUpdate"
+      },
+      "Job": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "completed",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "garmentId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Garmentid"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "wardrobe",
+              "catalog"
+            ],
+            "title": "Source"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          },
+          "finishedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finishedat"
+          },
+          "consentVersion": {
+            "type": "string",
+            "const": "photo-consent-v1",
+            "title": "Consentversion"
+          },
+          "consentAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Consentat"
+          },
+          "failureCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "CANCELLED",
+                  "WORKER_FAILED",
+                  "INPUT_EXPIRED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failurecode"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "workerAvailable": {
+            "type": "boolean",
+            "const": false,
+            "title": "Workeravailable"
+          },
+          "workerMessage": {
+            "type": "string",
+            "title": "Workermessage"
+          },
+          "canCancel": {
+            "type": "boolean",
+            "title": "Cancancel"
+          },
+          "inputAvailable": {
+            "type": "boolean",
+            "title": "Inputavailable"
+          },
+          "inputUrl": {
+            "type": "string",
+            "title": "Inputurl"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "garmentId",
+          "source",
+          "createdAt",
+          "updatedAt",
+          "finishedAt",
+          "consentVersion",
+          "consentAt",
+          "failureCode",
+          "error",
+          "workerAvailable",
+          "workerMessage",
+          "canCancel",
+          "inputAvailable",
+          "inputUrl"
+        ],
+        "title": "Job"
+      },
+      "JobPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Job"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextcursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "title": "JobPage"
+      },
+      "OutfitCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Description",
+            "default": ""
+          },
+          "occasion": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Occasion",
+            "default": ""
+          },
+          "garmentIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array",
+                "maxItems": 100,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Garmentids"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OutfitItem"
+                },
+                "type": "array",
+                "maxItems": 100,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "OutfitCreate"
+      },
+      "OutfitItem": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "wardrobe",
+              "catalog"
+            ],
+            "title": "Source"
+          },
+          "garmentId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Garmentid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "garmentId"
+        ],
+        "title": "OutfitItem"
+      },
+      "OutfitPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextcursor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "title": "OutfitPage"
+      },
+      "OutfitPatch": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "occasion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occasion"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "OutfitPatch"
+      },
+      "OutfitRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Description"
+          },
+          "occasion": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Occasion"
+          },
+          "garmentIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Garmentids"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StoredOutfitItem"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 2,
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "occasion",
+          "garmentIds",
+          "items"
+        ],
+        "title": "OutfitRead"
+      },
+      "OutfitReplacement": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitItem"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 2,
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "OutfitReplacement"
+      },
+      "PoseEstimates": {
+        "properties": {
+          "shoulder_hip_ratio": {
+            "type": "number",
+            "exclusiveMaximum": 4.0,
+            "exclusiveMinimum": 0.3,
+            "title": "Shoulder Hip Ratio"
+          },
+          "shoulder_landmark_span_cm": {
+            "type": "number",
+            "exclusiveMaximum": 110.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Shoulder Landmark Span Cm"
+          },
+          "clothed_waist_front_width_cm": {
+            "type": "number",
+            "exclusiveMaximum": 150.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Clothed Waist Front Width Cm"
+          },
+          "torso_landmark_length_cm": {
+            "type": "number",
+            "exclusiveMaximum": 120.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Torso Landmark Length Cm"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "shoulder_hip_ratio",
+          "shoulder_landmark_span_cm",
+          "clothed_waist_front_width_cm",
+          "torso_landmark_length_cm"
+        ],
+        "title": "PoseEstimates"
+      },
+      "PreferencePatch": {
+        "properties": {
+          "styleTags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Styletags"
+          },
+          "colorTags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Colortags"
+          },
+          "preferredFit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Fitted",
+                  "Regular",
+                  "Relaxed",
+                  "Oversized"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferredfit"
+          },
+          "preferredOccasions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "Everyday",
+                    "Work",
+                    "Evening",
+                    "Weekend",
+                    "Special occasion"
+                  ]
+                },
+                "type": "array",
+                "maxItems": 5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferredoccasions"
+          },
+          "budgetMin": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgetmin"
+          },
+          "budgetMax": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgetmax"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PreferencePatch"
+      },
+      "PreferenceRead": {
+        "properties": {
+          "styleTags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Styletags"
+          },
+          "colorTags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Colortags"
+          },
+          "preferredFit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "Fitted",
+                  "Regular",
+                  "Relaxed",
+                  "Oversized"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferredfit"
+          },
+          "preferredOccasions": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "Everyday",
+                "Work",
+                "Evening",
+                "Weekend",
+                "Special occasion"
+              ]
+            },
+            "type": "array",
+            "title": "Preferredoccasions"
+          },
+          "budgetMin": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgetmin"
+          },
+          "budgetMax": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgetmax"
+          },
+          "currency": {
+            "type": "string",
+            "const": "INR",
+            "title": "Currency"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "styleTags",
+          "colorTags",
+          "preferredFit",
+          "preferredOccasions",
+          "currency"
+        ],
+        "title": "PreferenceRead"
+      },
+      "Preferences": {
+        "properties": {
+          "units": {
+            "type": "string",
+            "enum": [
+              "cm",
+              "in",
+              ""
+            ],
+            "title": "Units",
+            "default": ""
+          },
+          "emailNotifications": {
+            "type": "string",
+            "enum": [
+              "Enabled",
+              "Disabled",
+              ""
+            ],
+            "title": "Emailnotifications",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Preferences"
+      },
+      "ProfilePatch": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "style": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Style",
+            "default": ""
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Location",
+            "default": ""
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Bio",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ProfilePatch"
+      },
+      "ProfileRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name"
+          },
+          "style": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Style",
+            "default": ""
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Location",
+            "default": ""
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Bio",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ProfileRead"
+      },
+      "Recommendation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Requestid"
+          },
+          "savedId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Savedid"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 250,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "occasion": {
+            "type": "string",
+            "enum": [
+              "Everyday",
+              "Work",
+              "Evening",
+              "Weekend",
+              "Special occasion"
+            ],
+            "title": "Occasion"
+          },
+          "garmentIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Garmentids"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationItem"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Items"
+          },
+          "score": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "reasons": {
+            "items": {
+              "type": "string",
+              "maxLength": 300,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Reasons"
+          },
+          "engineVersion": {
+            "type": "string",
+            "const": "rules-v1",
+            "title": "Engineversion"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generatedat"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "requestId",
+          "name",
+          "description",
+          "occasion",
+          "garmentIds",
+          "items",
+          "score",
+          "reasons",
+          "engineVersion",
+          "generatedAt"
+        ],
+        "title": "Recommendation"
+      },
+      "RecommendationItem": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "wardrobe",
+              "catalog"
+            ],
+            "title": "Source"
+          },
+          "garmentId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Garmentid"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "Tops",
+              "Bottoms",
+              "Dresses",
+              "Shoes"
+            ],
+            "title": "Category"
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Color"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "garmentId",
+          "name",
+          "category",
+          "color"
+        ],
+        "title": "RecommendationItem"
+      },
+      "RecommendationPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Recommendation"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "nextCursor": {
+            "type": "null",
+            "title": "Nextcursor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "title": "RecommendationPage"
+      },
+      "RecommendationRequest": {
+        "properties": {
+          "occasion": {
+            "type": "string",
+            "enum": [
+              "Everyday",
+              "Work",
+              "Evening",
+              "Weekend",
+              "Special occasion"
+            ],
+            "title": "Occasion"
+          },
+          "preferences": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Preferences",
+            "default": ""
+          },
+          "wardrobeOnly": {
+            "type": "boolean",
+            "title": "Wardrobeonly"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 5
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "occasion",
+          "wardrobeOnly"
+        ],
+        "title": "RecommendationRequest"
+      },
+      "RecommendationSave": {
+        "properties": {
+          "recommendationId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recommendationid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "recommendationId"
+        ],
+        "title": "RecommendationSave"
+      },
+      "Review": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Location",
+            "default": ""
+          },
+          "units": {
+            "type": "string",
+            "enum": [
+              "cm",
+              "in"
+            ],
+            "title": "Units"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "chest": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chest"
+          },
+          "waist": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waist"
+          },
+          "hips": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hips"
+          },
+          "inseam": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 300.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inseam"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "units"
+        ],
+        "title": "Review"
+      },
+      "ReviewedBodyAnalysis": {
+        "properties": {
+          "shoulder_hip_ratio": {
+            "type": "number",
+            "exclusiveMaximum": 4.0,
+            "exclusiveMinimum": 0.3,
+            "title": "Shoulder Hip Ratio"
+          },
+          "shoulder_landmark_span_cm": {
+            "type": "number",
+            "exclusiveMaximum": 110.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Shoulder Landmark Span Cm"
+          },
+          "clothed_waist_front_width_cm": {
+            "type": "number",
+            "exclusiveMaximum": 150.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Clothed Waist Front Width Cm"
+          },
+          "torso_landmark_length_cm": {
+            "type": "number",
+            "exclusiveMaximum": 120.0,
+            "exclusiveMinimum": 5.0,
+            "title": "Torso Landmark Length Cm"
+          },
+          "source": {
+            "type": "string",
+            "const": "mediapipe_pose_server_v1",
+            "title": "Source"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirmed"
+          },
+          "reference_height_cm": {
+            "type": "number",
+            "maximum": 250.0,
+            "minimum": 80.0,
+            "title": "Reference Height Cm"
+          },
+          "image_width": {
+            "type": "integer",
+            "maximum": 12000.0,
+            "minimum": 128.0,
+            "title": "Image Width"
+          },
+          "image_height": {
+            "type": "integer",
+            "maximum": 12000.0,
+            "minimum": 128.0,
+            "title": "Image Height"
+          },
+          "landmark_visibility": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.6,
+            "title": "Landmark Visibility"
+          },
+          "original_estimates": {
+            "$ref": "#/components/schemas/PoseEstimates"
+          },
+          "edited_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Edited Fields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "shoulder_hip_ratio",
+          "shoulder_landmark_span_cm",
+          "clothed_waist_front_width_cm",
+          "torso_landmark_length_cm",
+          "source",
+          "confirmed",
+          "reference_height_cm",
+          "image_width",
+          "image_height",
+          "landmark_visibility",
+          "original_estimates"
+        ],
+        "title": "ReviewedBodyAnalysis"
+      },
+      "SaveBody": {
+        "properties": {},
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SaveBody"
+      },
+      "SavedBodyResponse": {
+        "properties": {
+          "imageId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Imageid"
+          },
+          "analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewedBodyAnalysis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confirmedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "imageId",
+          "analysis"
+        ],
+        "title": "SavedBodyResponse"
+      },
+      "SavedPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SavedRecommendation"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextcursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "title": "SavedPage"
+      },
+      "SavedRecommendation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "recommendationId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recommendationid"
+          },
+          "savedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Savedat"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recommendation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "recommendationId",
+          "savedAt",
+          "available",
+          "recommendation"
+        ],
+        "title": "SavedRecommendation"
+      },
+      "SessionHistoryPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/StylistResult"
+                },
+                {
+                  "$ref": "#/components/schemas/SessionTryOnResult"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "kind",
+                "mapping": {
+                  "stylist": "#/components/schemas/StylistResult",
+                  "tryon": "#/components/schemas/SessionTryOnResult"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "nextCursor": {
+            "type": "null",
+            "title": "Nextcursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "SessionHistoryPage"
+      },
+      "SessionTryOnResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "conversationId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversationid"
+          },
+          "kind": {
+            "type": "string",
+            "const": "tryon",
+            "title": "Kind",
+            "default": "tryon"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "weshop",
+              "idm"
+            ],
+            "title": "Provider"
+          },
+          "attempts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Attempts"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "wardrobe",
+              "catalog"
+            ],
+            "title": "Source"
+          },
+          "garmentId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Garmentid"
+          },
+          "imageUrl": {
+            "type": "string",
+            "pattern": "^/ml/history/[0-9a-f-]{36}/image$",
+            "title": "Imageurl"
+          },
+          "consentVersion": {
+            "type": "string",
+            "const": "photo-consent-v1",
+            "title": "Consentversion"
+          },
+          "bookmarked": {
+            "type": "boolean",
+            "title": "Bookmarked",
+            "default": false
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "like",
+                  "dislike"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "provider",
+          "attempts",
+          "warnings",
+          "source",
+          "garmentId",
+          "imageUrl",
+          "consentVersion"
+        ],
+        "title": "SessionTryOnResult"
+      },
+      "StoredOutfitItem": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "wardrobe",
+              "catalog"
+            ],
+            "title": "Source"
+          },
+          "garmentId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Garmentid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "garmentId",
+          "id"
+        ],
+        "title": "StoredOutfitItem"
+      },
+      "StyledLook": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StyledPiece"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "minItems": 2,
+            "title": "Items"
+          },
+          "rankingScore": {
+            "type": "number",
+            "title": "Rankingscore"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "fitNotes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Fitnotes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "items",
+          "rankingScore",
+          "explanation",
+          "fitNotes"
+        ],
+        "title": "StyledLook"
+      },
+      "StyledPiece": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "wardrobe",
+              "catalog"
+            ],
+            "title": "Source"
+          },
+          "garmentId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Garmentid"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "color": {
+            "type": "string",
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "garmentId",
+          "name",
+          "category",
+          "color"
+        ],
+        "title": "StyledPiece"
+      },
+      "StylistRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          },
+          "wardrobeOnly": {
+            "type": "boolean",
+            "title": "Wardrobeonly",
+            "default": true
+          },
+          "conversationId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversationid"
+          },
+          "requiredItems": {
+            "items": {
+              "$ref": "#/components/schemas/OutfitItem"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Requireditems"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "StylistRequest"
+      },
+      "StylistResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversationid"
+          },
+          "kind": {
+            "type": "string",
+            "const": "stylist",
+            "title": "Kind",
+            "default": "stylist"
+          },
+          "engineVersion": {
+            "type": "string",
+            "const": "gemma-cir-v1",
+            "title": "Engineversion"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "recommended",
+              "no_match",
+              "needs_clarification",
+              "unavailable",
+              "chat"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "userMessage": {
+            "type": "string",
+            "title": "Usermessage"
+          },
+          "outfits": {
+            "items": {
+              "$ref": "#/components/schemas/StyledLook"
+            },
+            "type": "array",
+            "title": "Outfits"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "modelVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelversion"
+          },
+          "bookmarked": {
+            "type": "boolean",
+            "title": "Bookmarked",
+            "default": false
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "like",
+                  "dislike"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "conversationId",
+          "engineVersion",
+          "status",
+          "message",
+          "userMessage",
+          "outfits",
+          "warnings",
+          "modelVersion"
+        ],
+        "title": "StylistResult"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "app__catalog__GarmentPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/app__catalog__GarmentRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextcursor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "title": "GarmentPage"
+      },
+      "app__catalog__GarmentRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "Tops",
+              "Bottoms",
+              "Outerwear",
+              "Dresses",
+              "Shoes",
+              "Accessories"
+            ],
+            "title": "Category"
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Color"
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Brand"
+          },
+          "size": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Size"
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Material"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "imageUrl": {
+            "type": "string",
+            "pattern": "^/catalog/[0-9a-f-]{36}/image$",
+            "title": "Imageurl"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "color",
+          "brand",
+          "size",
+          "material",
+          "notes",
+          "price",
+          "active",
+          "imageUrl"
+        ],
+        "title": "GarmentRead"
+      },
+      "app__wardrobe__GarmentPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/app__wardrobe__GarmentRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextcursor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "title": "GarmentPage"
+      },
+      "app__wardrobe__GarmentRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "Tops",
+              "Bottoms",
+              "Outerwear",
+              "Dresses",
+              "Shoes",
+              "Accessories"
+            ],
+            "title": "Category"
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Color"
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Brand"
+          },
+          "size": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Size"
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Material"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes"
+          },
+          "imageUrl": {
+            "type": "string",
+            "pattern": "^/wardrobe/[0-9a-f-]{36}/image$",
+            "title": "Imageurl"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "color",
+          "brand",
+          "size",
+          "material",
+          "notes",
+          "imageUrl"
+        ],
+        "title": "GarmentRead"
+      }
+    }
+  }
+}

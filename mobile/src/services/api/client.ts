@@ -8,14 +8,19 @@ export class ApiError extends Error {
     this.kind = kind;
   }
 }
-export const isApiConfigured = () =>
-  Boolean(process.env.EXPO_PUBLIC_API_URL?.trim());
+function configuredBaseUrl(){
+  // Browser preview can target its local API without changing the phone tunnel.
+  return ((typeof document!=="undefined" ? process.env.EXPO_PUBLIC_WEB_API_URL : undefined)
+    || process.env.EXPO_PUBLIC_API_URL)?.trim();
+}
+export const isApiConfigured = () => Boolean(configuredBaseUrl());
 export type RequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
   token?: string;
   signal?: AbortSignal;
   responseType?: "image";
+  timeoutMs?: number;
 };
 const deadline = 20_000;
 const accessRecoveryDeadline = 50_000;
@@ -54,7 +59,9 @@ async function requestOnce<T>(
     }
     if (!response.ok) {
       const message =
-        response.status === 401
+        response.status === 429
+          ? "The service is finishing another request. Please try again shortly."
+          : response.status === 401
           ? "Your session has expired. Please sign in again."
           : response.status === 403
             ? "You do not have permission to perform this action."
@@ -65,12 +72,29 @@ async function requestOnce<T>(
                 : response.status === 422
                   ? "The service could not accept these details. Check your entries."
                   : "The service could not complete this request. Please try again.";
+      if ([413,415,422].includes(response.status) && new URL(url).pathname === "/ml/garments/analyse-upload") {
+        const allowed = new Set([
+          "Background removal was uncertain. Choose a clearer garment photo.",
+          "The clothing check was uncertain. Choose one garment on a plain background.",
+          "That image is too small to analyse. Try a larger photo.",
+          "This garment category is not supported for clean wardrobe photos.",
+          "The image could not be read. Choose a JPEG, PNG or WebP photo.",
+          "Image dimensions exceed the upload limit.",
+          "Photo exceeds the 10 MB upload limit.",
+          "Choose a single JPEG, PNG or WebP image.",
+          "The image could not be decoded safely.",
+        ]);
+        try {
+          const detail:unknown=(await response.json())?.detail;
+          if(typeof detail === "string" && allowed.has(detail)) throw new ApiError(detail,response.status);
+        } catch(error) { if(error instanceof ApiError) throw error; }
+      }
       throw new ApiError(message, response.status);
     }
     if (response.status === 204) return undefined as T;
     const contentType = response.headers.get("content-type") ?? "";
     if (options.responseType === "image") {
-      if (contentType.split(";", 1)[0] !== "image/jpeg")
+      if (!["image/jpeg","image/webp"].includes(contentType.split(";", 1)[0]))
         throw new ApiError("The service returned an unexpected image.");
       return (await response.blob()) as T;
     }
@@ -103,7 +127,7 @@ export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  const baseUrl = configuredBaseUrl();
   if (!baseUrl)
     throw new ApiError(
       "The service is not connected yet. Your changes have not been saved.",
@@ -114,7 +138,8 @@ export async function apiRequest<T>(
   const accessRead = (options.method ?? "GET") === "GET" && options.body === undefined &&
     (path === "/admin/catalog/access" || path === "/account/deletion");
   try {
-    return await requestOnce<T>(url, options, deadline, accessRead);
+    const requestDeadline = path.startsWith("/ml/") && Number.isFinite(options.timeoutMs) ? Math.max(1000,Math.min(options.timeoutMs!,330000)) : deadline;
+    return await requestOnce<T>(url, options, requestDeadline, accessRead);
   } catch (error) {
     if (!accessRead || !(error instanceof ApiError) ||
         (error.kind !== "timeout" && error.kind !== "unavailable")) throw error;

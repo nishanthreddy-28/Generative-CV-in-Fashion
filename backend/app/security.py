@@ -1,3 +1,4 @@
+import logging
 import asyncio
 import time
 from dataclasses import dataclass, field
@@ -63,7 +64,8 @@ class JWTVerifier:
                     raise ValueError("No supported public signing keys")
                 self._keys = keys
                 self._expires = now + self.settings.jwks_ttl_seconds
-            except (httpx.HTTPError, ValueError, KeyError, TypeError, jwt.PyJWTError):
+            except (httpx.HTTPError, ValueError, KeyError, TypeError, jwt.PyJWTError) as error:
+                logging.getLogger(__name__).warning("Signing key verification dependency failed: %s", type(error).__name__)
                 raise DependencyUnavailable() from None
             if kid not in self._keys:
                 raise Unauthorized()

@@ -1,0 +1,27 @@
+[Unit]
+Description=Drape and Drop expo-tunnel
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=simple
+User=drapedrop
+Group=drapedrop
+WorkingDirectory=/opt/drape-drop
+Environment=HOME=/opt/drape-drop
+Environment=HF_HOME=/opt/drape-drop/cache/huggingface
+Environment=MPLCONFIGDIR=/opt/drape-drop/cache/matplotlib
+Environment=TOKENIZERS_PARALLELISM=false
+Environment=OMP_NUM_THREADS=4
+Environment=CUDA_VISIBLE_DEVICES=-1
+ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8081
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/drape-drop
+
+[Install]
+WantedBy=multi-user.target

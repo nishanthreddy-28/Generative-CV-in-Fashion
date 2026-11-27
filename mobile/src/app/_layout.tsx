@@ -1,3 +1,7 @@
+import {SessionReadCacheProvider} from "../features/SessionReadCache";
+import {GarmentUploadStateProvider} from "../features/GarmentUploadState";
+import {TryOnStateProvider} from "../features/TryOnState";
+import {StylistStateProvider} from "../features/StylistState";
 import {Stack,usePathname} from "expo-router";
 import {StatusBar} from "expo-status-bar";
 import {SafeAreaProvider} from "react-native-safe-area-context";
@@ -27,9 +31,9 @@ function AppNavigator({publicAccount}: {publicAccount: boolean}){
 function AppFrame(){
  const {palette,mode}=useAppearance();
  const publicAccount=["/","/login","/signup"].includes(usePathname());
- return <View style={styles.browser}><View style={[styles.app,publicAccount && {backgroundColor:palette.background,borderColor:palette.border}]}><SafeAreaProvider><SessionProvider>
+ return <View style={styles.browser}><View style={[styles.app,publicAccount && {backgroundColor:palette.background,borderColor:palette.border}]}><SafeAreaProvider><SessionProvider><SessionReadCacheProvider><StylistStateProvider><GarmentUploadStateProvider><TryOnStateProvider>
  <StatusBar style={publicAccount && mode==="dark" ? "light" : "dark"}/><AppNavigator publicAccount={publicAccount}/>
- </SessionProvider></SafeAreaProvider></View></View>;
+ </TryOnStateProvider></GarmentUploadStateProvider></StylistStateProvider></SessionReadCacheProvider></SessionProvider></SafeAreaProvider></View></View>;
 }
 export default function RootLayout(){return <AppearanceProvider><AppFrame/></AppearanceProvider>;}
 

@@ -106,6 +106,9 @@ export default function Settings() {
         <RouteLink to="/profile/onboarding" preview={preview}>
           Body profile photo & review →
         </RouteLink>
+        <RouteLink to="/body-analysis">
+          Body photo analysis →
+        </RouteLink>
         <RouteLink to="/preferences" preview={preview}>
           Units & email preferences →
         </RouteLink>

@@ -239,12 +239,12 @@ test("sensitive account confirmation reauthenticates the same identity", async()
  await assert.rejects(reauthenticate(auth,"a@example.invalid","secret-test","user-b"),/Account changed/);
 });
 
-test("web OAuth verifier survives redirect without persisting access or refresh tokens", async()=>{
+test("web session survives same-tab reload and is removed on sign-out", async()=>{
  const {webAuthStorage}=await import('../src/services/auth/webStorage.ts');
  const values=new Map();const storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
  const before=webAuthStorage(storage);before.setItem('session','private-session');before.setItem('session-code-verifier','verifier');
- const after=webAuthStorage(storage);assert.equal(after.getItem('session'),null);assert.equal(after.getItem('session-code-verifier'),'verifier');
- after.removeItem('session-code-verifier');assert.equal(values.size,0);
+ const after=webAuthStorage(storage);assert.equal(after.getItem('session'),'private-session');assert.equal(after.getItem('session-code-verifier'),'verifier');
+ after.removeItem('session-code-verifier');after.removeItem('session');assert.equal(values.size,0);
 });
 
 test("real SDK PKCE redirect exchange restores only the verifier and returns a fresh session", async () => {
@@ -269,6 +269,8 @@ test("real SDK PKCE redirect exchange restores only the verifier and returns a f
   await assert.rejects(exchangeOAuth(returned,'fixture-oauth-code','missing-flow-slot'),/invalid or expired/);
   const result=await exchangeOAuth(returned,'fixture-oauth-code',flowId);
   assert.equal(result.access_token,'oauth-access');
+  assert.deepEqual([...values.keys()],["oauth-contract"]);
+  await returned.signOut({scope:"local"});
   assert.deepEqual([...values.keys()],[]);
 });
 
@@ -302,4 +304,11 @@ test("provider controls require strict server availability and explicit rollout"
  for(const response of [null,{}, {external:{google:'true',apple:1}},{external:false}])
   assert.deepEqual(providerAvailability(response,{google:true,apple:true}),{google:false,apple:false});
  assert.deepEqual(providerAvailability({external:{google:false,apple:false}},{google:true,apple:true}),{google:false,apple:false});
+});
+
+test("signup surfaces delivery restrictions without claiming an email was sent", async () => {
+  for (const code of ["email_address_not_authorized","email_provider_disabled"]) {
+    const auth=makeAuth(async()=>response({error_code:code,msg:"Private provider details"},422));
+    await assert.rejects(register(auth,user.email,"test-password","drapedrop://auth-confirm"),/contact support/i);
+  }
 });

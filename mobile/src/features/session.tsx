@@ -1,3 +1,4 @@
+import {wardrobeChanges} from "./wardrobeChanges";
 import {
   createContext, useCallback, useContext, useEffect, useRef, useState,
   type PropsWithChildren,
@@ -171,6 +172,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const result = await apiRequest<T>(path, { ...options, token });
     if (identity.current !== caller) throw new ApiError("Account changed during the request.", 401);
     if (!accountRequestAllowed(deleting.current, path, options?.method)) throw new ApiError("Account deletion is pending.", 403);
+    if(options?.method&&options.method!=="GET")wardrobeChanges.invalidate(path);
     return result;
   }, []);
 

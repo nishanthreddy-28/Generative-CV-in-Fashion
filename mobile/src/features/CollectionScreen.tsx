@@ -1,3 +1,5 @@
+import {useWardrobePages} from "../hooks/useWardrobePages";
+import {AppIcon} from "../components/AppIcon";
 import { colors } from "../theme/tokens";
 import {useCallback} from "react";
 import {Link,useFocusEffect} from "expo-router";
@@ -26,33 +28,39 @@ type Props = {
 };
 export function CollectionScreen({ kind, title, subtitle }: Props) {
   const preview = usePreview();
-  const columns=collectionColumns(useWindowDimensions().width);
+  const {width}=useWindowDimensions();
+  const columns=collectionColumns(width);
   const [search, setSearch] = useDraft(`${kind}:collection:search`,"");
   const [applied, setApplied] = useDraft(`${kind}:collection:applied`,"");
   const [category, setCategory] = useDraft(`${kind}:collection:category`,"");
   const [sort, setSort] = useDraft(`${kind}:collection:sort`,"newest");
   const [cursor, setCursor] = useDraft(`${kind}:collection:cursor`,"");
+  const [pageCount,setPageCount]=useDraft("wardrobe:collection:page-count",1);
+  const wardrobe=kind==="wardrobe";
+  function resetPages(){setCursor("");if(wardrobe)setPageCount(1);}
   const base = kind === "admin" ? "/admin/catalog" : `/${kind}`;
   const params = new URLSearchParams({
     search: applied,
     category,
     sort,
-    limit: "24",
-    ...(cursor ? { cursor } : {}),
+    limit: wardrobe?"8":"24",
+    ...(!wardrobe && cursor ? { cursor } : {}),
   });
-  const result = useResource<Page<Garment | Outfit>>(
+  const uncached = useResource<Page<Garment | Outfit>>(
     `${base}?${params}`,
-    preview,
+    preview||wardrobe,
     kind === "admin",
     undefined,
     readPage,
   );
-  const refresh=result.retry;
-  useFocusEffect(useCallback(()=>{refresh();},[refresh]));
+  const pages=useWardrobePages(base+"?"+params,pageCount,wardrobe&&!preview);
+  const result=wardrobe?pages:uncached;
+  const refresh=uncached.retry;
+  useFocusEffect(useCallback(()=>{if(!wardrobe)refresh();},[refresh,wardrobe]));
   const list = result.data?.items ?? [];
   return (
     <Screen title={title} subtitle={kind === "wardrobe" ? undefined : subtitle}
-      action={kind === "wardrobe" ? <Link href="/wardrobe/add" accessibilityLabel="Add item" style={styles.add}>+</Link> : undefined}>
+      action={kind === "wardrobe" ? <Link href="/outfits" accessibilityLabel="Your saved outfits and generated looks" asChild><Pressable style={styles.outfitsShortcut}><AppIcon name="outfits" size={20}/>{width>=380&&<Text style={styles.shortcutLabel}>Outfits</Text>}</Pressable></Link> : undefined}>
       <Gate preview={preview} admin={kind === "admin"}>
         {kind === "admin" && <Link href="/admin/catalog/new" style={ui.primaryLink}>+ Add catalog item</Link>}
         {kind === "outfits" && <Link href="/outfits/new" style={ui.primaryLink}>+ Create outfit</Link>}
@@ -64,7 +72,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
             onChangeText={setSearch}
             placeholderTextColor={colors.muted} placeholder="Search by name or brand"
             returnKeyType="search"
-            onSubmitEditing={()=>{setApplied(search.trim());setCursor("");}}
+            onSubmitEditing={()=>{setApplied(search.trim());resetPages();}}
             style={[ui.input,styles.search]}
           />
           <Button
@@ -72,7 +80,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
             variant="secondary"
             onPress={() => {
               setApplied(search.trim());
-              setCursor("");
+              resetPages();
             }}
           />
           </View>
@@ -88,7 +96,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
                 style={[styles.filter, (category || "All") === c && styles.activeFilter]}
                 onPress={() => {
                   setCategory(c === "All" ? "" : c);
-                  setCursor("");
+                  resetPages();
                 }}
               >
                 <Text style={[ui.chipLabel,(category || "All") === c && styles.activeLabel]}>{c}</Text>
@@ -108,7 +116,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
               key={v}
               onPress={() => {
                 setSort(v);
-                setCursor("");
+                resetPages();
               }}
               style={[ui.chip, sort === v && ui.selected]}
             >
@@ -116,7 +124,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
             </Pressable>
           ))}
         </View>
-        <ResourceState {...result} />
+        <ResourceState {...result} loading={result.loading&&(!wardrobe||!result.data)} />
         {result.data && list.length === 0 && (
           <Notice
             title={applied || category ? "No matching pieces" : kind === "wardrobe" ? "Your wardrobe is empty" : kind === "outfits" ? "No saved outfits" : "No catalog items yet"}
@@ -125,7 +133,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
               : kind === "outfits" ? "Create an outfit to keep it here." : "Pieces will appear here when they’re added to the catalog."}
           >{kind === "wardrobe" && !applied && !category && <RouteLink to="/wardrobe/add">Add your first piece ›</RouteLink>}</Notice>
         )}
-        <View style={{flexDirection:"row",flexWrap:"wrap",gap:12}}>
+        <View style={{flexDirection:"row",flexWrap:"wrap",alignItems:"flex-start",gap:12}}>
         {list.map(item=><View key={item.id} style={{flexBasis: columns === 2 ? "48%" : "100%", flexGrow: columns === 2 ? 1 : 0, maxWidth: columns === 2 ? "50%" : "100%"}}>
           {"category" in item ? <GarmentCard item={item} source={kind==="admin" ? "admin/catalog" : kind==="catalog" ? "catalog" : "wardrobe"}/> :
            <View style={ui.card}><Text style={ui.heading}>{item.name}</Text><RouteLink to={`/outfits/${encodeURIComponent(item.id)}`}>View outfit →</RouteLink></View>}
@@ -133,13 +141,14 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
         </View>
         {Boolean(result.data?.nextCursor) && (
           <Button
-            label="Next page"
-            disabled={result.loading}
+            label={wardrobe?"Show more":"Next page"}
+            loading={wardrobe&&result.loading}
+            disabled={result.loading||!!result.error}
             variant="secondary"
-            onPress={() => setCursor(result.data!.nextCursor!)}
+            onPress={() => wardrobe?setPageCount(pageCount+1):setCursor(result.data!.nextCursor!)}
           />
         )}
-        {Boolean(cursor) && (
+        {!wardrobe && Boolean(cursor) && (
           <Button
             label="Back to first page"
             variant="secondary"
@@ -154,7 +163,7 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
               setSearch("");
               setApplied("");
               setCategory("");
-              setCursor("");
+              resetPages();
             }}
           />
         )}
@@ -164,7 +173,8 @@ export function CollectionScreen({ kind, title, subtitle }: Props) {
 }
 
 const styles = StyleSheet.create({
-  add:{width:44,height:44,lineHeight:42,textAlign:"center",borderRadius:22,overflow:"hidden",fontSize:25,backgroundColor:colors.ink,color:colors.surface},
+  outfitsShortcut:{minHeight:44,minWidth:44,flexDirection:"row",alignItems:"center",justifyContent:"center",gap:6,paddingHorizontal:12,borderRadius:22,backgroundColor:colors.selected},
+  shortcutLabel:{fontSize:13,fontWeight:"600",color:colors.ink},
   search:{flex:1,minWidth:0,borderRadius:24,backgroundColor:colors.raised,paddingHorizontal:16},
   filters:{gap:7,paddingVertical:2},
   filter:{minHeight:44,borderRadius:22,justifyContent:"center",paddingHorizontal:14,backgroundColor:colors.raised},

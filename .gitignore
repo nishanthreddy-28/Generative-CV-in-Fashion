@@ -1,55 +1,45 @@
-# Local secrets (only safe setup templates are tracked)
-.env*
+# Private configuration and credentials
+.env
+.env.*
 !.env.example
-!**/.env.example
+!.env.production.example
 *.pem
 *.key
-.pgpass
-.pg_service.conf
-integration-secrets.json
-credentials.json
+*.p12
+*.pfx
 *.jks
 *.keystore
-*.p12
-
-# Dependencies and Python caches
+*.crt
+# Installed dependencies and tools
+.venv/
+venv/
 node_modules/
-.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-backend/.venv/
+.integration/
+# Generated application/model data
+storage/
+ml/backend/storage/
+*.db
+*.sqlite*
+*.safetensors
+*.onnx
+*.pth
+*.pt
+*.task
+# Build/test/editor output
 __pycache__/
-*.py[cod]
 .pytest_cache/
-*.egg-info/
-
-# Generated web, native and test outputs
-.next/
-frontend/.next/
+.mypy_cache/
+.ruff_cache/
+.expo/
+dist/
+build/
 coverage/
-mobile/coverage/
-/out/
-/build/
-mobile/build/
-mobile/dist/
-mobile/.expo/
-mobile/android/
-mobile/ios/
+.cache/
+.claude/
+*.py[cod]
 *.tsbuildinfo
-next-env.d.ts
-
-# Provider-local state
-.vercel/
-supabase/.temp/
-supabase/.branches/
-.supabase/
-
-# OS metadata and diagnostic logs
-.DS_Store
 *.log
-
-# Laptop-specific assistant preferences
-mobile/.claude/
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db

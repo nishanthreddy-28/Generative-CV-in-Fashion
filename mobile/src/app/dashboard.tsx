@@ -1,6 +1,7 @@
+import {AppIcon} from "../components/AppIcon";
 import { useCallback } from "react";
 import { Link, useFocusEffect } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Gate, ResourceState, Screen, ui } from "../components/Screen";
 import { WardrobeImage } from "../components/WardrobeImage";
 import { useResource } from "../hooks/useResource";
@@ -14,15 +15,9 @@ export default function DashboardScreen() {
   return <Screen title="Your wardrobe">
     <Gate preview={false}>
       <View style={styles.shortcuts}>
-        <Link href="/wardrobe/add" style={[styles.tile,styles.addTile]}>
-          <Text style={styles.symbol}>＋</Text>{"\n"}Add a piece
-        </Link>
-        <Link href="/wardrobe" style={styles.tile}>
-          <Text style={styles.symbol}>▤</Text>{"\n"}My wardrobe
-        </Link>
-        <Link href="/catalog" style={styles.tile}>
-          <Text style={styles.symbol}>◇</Text>{"\n"}Catalog
-        </Link>
+        <Link href="/wardrobe/add" asChild><Pressable style={StyleSheet.flatten([styles.tile,styles.addTile])} accessibilityLabel="Add a piece"><Text style={styles.symbol}>＋</Text><Text style={styles.tileLabel}>Add a piece</Text></Pressable></Link>
+        <Link href="/wardrobe" asChild><Pressable style={styles.tile} accessibilityLabel="My wardrobe"><AppIcon name="wardrobe" size={28}/><Text style={styles.tileLabel}>My wardrobe</Text></Pressable></Link>
+        <Link href="/catalog" asChild><Pressable style={styles.tile} accessibilityLabel="Catalog"><AppIcon name="catalog" size={28}/><Text style={styles.tileLabel}>Catalog</Text></Pressable></Link>
       </View>
       <View style={styles.section}>
         <View style={styles.heading}>
@@ -46,9 +41,10 @@ export default function DashboardScreen() {
         </View>}
       </View>
       <View style={styles.suggestions}>
-        <Text style={ui.heading}>Outfit suggestions</Text>
-        <Text style={ui.body}>Find combinations for an occasion.</Text>
-        <Link href="/recommendations" style={styles.textLink}>Find outfits ›</Link>
+        <Text style={ui.heading}>Your personal stylist</Text>
+        <Text style={ui.body}>Build a look around your wardrobe.</Text>
+        <Link href="/stylist" style={styles.textLink}>Chat with your AI stylist ›</Link>
+        <Link href="/body-analysis" style={styles.textLink}>Body photo analysis ›</Link>
       </View>
     </Gate>
   </Screen>;
@@ -56,7 +52,8 @@ export default function DashboardScreen() {
 
 const styles=StyleSheet.create({
   shortcuts:{flexDirection:"row",gap:8},
-  tile:{flex:1,minWidth:0,textAlign:"center",paddingVertical:12,paddingHorizontal:3,borderRadius:16,overflow:"hidden",backgroundColor:colors.raised,color:colors.ink,fontSize:12,fontWeight:"700",lineHeight:21},
+  tileLabel:{fontSize:12,fontWeight:"700",color:colors.ink,textAlign:"center"},
+  tile:{alignItems:"center",justifyContent:"center",gap:8,flex:1,minWidth:0,paddingVertical:12,paddingHorizontal:3,borderRadius:16,overflow:"hidden",backgroundColor:colors.raised},
   addTile:{backgroundColor:"#FFDBC0"},
   symbol:{fontSize:23,lineHeight:30},
   section:{gap:10},

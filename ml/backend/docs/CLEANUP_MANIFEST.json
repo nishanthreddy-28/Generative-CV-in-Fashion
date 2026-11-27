@@ -1,0 +1,442 @@
+[
+  {
+    "move": "drapedrop-phase2\\backend\\storage\\tryon-weights",
+    "to": "FASHN_Archive\\tryon-weights"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\storage\\tryon-env",
+    "to": "FASHN_Archive\\tryon-env"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\storage\\tryon-source",
+    "to": "FASHN_Archive\\tryon-source"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\storage\\tryon-evaluation",
+    "to": "FASHN_Archive\\tryon-evaluation"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\scripts\\run_tryon.py",
+    "to": "FASHN_Archive\\scripts\\run_tryon.py"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\scripts\\setup_tryon.ps1",
+    "to": "FASHN_Archive\\scripts\\setup_tryon.ps1"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\scripts\\benchmark_image_quality.py",
+    "to": "FASHN_Archive\\scripts\\benchmark_image_quality.py"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\scripts\\audit_tryon_masks.py",
+    "to": "FASHN_Archive\\scripts\\audit_tryon_masks.py"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\storage\\tryon-cache",
+    "to": "drapedrop-phase2\\backend\\storage\\preparation-cache"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\app\\phase3\\fitdit.py",
+    "reason": "Retired try-on provider; shared helpers extracted"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\app\\phase3\\qwen_tryon.py",
+    "reason": "Retired try-on provider; shared helpers extracted"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\app\\phase3\\workers_tryon.py",
+    "reason": "Retired try-on provider; shared helpers extracted"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\tests\\test_fitdit.py",
+    "reason": "Tests for removed providers"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\tests\\test_qwen_tryon.py",
+    "reason": "Tests for removed providers"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\tests\\test_workers_tryon.py",
+    "reason": "Tests for removed providers"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\app\\phase3\\studio\\avatar.js",
+    "to": "FASHN_Archive\\historical-ui\\avatar.js"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\app\\phase3\\studio\\live-geometry.js",
+    "to": "FASHN_Archive\\historical-ui\\live-geometry.js"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\app\\phase3\\studio\\pose-geometry.js",
+    "to": "FASHN_Archive\\historical-ui\\pose-geometry.js"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\app\\phase3\\studio\\vendor",
+    "to": "FASHN_Archive\\historical-ui\\vendor"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\scripts\\verify_studio_browser.py",
+    "to": "FASHN_Archive\\scripts\\verify_studio_browser.py"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\scripts\\verify_pose_geometry.mjs",
+    "to": "FASHN_Archive\\scripts\\verify_pose_geometry.mjs"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\EVALUATION.md",
+    "to": "drapedrop-phase2\\backend\\docs\\history\\EVALUATION.md"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\METRICS_EXPLAINED.md",
+    "to": "drapedrop-phase2\\backend\\docs\\history\\METRICS_EXPLAINED.md"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\PHASE3.md",
+    "to": "drapedrop-phase2\\backend\\docs\\history\\PHASE3.md"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\PHASE3_VERIFICATION.md",
+    "to": "drapedrop-phase2\\backend\\docs\\history\\PHASE3_VERIFICATION.md"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\PROJECT_RESULTS.md",
+    "to": "drapedrop-phase2\\backend\\docs\\history\\PROJECT_RESULTS.md"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\README.md",
+    "to": "drapedrop-phase2\\backend\\docs\\history\\README.md"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\TRYON_OPTIONS.md",
+    "to": "drapedrop-phase2\\backend\\docs\\history\\TRYON_OPTIONS.md"
+  },
+  {
+    "move": "PHASE3_OUTFIT_RECOMMENDATION_PLAN.md",
+    "to": "drapedrop-phase2\\backend\\docs\\history\\PHASE3_OUTFIT_RECOMMENDATION_PLAN.md"
+  },
+  {
+    "removed": "README.md",
+    "reason": "Obsolete Phase 2 duplicate; authoritative versions remain in backend"
+  },
+  {
+    "removed": "run_eval.py",
+    "reason": "Obsolete Phase 2 duplicate; authoritative versions remain in backend"
+  },
+  {
+    "removed": "schemas.py",
+    "reason": "Obsolete Phase 2 duplicate; authoritative versions remain in backend"
+  },
+  {
+    "removed": "taxonomy.py",
+    "reason": "Obsolete Phase 2 duplicate; authoritative versions remain in backend"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\space-bundle",
+    "reason": "Generated source copies or temporary UI fixture; rebuild from current source"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\space-bundle-final",
+    "reason": "Generated source copies or temporary UI fixture; rebuild from current source"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\space-bundle-ready",
+    "reason": "Generated source copies or temporary UI fixture; rebuild from current source"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\ui-preview",
+    "reason": "Generated source copies or temporary UI fixture; rebuild from current source"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\0ce66b13f1fa46449ebf4465e0329495",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\1545519dbc7d4ca8be2ae29b19ab8c22",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\3c4c47c8c63e4ce4b20d31aaf0fb0c3c",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\81612a0e6ca34388b242827c2a61cf21",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\86e107910a69468d9f59abbe31e06aed",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\9c1e5ded0c14480b921dfb37b8df9a98",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\cb8a1cb8460b43a2812ea0e198eea73e",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\ed7785f212e54cd4b2ef6f39655a14e9",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\pose-check\\fd75f3a46dd64f8283343da427d8b407",
+    "reason": "Disposable headless browser profile"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\hosted-studio-errors.log",
+    "reason": "Old development process log"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\hosted-studio.log",
+    "reason": "Old development process log"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\local-studio.err.log",
+    "reason": "Old development process log"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\local-studio.out.log",
+    "reason": "Old development process log"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\qwen-studio.err.log",
+    "reason": "Old development process log"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\qwen-studio.out.log",
+    "reason": "Old development process log"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\studio-prepared.err.log",
+    "reason": "Old development process log"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\storage\\studio-prepared.out.log",
+    "reason": "Old development process log"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\storage\\avatar-verification.png",
+    "to": "FASHN_Archive\\historical-ui\\avatar-verification.png"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\storage\\camera-verification.png",
+    "to": "FASHN_Archive\\historical-ui\\camera-verification.png"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\storage\\tryon-sample.png",
+    "to": "FASHN_Archive\\tryon-sample.png"
+  },
+  {
+    "removed": "hf_tryon_research\\local_eval\\cat-base",
+    "reason": "Downloaded CatVTON weights for a discarded provider"
+  },
+  {
+    "removed": "hf_tryon_research\\local_eval\\cat-vae",
+    "reason": "Downloaded CatVTON weights for a discarded provider"
+  },
+  {
+    "removed": "hf_tryon_research\\local_eval\\cat-attention",
+    "reason": "Downloaded CatVTON weights for a discarded provider"
+  },
+  {
+    "removed": "hf_tryon_research\\catvton_source",
+    "reason": "Downloaded source for a discarded provider"
+  },
+  {
+    "move": "hf_tryon_research",
+    "to": "drapedrop-phase2\\backend\\research\\tryon-experiments"
+  },
+  {
+    "move": "drapedrop-phase2\\backend\\deployment\\zerogpu",
+    "to": "drapedrop-phase2\\backend\\deployment\\cloud"
+  },
+  {
+    "removed": "drapedrop-phase2\\backend\\requirements-phase3.txt",
+    "reason": "Merged into the active requirements file"
+  },
+  {
+    "move": "drapedrop-phase2\\backend",
+    "to": "ml\\backend"
+  },
+  {
+    "move": ".venv",
+    "to": "ml\\.venv"
+  },
+  {
+    "removed": "drapedrop-phase2",
+    "reason": "Empty former project container"
+  },
+  {
+    "updated_saved_job_path_files": [
+      "storage\\tryon-jobs\\01b4bbf6022d47408c6267bbf01c5266\\manifest.json",
+      "storage\\tryon-jobs\\01b4bbf6022d47408c6267bbf01c5266\\prepared-manifest.json",
+      "storage\\tryon-jobs\\0cc96df499bb4663a98951628ff7f6d4\\manifest.json",
+      "storage\\tryon-jobs\\12506bf3116048e29785b6b39311e14c\\manifest.json",
+      "storage\\tryon-jobs\\1a140b75dd8142749b529cb4bf2dad9a\\manifest.json",
+      "storage\\tryon-jobs\\1d6d3986f0ab4f03ad216654054b9dfd\\manifest.json",
+      "storage\\tryon-jobs\\1d6d3986f0ab4f03ad216654054b9dfd\\prepared-manifest.json",
+      "storage\\tryon-jobs\\1d7af519e61046d9a103521c7bd45419\\manifest.json",
+      "storage\\tryon-jobs\\1d7af519e61046d9a103521c7bd45419\\prepared-manifest.json",
+      "storage\\tryon-jobs\\1fd8aefa6b3d4cb2bcf036d320294b51\\manifest.json",
+      "storage\\tryon-jobs\\23e2550a01fd4affba8874bf5f48e541\\manifest.json",
+      "storage\\tryon-jobs\\244252793df34067881f00e16e133f60\\manifest.json",
+      "storage\\tryon-jobs\\244252793df34067881f00e16e133f60\\prepared-manifest.json",
+      "storage\\tryon-jobs\\2752a61d5a8d45fcb037016fc60e9c31\\manifest.json",
+      "storage\\tryon-jobs\\2752a61d5a8d45fcb037016fc60e9c31\\prepared-manifest.json",
+      "storage\\tryon-jobs\\351baf6a8ce0417786ee3c978ebf063a\\manifest.json",
+      "storage\\tryon-jobs\\36f5f2e4b38f444ea6ec78e9dcfbfa07\\manifest.json",
+      "storage\\tryon-jobs\\36f5f2e4b38f444ea6ec78e9dcfbfa07\\prepared-manifest.json",
+      "storage\\tryon-jobs\\38c174494c914c30a3c001ed7f62a4f2\\manifest.json",
+      "storage\\tryon-jobs\\38c174494c914c30a3c001ed7f62a4f2\\prepared-manifest.json",
+      "storage\\tryon-jobs\\3b9ca0ff087d4bbc89b30af6ce4621f8\\manifest.json",
+      "storage\\tryon-jobs\\3b9ca0ff087d4bbc89b30af6ce4621f8\\prepared-manifest.json",
+      "storage\\tryon-jobs\\421b57c849df466e8ec7aeb54b95334f\\manifest.json",
+      "storage\\tryon-jobs\\421b57c849df466e8ec7aeb54b95334f\\prepared-manifest.json",
+      "storage\\tryon-jobs\\45fd68100f4c473785cb15dca89ef676\\manifest.json",
+      "storage\\tryon-jobs\\45fd68100f4c473785cb15dca89ef676\\prepared-manifest.json",
+      "storage\\tryon-jobs\\465d922bcb3e4752b5b20b1d4efe12e5\\manifest.json",
+      "storage\\tryon-jobs\\465d922bcb3e4752b5b20b1d4efe12e5\\prepared-manifest.json",
+      "storage\\tryon-jobs\\475e070456f440bb9cc972c9ba5e8a82\\manifest.json",
+      "storage\\tryon-jobs\\4cce8412dad243eea86628237b4d9f50\\manifest.json",
+      "storage\\tryon-jobs\\5a8551fdf8864209ae006b4dfe948ed9\\manifest.json",
+      "storage\\tryon-jobs\\62345b80f4c44759b0fb9e59e3464c04\\manifest.json",
+      "storage\\tryon-jobs\\62345b80f4c44759b0fb9e59e3464c04\\prepared-manifest.json",
+      "storage\\tryon-jobs\\65798c4020f0485aad8802db1fa17fac\\manifest.json",
+      "storage\\tryon-jobs\\65798c4020f0485aad8802db1fa17fac\\prepared-manifest.json",
+      "storage\\tryon-jobs\\66ce8daa7fc74304b3110e91d96c0f9c\\manifest.json",
+      "storage\\tryon-jobs\\66ce8daa7fc74304b3110e91d96c0f9c\\prepared-manifest.json",
+      "storage\\tryon-jobs\\690beafb4d5c475c88ccf5e1ace099f0\\manifest.json",
+      "storage\\tryon-jobs\\690beafb4d5c475c88ccf5e1ace099f0\\prepared-manifest.json",
+      "storage\\tryon-jobs\\6abb81766e984e8e9a86f6c3d6ec3452\\manifest.json",
+      "storage\\tryon-jobs\\6abb81766e984e8e9a86f6c3d6ec3452\\prepared-manifest.json",
+      "storage\\tryon-jobs\\6fc7c5041e384f3db38ccc4c492a5edf\\manifest.json",
+      "storage\\tryon-jobs\\721e4aed34cc4b5cb4d1ec85f574f606\\manifest.json",
+      "storage\\tryon-jobs\\774f4f23874946fbb7f7449cdb3b37a9\\manifest.json",
+      "storage\\tryon-jobs\\774f4f23874946fbb7f7449cdb3b37a9\\prepared-manifest.json",
+      "storage\\tryon-jobs\\77bdbe6d182642368422f350f785315f\\manifest.json",
+      "storage\\tryon-jobs\\77bdbe6d182642368422f350f785315f\\prepared-manifest.json",
+      "storage\\tryon-jobs\\7b08d554b0ce446493182a986987b5ad\\manifest.json",
+      "storage\\tryon-jobs\\7b08d554b0ce446493182a986987b5ad\\prepared-manifest.json",
+      "storage\\tryon-jobs\\7c2ef1e814674843a172db7c9da060fc\\manifest.json",
+      "storage\\tryon-jobs\\7c2ef1e814674843a172db7c9da060fc\\prepared-manifest.json",
+      "storage\\tryon-jobs\\81bdc77f9d4d4acbae9e4abe2237831f\\manifest.json",
+      "storage\\tryon-jobs\\81bdc77f9d4d4acbae9e4abe2237831f\\prepared-manifest.json",
+      "storage\\tryon-jobs\\81dfd2affca948bcb6663ff320d2ba30\\manifest.json",
+      "storage\\tryon-jobs\\8a076fd085b54f71838d2dfe24a16c51\\manifest.json",
+      "storage\\tryon-jobs\\8a076fd085b54f71838d2dfe24a16c51\\prepared-manifest.json",
+      "storage\\tryon-jobs\\8dcf36ccf59847629f44507cceb116ac\\manifest.json",
+      "storage\\tryon-jobs\\8dcf36ccf59847629f44507cceb116ac\\prepared-manifest.json",
+      "storage\\tryon-jobs\\97f33ef3a7c641bebe610784f119afa9\\manifest.json",
+      "storage\\tryon-jobs\\97f33ef3a7c641bebe610784f119afa9\\prepared-manifest.json",
+      "storage\\tryon-jobs\\9c91a230b9ea489787a6c1cc05e58296\\manifest.json",
+      "storage\\tryon-jobs\\9f156fe7827946f08a89cf1ce0bd27b9\\manifest.json",
+      "storage\\tryon-jobs\\9fb907b2a62a4b7ca022ffd9cbabfbdf\\manifest.json",
+      "storage\\tryon-jobs\\9fb907b2a62a4b7ca022ffd9cbabfbdf\\prepared-manifest.json",
+      "storage\\tryon-jobs\\ae78e858d56743aebda6a0a9a8178bcb\\manifest.json",
+      "storage\\tryon-jobs\\ae78e858d56743aebda6a0a9a8178bcb\\prepared-manifest.json",
+      "storage\\tryon-jobs\\b20a959fc0114c83b731cd5c716fc4c8\\manifest.json",
+      "storage\\tryon-jobs\\b20a959fc0114c83b731cd5c716fc4c8\\prepared-manifest.json",
+      "storage\\tryon-jobs\\b559c595485346698784086bb4780689\\manifest.json",
+      "storage\\tryon-jobs\\bb8e5afc8d6b45fea1447abe136b695e\\manifest.json",
+      "storage\\tryon-jobs\\bb8e5afc8d6b45fea1447abe136b695e\\prepared-manifest.json",
+      "storage\\tryon-jobs\\c4079e950d4b42b19dd5f0843cbc82b7\\manifest.json",
+      "storage\\tryon-jobs\\c4079e950d4b42b19dd5f0843cbc82b7\\prepared-manifest.json",
+      "storage\\tryon-jobs\\c6234692f26f49ab9abfc83f29dbc546\\manifest.json",
+      "storage\\tryon-jobs\\c6234692f26f49ab9abfc83f29dbc546\\prepared-manifest.json",
+      "storage\\tryon-jobs\\d62f90c083a647c2a029c8110e9559ff\\manifest.json",
+      "storage\\tryon-jobs\\d7aeaf74f32d425d9aa54f9a431fa674\\manifest.json",
+      "storage\\tryon-jobs\\d7aeaf74f32d425d9aa54f9a431fa674\\prepared-manifest.json",
+      "storage\\tryon-jobs\\dd60676e59f447de85f1c0e66cdf4496\\manifest.json",
+      "storage\\tryon-jobs\\df2cb5c392a24bc78e11a9736cd5c77c\\manifest.json",
+      "storage\\tryon-jobs\\df2cb5c392a24bc78e11a9736cd5c77c\\prepared-manifest.json",
+      "storage\\tryon-jobs\\dffc4388d20c46f4b3d1f24c0c754b1d\\manifest.json",
+      "storage\\tryon-jobs\\dffc4388d20c46f4b3d1f24c0c754b1d\\prepared-manifest.json",
+      "storage\\tryon-jobs\\e12233583095411ea2c9eefa2370d8a8\\manifest.json",
+      "storage\\tryon-jobs\\e12233583095411ea2c9eefa2370d8a8\\prepared-manifest.json",
+      "storage\\tryon-jobs\\e3ecdcefc28748bca3028ed7853fd458\\manifest.json",
+      "storage\\tryon-jobs\\e5fe7008486345c485d7fc673125228a\\manifest.json",
+      "storage\\tryon-jobs\\f414ebf211104ccb913032a9a9341781\\manifest.json",
+      "storage\\tryon-jobs\\f431bc8fa7f24a2287a6cc3cefeab91b\\manifest.json",
+      "storage\\tryon-jobs\\f431bc8fa7f24a2287a6cc3cefeab91b\\prepared-manifest.json",
+      "storage\\tryon-jobs\\f5de0deca72d4f2ba367ed3d21eb5897\\manifest.json",
+      "storage\\tryon-jobs\\f5ef421046f24dd4bbb35882c55045a1\\manifest.json",
+      "storage\\tryon-jobs\\f6564a97738d4da2b3ca1615c3f36394\\manifest.json",
+      "storage\\tryon-jobs\\f6564a97738d4da2b3ca1615c3f36394\\prepared-manifest.json",
+      "storage\\tryon-jobs\\f9d3711304914617bb69789e8f481cfd\\manifest.json",
+      "storage\\tryon-jobs\\fc3e5b91b6754cecae4ff881aadf60f7\\manifest.json",
+      "storage\\tryon-jobs\\fc3e5b91b6754cecae4ff881aadf60f7\\prepared-manifest.json"
+    ],
+    "reason": "Preserve result/reference access after relocation; no image pixels or ownership changed"
+  },
+  {
+    "move": "ml\\backend\\deployment\\README.md",
+    "to": "ml\\backend\\docs\\history\\DEPLOYMENT_PRE_CLEANUP.md"
+  },
+  {
+    "move": "ml\\backend\\deployment\\TRYON_EXPERIMENTS.md",
+    "to": "ml\\backend\\docs\\history\\TRYON_EXPERIMENTS.md"
+  },
+  {
+    "move": "ml\\backend\\scripts\\measure_metrics.py",
+    "to": "ml\\backend\\research\\evaluation-tools\\measure_metrics.py"
+  },
+  {
+    "move": "ml\\backend\\scripts\\report_benchmarks.py",
+    "to": "ml\\backend\\research\\evaluation-tools\\report_benchmarks.py"
+  },
+  {
+    "move": "ml\\backend\\scripts\\benchmark_models.py",
+    "to": "ml\\backend\\research\\evaluation-tools\\benchmark_models.py"
+  },
+  {
+    "move": "ml\\backend\\scripts\\plot_benchmarks.py",
+    "to": "ml\\backend\\research\\evaluation-tools\\plot_benchmarks.py"
+  },
+  {
+    "move": "ml\\backend\\scripts\\prepare_viton_benchmark.py",
+    "to": "ml\\backend\\research\\evaluation-tools\\prepare_viton_benchmark.py"
+  },
+  {
+    "move": "ml\\backend\\scripts\\validate_benchmark_results.py",
+    "to": "ml\\backend\\research\\evaluation-tools\\validate_benchmark_results.py"
+  },
+  {
+    "move": "ml\\backend\\scripts\\verify_benchmark_parity.py",
+    "to": "ml\\backend\\research\\evaluation-tools\\verify_benchmark_parity.py"
+  },
+  {
+    "move": "cleanup_project.py",
+    "to": "ml\\backend\\docs\\maintenance\\cleanup_project.py"
+  },
+  {
+    "removed": "ml\\backend\\{eval,storage",
+    "reason": "Empty malformed scaffolding"
+  },
+  {
+    "reason": "Unused retired live-camera/3D assets and obsolete harnesses; unrelated to archived FASHN generator",
+    "removed": "FASHN_Archive\\historical-ui"
+  },
+  {
+    "reason": "Unused retired live-camera/3D assets and obsolete harnesses; unrelated to archived FASHN generator",
+    "removed": "FASHN_Archive\\scripts\\verify_studio_browser.py"
+  },
+  {
+    "reason": "Unused retired live-camera/3D assets and obsolete harnesses; unrelated to archived FASHN generator",
+    "removed": "FASHN_Archive\\scripts\\verify_pose_geometry.mjs"
+  },
+  {
+    "final_checks": {
+      "python_tests_passed": 155,
+      "database_integrity": "both ok",
+      "wardrobe_images": "present",
+      "real_cpu_parser": "passed",
+      "real_mediapipe_browser_flow": "passed",
+      "mobile_transport": "passed",
+      "source_bundle": "passed"
+    },
+    "additional_relocated_reference_files": 0,
+    "missing_historical_garment_references": 0,
+    "removed_cache_folders": 8
+  }
+]

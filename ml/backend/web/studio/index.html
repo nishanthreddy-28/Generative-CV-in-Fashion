@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Drape &amp; Drop Studio</title>
+    <link rel="stylesheet" href="/studio/assets/studio.css?v=wardrobe-delete-1">
+    <script type="module" src="/studio/assets/studio.js?v=wardrobe-delete-2"></script>
+</head>
+<body>
+    <header class="masthead">
+        <a href="/" class="brand"><span class="brand-mark" aria-hidden="true">D&amp;D</span>Drape &amp; Drop</a>
+        <span id="session" class="session" role="status">Connecting to local workspace…</span>
+    </header>
+    <main>
+        <div class="intro">
+            <p class="eyebrow">LOCAL TEST STUDIO</p>
+            <h1>Your wardrobe, styled.</h1>
+            <p>Add clothes, then ask for an outfit using pieces you already own.</p>
+        </div>
+        <div class="workspace">
+            <section class="panel wardrobe" aria-labelledby="wardrobe-title">
+                <details class="profile-editor">
+                    <summary>My style &amp; measurements</summary>
+                    <form id="profile-form">
+                        <label>Styles <input name="styles" placeholder="casual, minimal"></label>
+                        <label>Preferred colours <input name="liked_colors" placeholder="teal, beige"></label>
+                        <label>Colours to avoid <input name="avoided_colors" placeholder="red"></label>
+                        <label>Preferred fit <select name="fit"><option value="">Any</option><option>regular</option><option>slim</option><option>oversized</option></select></label>
+                        <label>Height in cm <input name="height_cm" type="number" min="80" max="250" step="0.1"></label>
+                        <label>Chest in cm <input name="chest_cm" type="number" min="40" max="250" step="0.1"></label>
+                        <label>Waist in cm <input name="waist_cm" type="number" min="35" max="250" step="0.1"></label>
+                        <label>Hips in cm <input name="hips_cm" type="number" min="40" max="250" step="0.1"></label>
+                        <label>Other preferences <input name="notes" maxlength="500" placeholder="I prefer long sleeves"></label>
+                        <label>Comfort requirements <input name="comfort" maxlength="300" placeholder="Room at waist, avoid tight collars"></label>
+                        <button class="primary" id="save-profile">Save preferences</button>
+                        <p id="profile-status" class="notice" role="status" hidden></p>
+                    </form>
+                </details>
+                    <details class="profile-editor"><summary>Analyze a full-body photo</summary>
+                        <p>Upload one person standing straight and facing front, head and feet visible, arms down and legs uncrossed. Enter your known height to calibrate the estimates. Review and edit the attributes below before confirming. Front widths are not waist circumferences.</p>
+                        <label>Full-body photo <input id="body-photo" type="file" accept="image/*"></label>
+                        <label>Your known height in cm <input id="body-height" type="number" min="80" max="250" step="0.1"></label>
+                        <button id="body-analyze" type="button">Analyze photo</button>
+                        <p id="body-status" role="status">Photo analysis is optional. You can enter actual tape measurements above.</p>
+                        <div id="body-confirm" hidden>
+                            <fieldset id="body-attributes"><legend>Review estimated attributes (editable)</legend></fieldset>
+                            <button id="body-reset" type="button">Restore original estimates</button>
+                            <button id="body-use-photo" type="button" disabled>Use this photo for try-on</button>
+                            <p id="body-metadata"></p>
+                            <p>Used as approximate silhouette context for outfit recommendations. Try-on has a separate photo upload; use the button above to reuse this photo. These numbers do not control WeShopAI/IDM-VTON or guarantee fit. Actual tape measurements can be entered above.</p>
+                            <label><input id="body-accept" type="checkbox"> I reviewed these values and understand they are approximate widths/proportions, not circumferences or a fit guarantee.</label>
+                            <button id="body-save" type="button">Save reviewed attributes</button>
+                        </div>
+                        <button id="body-clear" type="button">Remove saved pose context</button>
+                    </details>
+                <header class="panel-header">
+                    <p class="eyebrow">PHASE 2 · GARMENT TAGGING</p>
+                    <h2 id="wardrobe-title">Wardrobe</h2>
+                </header>
+                <form id="upload-form" class="upload">
+                    <label id="drop-zone" class="drop-zone" for="garment">
+                        <span class="upload-icon" aria-hidden="true">↑</span>
+                        <span id="file-label">Choose or drop one garment photo</span>
+                        <small>JPG, PNG, WebP or HEIC · up to 15 MB</small>
+                        <input id="garment" type="file" accept="image/*,.heic,.heif">
+                    </label>
+                    <button id="upload-button" class="primary" disabled>Add to wardrobe</button>
+                </form>
+                <p id="upload-status" class="notice" role="status" hidden></p>
+                <div class="collection-header">
+                    <h3>Saved pieces <span id="item-count"></span></h3>
+                    <button id="refresh" class="quiet" type="button" disabled>Refresh</button>
+                </div>
+                <p id="wardrobe-status" class="notice" role="status">Loading wardrobe…</p>
+                <ul id="items" class="item-grid" aria-label="Saved garments"></ul>
+                <details class="profile-editor"><summary>Correct a garment / add measurements</summary>
+                    <form id="garment-editor" class="editor-form">
+                        <label>Garment <select id="edit-item" required></select></label>
+                        <label>Category <select id="edit-category" required></select></label>
+                        <label>Formality <select id="edit-formality"><option>casual</option><option>smart_casual</option><option>formal</option><option>athletic</option></select></label>
+                        <label>Fit <select id="edit-fit"><option>slim</option><option>regular</option><option>oversized</option></select></label>
+                        <label>Preview rotation <select id="edit-rotation"><option value="0">Original</option><option value="90">90° clockwise</option><option value="180">180°</option><option value="270">90° counterclockwise</option></select></label>
+                        <img id="editor-preview" alt="Garment orientation for previews" style="max-width:100%;max-height:180px" hidden>
+                        <p>Keep the neckline or waistband at the top before trying on a garment.</p>
+                        <p>Measure the garment, not your body. Enter full circumferences in cm (flat width × 2).</p>
+                        <label>Chest <input id="edit-chest" type="number" min="20" max="300" step="0.1"></label>
+                        <label>Waist <input id="edit-waist" type="number" min="20" max="300" step="0.1"></label>
+                        <label>Hips <input id="edit-hips" type="number" min="20" max="300" step="0.1"></label>
+                        <label>Length <input id="edit-length" type="number" min="5" max="250" step="0.1"></label>
+                        <button class="primary" id="save-garment">Save garment details</button>
+                        <p id="editor-status" role="status"></p>
+                    </form>
+                </details>
+            </section>
+
+            <section class="panel stylist" aria-labelledby="stylist-title">
+                <header class="panel-header chat-header">
+                    <div>
+                        <p class="eyebrow">PHASE 3 · OUTFIT RECOMMENDATIONS</p>
+                        <h2 id="stylist-title">Outfit chat</h2>
+                        <p id="model" class="model">Checking stylist…</p>
+                    </div>
+                    <button id="new-chat" class="quiet" type="button" disabled>New chat</button>
+                </header>
+                <div id="messages" class="messages" role="log" aria-label="Outfit conversation" tabindex="0">
+                    <div class="message assistant"><p>Tell me where you’re going, what the weather is like, or just ask for an outfit.</p></div>
+                </div>
+                <div class="chat-controls">
+                    <div id="chat-wait" class="chat-wait" hidden>
+                        <svg class="wait-illustration" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                            <circle cx="50" cy="50" r="46" fill="currentColor" opacity=".07"/>
+                            <circle class="wait-orbit" cx="50" cy="50" r="43" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="12 9" opacity=".45"/>
+                            <g class="wait-shirt" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M39 29l-16 9 9 16 7-4v27h23V50l7 4 9-16-16-9c-2 10-20 10-23 0z"/>
+                                <path d="M45 23c0-8 12-8 12 0 0 5-7 5-7 10M31 44l19-11 20 11" opacity=".5"/>
+                            </g>
+                            <circle class="wait-spark" cx="79" cy="24" r="3" fill="currentColor"/>
+                        </svg>
+                        <div class="wait-copy" role="status" aria-live="polite">
+                            <strong>Finding your outfit <span class="wait-dots" aria-hidden="true"><i></i><i></i><i></i></span></strong>
+                            <p id="chat-wait-copy">Reading your request and checking your wardrobe.</p>
+                        </div>
+                        <span id="chat-wait-time" class="wait-time" aria-hidden="true">0s</span>
+                    </div>
+                    <div class="prompts" aria-label="Example prompts">
+                        <button type="button" data-prompt="Recommend one casual outfit." disabled>Casual outfit</button>
+                        <button type="button" data-prompt="I have a dinner date and it will be cold. Recommend an outfit." disabled>Cold-weather dinner date</button>
+                        <button id="another" type="button" data-prompt="Show me another outfit." disabled>Another outfit</button>
+                    </div>
+                    <form id="chat-form" class="composer">
+                        <label class="outfit-count">Outfits <select id="outfit-count"><option value="" selected>Follow request</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+                        <label class="sr-only" for="message">Message your stylist</label>
+                        <input id="message" type="text" placeholder="What are you dressing for?" maxlength="4000" required disabled>
+                        <button id="send" class="primary" disabled>Send</button>
+                    </form>
+                    <p id="chat-status" class="notice" role="status" hidden></p>
+                </div>
+            </section>
+        </div>
+        <section class="panel wardrobe" style="margin-top:20px">
+            <p class="eyebrow">PERSONAL PREVIEW</p>
+            <h2>Try it on</h2>
+            <p>Upload a clear person photo: show the upper body for tops, or include the legs and garment area for bottoms and dresses. Try-on does not require body measurements or a measurement pose. Men's and women's clothing can be selected. Shoes and accessories are not rendered.</p>
+            <p id="tryon-engine-note">Choose WeShopAI or IDM-VTON hosted generation.</p>
+            <p id="selection-status" role="status">Choose one garment per preview.</p>
+            <form id="tryon-form" class="upload">
+                <label>1. Your photo <input id="person-photo" type="file" accept="image/*" required></label>
+                <label>Generate with <select id="tryon-engine"><option value="weshop" selected>WeShopAI → IDM-VTON top backup</option><option value="idm">IDM-VTON demo — one top</option></select></label>
+                <p id="photo-type-label" hidden>Clothing is prepared automatically. Check the cleaned reference below before judging the result.</p>
+                <label>2. Clothing source <select id="clothing-source"><option value="wardrobe">My wardrobe</option><option value="upload">Upload clothing photos</option></select></label>
+                <div id="wardrobe-clothing">
+                    <label>First item <select id="tryon-item"></select></label>
+                    <button id="clear-preview" class="quiet" type="button">Clear selection</button>
+                </div>
+                <div id="upload-clothing" hidden>
+                    <label>First clothing photo <input id="clothing-photo-1" type="file" accept="image/*"></label>
+                    <label>Type <select id="clothing-category-1"><option value="tops">T-shirt / shirt / jacket / top</option><option value="bottoms">Jeans / trousers / skirt</option><option value="one-pieces">Dress / one-piece</option></select></label>
+                </div>
+                <button id="tryon-submit" class="primary">Generate 2D try-on</button>
+            </form>
+            <p id="tryon-status" role="status"></p>
+            <div id="prepared-references" hidden>
+                <p>Cleaned clothing used for this preview</p>
+                <div id="prepared-images" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+            </div>
+            <img id="tryon-result" alt="Generated garment preview on your photo" hidden style="max-width:100%;max-height:650px">
+            <div><a id="download-tryon" hidden download="drapedrop-preview.png">Download preview</a>
+            <button id="delete-tryon" class="quiet" type="button" hidden>Delete saved person photo and result</button></div>
+            <div id="external-tryon" hidden>
+                <p id="external-tryon-note">Download the prepared input photos and reference prompt for inspection.</p>
+                <a id="export-tryon" download="try-on-inputs.zip">Download prepared inputs</a>
+            </div>
+            <p>Choose one garment. WeShopAI supports tops, bottoms and one-pieces; IDM-VTON supports one top. Generated previews may change details and body proportions. Include the legs for bottoms and dresses. Shoes and layered clothing are not rendered reliably.</p>
+        </section>
+    </main>
+    <script type="module" src="/studio/assets/preview.js?v=hosted-only-5"></script>
+    <script type="module" src="/studio/assets/editor.js"></script>
+    <script type="module" src="/studio/assets/body-analysis.js?v=shared-server-pose-2"></script>
+</body>
+</html>

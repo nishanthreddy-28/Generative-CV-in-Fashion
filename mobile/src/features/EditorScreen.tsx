@@ -1,3 +1,4 @@
+import { GarmentAnalysisPanel } from "./GarmentAnalysisPanel";
 import { GarmentGallery } from "./GarmentGallery";
 import { ApiError } from "../services/api/client";
 import { useDraft } from "../hooks/useDraft";
@@ -165,6 +166,7 @@ export function EditorScreen({
                 source={admin ? "admin/catalog" : "wardrobe"} />
             )}
             {!create && !admin && photo && typeof result.data?.id === "string" && <GarmentGallery id={result.data.id} preview={preview} />}
+            {!create && !admin && photo && typeof result.data?.id === "string" && <GarmentAnalysisPanel id={result.data.id} disabled={busy || !!image || preview} onApply={suggested=>{setValues(current=>({...current,...suggested}));setDirty(true);}} />}
             {admin && result.data?.active === false &&
               <Notice title="Inactive catalog item" text="Hidden from the catalog. Its record and image are retained." />}
             {wardrobeEntry && photoSection}

@@ -1,10 +1,13 @@
-import { Fragment, type PropsWithChildren, type ReactNode } from "react";
+import {AppIcon,type IconName} from "./AppIcon";
+import {useStylistState} from "../features/StylistState";
+import { useEffect, useRef, Fragment, type PropsWithChildren, type ComponentRef, type ReactNode } from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,7 +18,7 @@ import { Link, type Href, usePathname } from "expo-router";
 import { Button } from "./Button";
 import { colors, typography } from "../theme/tokens";
 import { useSession } from "../features/session";
-import { appDestinations, activeDestination } from "../features/navigation";
+import { bottomDestinations, activeDestination, navigationParent } from "../features/navigation";
 import { protectedScreenState } from "../services/auth/contracts";
 // Legacy screen prop retained temporarily; query parameters never unlock access.
 export function usePreview(): boolean { return false; }
@@ -30,54 +33,76 @@ export function RouteLink({
     </Link>
   );
 }
-const destinationMarks = {"/dashboard":"⌂","/wardrobe":"▤","/catalog":"◇","/outfits":"▱","/settings":"◎"} as const;
-const mainTabs = appDestinations.filter(item => item.path !== "/catalog");
+const destinationIcons:Record<string,IconName>={"/dashboard":"home","/wardrobe":"wardrobe","/stylist":"stylist","/try-on":"try-on"};
+const mainTabs = bottomDestinations;
 
 export function Screen({
   title,
   subtitle,
   action,
+  footer,
+  autoScroll=false,
+  layout="default",
+  scrollResetKey,
   children,
-}: PropsWithChildren<{ title: string; subtitle?: string; action?: ReactNode }>) {
+}: PropsWithChildren<{ title: string; subtitle?: string; action?: ReactNode; footer?: ReactNode; autoScroll?: boolean; layout?: "default"|"conversation"; scrollResetKey?:string }>) {
+  const scroll=useRef<ComponentRef<typeof ScrollView>>(null);
+  useEffect(()=>{if(scrollResetKey)scroll.current?.scrollTo({y:0,animated:false});},[scrollResetKey]);
   const {session,accountDeleting}=useSession();
+  const stylistTask=useStylistState();
   const path=usePathname();
   const {width}=useWindowDimensions();
   const showNavigation=!!session && !accountDeleting;
   const active=activeDestination(path);
+  const parent=navigationParent(path);
   const accountForm = !session && ["/login", "/signup", "/forgot-password", "/reset-password", "/auth-confirm"].includes(path);
   const section = accountForm ? "MEMBER ACCESS" : undefined;
+  const accountShortcut=showNavigation?<Link href="/settings" accessibilityLabel="Account" asChild><Pressable accessibilityState={{selected:active==="/settings"}} style={StyleSheet.flatten([ui.accountShortcut,active==="/settings"&&ui.navSelected])}><AppIcon name="account" size={26}/></Pressable></Link>:null;
   return (
     <SafeAreaView style={{flex:1,backgroundColor:colors.background}} edges={["top","bottom"]}>
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      {layout==="conversation"&&<View style={ui.chatHeader}>
+        <View style={ui.chatIdentity}><Text style={ui.chatMark}>✧</Text><Text accessibilityRole="header" style={ui.chatTitle}>{title}</Text></View>
+        <View style={ui.headerActions}>{action}{accountShortcut}</View>
+      </View>}
       <ScrollView
+        ref={scroll}
+        onContentSizeChange={()=>{if(autoScroll)scroll.current?.scrollToEnd({animated:true});}}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[ui.screen, accountForm && ui.accountScreen, width < 380 && ui.narrowScreen]}
+        contentContainerStyle={[ui.screen, accountForm && ui.accountScreen, width < 380 && ui.narrowScreen, layout==="conversation" && ui.chatContent]}
       >
         {!showNavigation && <View style={ui.top}>
           <Link href={session ? "/dashboard" : "/"} style={ui.brand} accessibilityLabel="Drape and Drop home">DRAPE &amp; DROP</Link>
           {!session && <RouteLink to={path==="/login" ? "/signup" : "/login"}>{path==="/login" ? "Join us" : "Sign in"}</RouteLink>}
         </View>}
-        <View style={ui.intro}>
+        {layout!=="conversation"&&<View style={ui.intro}>
           {section && <Text style={typography.eyebrow}>{section}</Text>}
           <View style={ui.titleRow}>
-            <Text accessibilityRole="header" style={[ui.title, showNavigation && ui.appTitle]}>{title}</Text>
-            {showNavigation && action}
+            <View style={ui.titleIdentity}>
+              {!!parent&&<Link href={parent} replace accessibilityLabel={`Back to ${parent==="/settings"?"account":parent.slice(1)}`} asChild><Pressable style={ui.backButton}><AppIcon name="back" size={22}/></Pressable></Link>}
+              <Text accessibilityRole="header" style={[ui.title, showNavigation && ui.appTitle]}>{title}</Text>
+            </View>
+            {showNavigation && <View style={ui.headerActions}>{action}{accountShortcut}</View>}
           </View>
           {!!subtitle && <Text style={ui.body}>{subtitle}</Text>}
-        </View>
+        </View>}
         {children}
       </ScrollView>
+      {stylistTask.busy&&!!stylistTask.pending&&path!=="/stylist"&&<View style={ui.taskBanner}><Text style={ui.body}>Crafting your look…</Text><Link href="/stylist" style={ui.link}>View stylist</Link></View>}
+      {footer}
       {showNavigation && <View style={ui.navigation} accessibilityLabel="Main navigation">
         {mainTabs.map((item,index)=>{
-          const selected=active===item.path || (active==="/catalog" && item.path==="/wardrobe");
+          const selected=active===item.path || ((active==="/catalog" || active==="/outfits") && item.path==="/wardrobe");
           return <Fragment key={item.path}>
-            {index===2 && <Link href="/wardrobe/add" accessibilityLabel="Add wardrobe item" style={ui.navAdd}>+</Link>}
-            <Link href={item.path} replace accessibilityLabel={item.label} accessibilityState={{selected}}
-              style={[ui.navItem,selected && ui.navActive]}>
-              <Text style={ui.navMark}>{destinationMarks[item.path]}</Text>{"\n"}{item.label}
+            {index===2 && <Link href="/wardrobe/add" accessibilityLabel="Add wardrobe item" asChild><Pressable style={ui.navAdd}><AppIcon name="plus" size={24} color={colors.surface}/></Pressable></Link>}
+            <Link href={item.path} replace accessibilityLabel={item.path==="/try-on"?"2D virtual try-on":item.label} asChild>
+              <Pressable accessibilityState={{selected}} style={ui.navItem}>
+                <View style={[ui.navIcon,selected&&ui.navSelected]}><AppIcon name={destinationIcons[item.path]} size={24} color={selected?colors.ink:colors.muted}/></View>
+                <Text style={{fontSize:11,lineHeight:15,fontWeight:selected?"700":"500",color:selected?colors.ink:colors.muted}}>{item.label}</Text>
+              </Pressable>
             </Link>
           </Fragment>;
         })}
@@ -197,12 +222,22 @@ export function Confirm({
   );
 }
 export const ui = StyleSheet.create({
+  taskBanner: {flexDirection:"row",alignItems:"center",justifyContent:"space-between",paddingHorizontal:20,backgroundColor:colors.raised,gap:10},
+  headerActions: {flexDirection:"row",alignItems:"center",gap:8,flexShrink:0},
+  accountShortcut: {width:44,height:44,borderRadius:22,alignItems:"center",justifyContent:"center"},
+  titleIdentity:{flex:1,flexDirection:"row",alignItems:"center",gap:4,minWidth:0},
+  backButton:{width:44,height:44,borderRadius:22,alignItems:"center",justifyContent:"center",marginLeft:-10},
+  chatHeader: {width:"100%",maxWidth:660,alignSelf:"center",paddingHorizontal:20,paddingVertical:12,minHeight:72,flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:12,borderBottomWidth:1,borderColor:colors.border},
+  chatIdentity: {flexDirection:"row",gap:9,alignItems:"center",flexShrink:1},
+  chatMark: {fontSize:28,color:colors.sage},
+  chatTitle: {fontSize:18,fontWeight:"600",color:colors.ink,flexShrink:1},
+  chatContent: {flexGrow:1,paddingTop:12,paddingBottom:20,gap:16},
   skeleton: {backgroundColor:colors.border,borderRadius:4},
   navigation: {flexDirection:"row",alignItems:"center",backgroundColor:colors.surface,borderTopWidth:1,borderColor:colors.border,paddingHorizontal:8,paddingBottom:6,paddingTop:5,width:"100%",maxWidth:660,alignSelf:"center"},
-  navItem: {flex:1,textAlign:"center",fontSize:10,fontWeight:"600",lineHeight:19,color:colors.muted,paddingVertical:6,minHeight:48},
-  navActive: {color:colors.ink,fontWeight:"800"},
-  navMark: {fontSize:19},
-  navAdd: {width:44,height:44,borderRadius:22,overflow:"hidden",backgroundColor:colors.ink,color:colors.surface,fontSize:25,lineHeight:42,textAlign:"center"},
+  navItem: {flex:1,alignItems:"center",justifyContent:"center",gap:3,paddingVertical:4,minHeight:60,minWidth:0},
+  navIcon:{width:44,height:32,borderRadius:16,alignItems:"center",justifyContent:"center"},
+  navSelected:{backgroundColor:colors.selected},
+  navAdd: {width:48,height:48,borderRadius:24,backgroundColor:colors.ink,alignItems:"center",justifyContent:"center",marginHorizontal:4},
   intro: {gap:8,paddingVertical:4},
   titleRow: {flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:10},
   appTitle: {fontFamily:"System",fontWeight:"800",fontSize:28,lineHeight:34,flexShrink:1},

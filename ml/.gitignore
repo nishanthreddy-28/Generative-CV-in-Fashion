@@ -1,0 +1,12 @@
+.venv/
+backend/**/__pycache__/
+backend/storage/
+backend/eval/images/
+backend/eval/results.json
+backend/.env
+backend/.env.*
+!backend/.env.production.example
+backend/research/tryon-experiments/local_eval/
+
+# Safe configuration templates are part of the clean source repository.
+!backend/.env.example

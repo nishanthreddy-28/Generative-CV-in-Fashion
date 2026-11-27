@@ -6,7 +6,7 @@ import { Screen, Gate, Notice, ResourceState, RouteLink, ui, usePreview } from "
 import { useResource } from "../hooks/useResource";
 import { useDraft } from "../hooks/useDraft";
 import { useSession } from "./session";
-import { RecommendationLooks } from "./RecommendationsScreen";
+import { RecommendationLooks } from "./RecommendationLooks";
 import { createMutationGate, removeSavedRecommendation, savedPage } from "./savedRecommendationActions";
 import type { Page, SavedRecommendation } from "../types/domain";
 
@@ -34,6 +34,7 @@ export function SavedRecommendationsScreen() {
   }
   return <Screen title="Saved ideas" subtitle="Keep useful combinations close.">
     <Gate preview={preview}>
+      <RouteLink to="/stylist" preview={preview}>Open your AI stylist and saved conversations</RouteLink>
       <Button label="Refresh saved recommendations" variant="secondary" disabled={Boolean(busy) || result.loading} onPress={refresh} />
       <ResourceState loading={result.loading} error={result.error || invalid} retry={result.retry} />
       {Boolean(message) && <Notice title="Saved recommendation status" text={message} />}
@@ -45,7 +46,7 @@ export function SavedRecommendationsScreen() {
       </View>)}
       {data?.nextCursor && <Button label="Next saved recommendations" variant="secondary" disabled={result.loading || Boolean(busy)} onPress={()=>setCursor(data!.nextCursor!)} />}
       {Boolean(cursor) && <Button label="Back to first page" variant="secondary" disabled={Boolean(busy)} onPress={()=>setCursor("")} />}
-      <RouteLink to="/recommendations" preview={preview}>Explore style ideas →</RouteLink>
+      <RouteLink to="/stylist" preview={preview}>Ask your AI stylist →</RouteLink>
     </Gate>
   </Screen>;
 }

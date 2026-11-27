@@ -332,3 +332,13 @@ def test_gallery_maps_primary_delete_conflict(wardrobe_client):
     faults['wardrobe_gallery']=httpx.Response(400,json={'code':'DD001'})
     response=client.delete('/wardrobe/'+str(uuid4())+'/photos/'+str(uuid4()))
     assert response.status_code==409 and 'primary photo' in response.text
+
+
+def test_original_image_bytes_stay_stable_for_cutout_receipts(wardrobe_client):
+    client,_,_,objects,_,_,_=wardrobe_client
+    source=Image.effect_noise((256,256),70).convert('RGB');buffer=io.BytesIO();source.save(buffer,'PNG')
+    response=create(client,image=buffer.getvalue());assert response.status_code==201
+    stored=next(iter(objects.values()))
+    assert normalize_image(stored)!=stored, 'Fixture must expose lossy re-encoding'
+    first=client.get(response.json()['imageUrl']);second=client.get(response.json()['imageUrl'])
+    assert first.content==stored==second.content

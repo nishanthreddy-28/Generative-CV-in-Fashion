@@ -1,0 +1,102 @@
+"""One-time source-only refactor; data/models/runtime remain in place."""
+import ast,json,shutil
+from pathlib import Path
+ROOT=Path(__file__).resolve().parent
+B=ROOT/'backend'
+mapping={
+'app.config':'app.core.config', 'app.schemas':'app.contracts.wardrobe',
+'app.db':'app.persistence.wardrobe', 'app.background':'app.wardrobe.background',
+'app.mask_cache':'app.core.mask_cache','app.cloud_service':'app.cloud.service',
+'app.main':'app.api.wardrobe_app','app.studio':'app.main',
+'app.routes.items':'app.api.items','app.routes.health':'app.api.health',
+**{f'app.phase2.{n}':f'app.wardrobe.{n}' for n in ['taxonomy','tagger','pipeline','gates','color']},
+'app.phase3.api':'app.api.styling','app.phase3.store':'app.persistence.conversations',
+'app.phase3.schemas':'app.contracts.styling',
+'app.phase3.body_analysis':'app.pose.models','app.phase3.photo_validation':'app.pose.validation',
+'app.phase3.pose_measurements':'app.pose.measurements',
+'app.phase3.profile':'app.profiles.service','app.phase3.fit':'app.profiles.fit',
+'app.phase3.llm':'app.chat.stylist','app.phase3.alternate_stylists':'app.chat.alternate_providers',
+'app.phase3.chat_routing':'app.chat.routing','app.phase3.gemini_budget':'app.chat.request_budget',
+**{f'app.phase3.{n}':f'app.recommendations.{n}' for n in ['scorer','service','search']},
+'app.phase3.tryon':'app.tryon.jobs','app.phase3.preparation':'app.tryon.preparation',
+'app.phase3.tryon_common':'app.tryon.common','app.phase3.tryon_export':'app.tryon.export',
+'app.phase3.hosted_tryon':'app.tryon.hosted','app.phase3.weshop_tryon':'app.tryon.weshop',
+'app.phase3.idm_tryon':'app.tryon.idm',
+}
+rename_files={
+'scripts/setup_phase3.py':'scripts/setup_models.py',
+'scripts/verify_phase3_model.py':'scripts/verify_recommendation_model.py',
+'scripts/verify_phase3_chat.py':'scripts/verify_chat.py',
+'scripts/verify_phase3_e2e.py':'scripts/verify_recommendations_e2e.py',
+'scripts/verify_phase3_gemini.py':'scripts/verify_gemini.py',
+'tests/test_phase3.py':'tests/test_recommendations_api.py',
+'tests/test_phase3_hosted.py':'tests/test_gemini_provider.py',
+'tests/test_phase3_groq.py':'tests/test_groq_provider.py',
+}
+contents={p:p.read_text(encoding='utf-8-sig') for base in ['app','scripts','tests','deployment','eval'] for p in (B/base).rglob('*') if p.is_file() and p.suffix in {'.py','.ps1','.js','.mjs','.ts','.html','.css','.md'}}
+def imports(s):
+    lines=s.splitlines(keepends=True); edits=[]
+    for node in ast.walk(ast.parse(s)):
+        if isinstance(node,ast.ImportFrom) and node.module and not node.level:
+            replacements=[]; changed=False
+            for a in node.names:
+                whole=node.module+'.'+a.name
+                if whole in mapping:
+                    module,name=mapping[whole].rsplit('.',1)
+                    alias=a.asname or (a.name if a.name!=name else None)
+                    replacements.append(f'from {module} import {name}'+(f' as {alias}' if alias else ''))
+                    changed=True
+                else:
+                    module=mapping.get(node.module,node.module)
+                    changed |= module!=node.module
+                    replacements.append(f'from {module} import {a.name}'+(f' as {a.asname}' if a.asname else ''))
+            if changed:
+                indent=' '*node.col_offset
+                edits.append((node.lineno-1,node.end_lineno,''.join(indent+r+'\n' for r in replacements)))
+    for a,b,r in sorted(edits,reverse=True):lines[a:b]=[r]
+    return ''.join(lines)
+
+for p,s in contents.items():
+    if p.suffix=='.py':s=imports(s)
+    # Literal mock patch targets, module strings and source paths also move.
+    for old,new in sorted(mapping.items(),key=lambda pair:-len(pair[0])):
+        s=s.replace(old,new).replace(old.replace('.','/'),new.replace('.','/'))
+    for old,new in rename_files.items():
+        s=s.replace(old,new).replace(Path(old).name,Path(new).name)
+    s=s.replace('from test_phase3 import','from test_recommendations_api import')
+    s=s.replace('app/phase3/studio','web/studio')
+    contents[p]=s
+
+# Write into memory-mapped destinations, then remove only the previous source files.
+destinations={}
+for old,new in mapping.items():
+    src=B/(old.replace('.','/')+'.py');dst=B/(new.replace('.','/')+'.py')
+    if src.exists():destinations[src]=dst
+for old,new in rename_files.items():destinations[B/old]=B/new
+for src,s in contents.items():
+    dst=destinations.get(src,src);dst.parent.mkdir(parents=True,exist_ok=True);dst.write_text(s,encoding='utf-8')
+for src,dst in destinations.items():
+    if src!=dst and src not in destinations.values():src.unlink()
+# Remove old modules that coincide with another destination only after all writes.
+# app/main.py is now the combined entry point and must be retained.
+old_web=B/'app/phase3/studio';new_web=B/'web/studio'
+new_web.parent.mkdir(exist_ok=True)
+if new_web.exists():raise RuntimeError('Web destination exists')
+shutil.move(str(old_web),str(new_web))
+for name in ['phase2','phase3','routes']:
+    p=B/'app'/name
+    remaining=[f for f in p.rglob('*.py') if f.name!='__init__.py']
+    if remaining:raise RuntimeError(str(remaining))
+    assert p.resolve().is_relative_to(B.resolve())
+    shutil.rmtree(p)
+for package in ['core','contracts','persistence','cloud','api','wardrobe','pose','profiles','recommendations','chat','tryon']:
+    (B/'app'/package/'__init__.py').write_text(f'"""{package.capitalize()} components."""\n',encoding='utf-8')
+
+p=B/'app/core/config.py';s=p.read_text();s=s.replace('Path(__file__).resolve().parent.parent','Path(__file__).resolve().parents[2]');p.write_text(s)
+p=B/'app/api/styling.py';s=p.read_text();s=s.replace('Path(__file__).parent / "studio"','Path(__file__).resolve().parents[2] / "web" / "studio"');p.write_text(s)
+p=B/'app/main.py';s=p.read_text().replace('phase2','wardrobe_backend').replace('phase3','styling_backend')
+# Public compatibility field name stays unchanged for existing clients.
+s=s.replace('"wardrobe_backend_api"','"phase2_api"');p.write_text(s)
+p=B/'scripts/build_space_bundle.py';s=p.read_text().replace('["app", "scripts", "deployment"]','["app", "scripts", "deployment", "web"]');p.write_text(s)
+(B/'docs/STRUCTURE_MIGRATION.json').write_text(json.dumps({'modules':mapping,'files':rename_files,'web':'backend/web/studio','preserved':['HTTP paths','databases','model and image storage','FASHN archive']},indent=2))
+print('Feature packages and imports migrated; runtime data unchanged.')

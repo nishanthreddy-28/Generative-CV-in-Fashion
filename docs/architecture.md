@@ -28,7 +28,7 @@
 
 ## Implemented API and database boundary
 
-FastAPI implements GET/PATCH `/profile` and GET/PATCH `/settings` only (contracts10/11/14/15). The preserved [35-contract inventory](backend/api-requirements.md) includes future and historical Auth contracts; [Auth transition documentation — historical reference](https://github.com/nishanthreddy-28/Generative-CV-in-Fashion/blob/20a3b10dbb98f0a1dae0c23698d29983559f3f4c/docs/backend/frontend-supabase-auth-integration.md) records current callers without silently rewriting them. PATCH uses full form snapshots and204 success. All other domain routes remain missing.
+FastAPI implements GET/PATCH `/profile` and GET/PATCH `/settings` only (contracts10/11/14/15). The preserved [35-contract inventory](backend/api-requirements.md) includes future and historical Auth contracts; [Auth transition documentation](backend/frontend-supabase-auth-integration.md) records current callers without silently rewriting them. PATCH uses full form snapshots and204 success. All other domain routes remain missing.
 
 The sole migration `202611060001_foundation.sql` defines user_profiles, body_profiles, user_preferences, account_lifecycle, account_deletion_tombstones and administrator_memberships. Body storage is empty/incomplete; no normal body write API/grants exist until units/precision decisions are approved. Tombstones deliberately lack a live Auth FK; begin deletion is not a completed purge. The additional nine physical-schema proposal tables are not implemented.
 

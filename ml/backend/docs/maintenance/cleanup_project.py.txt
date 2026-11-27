@@ -1,0 +1,220 @@
+"""One-time, workspace-scoped consolidation. Preserve data and FASHN assets."""
+from pathlib import Path
+import ast, json, shutil, hashlib, os
+
+ROOT=Path(__file__).resolve().parent
+B=ROOT/'drapedrop-phase2/backend'
+NEW=ROOT/'Drape&Drop_ML'
+ARCHIVE=ROOT/'FASHN_Archive'
+actions=[]
+def safe(p):
+    p=Path(p).absolute()
+    if not p.resolve().is_relative_to(ROOT) or p.resolve()==ROOT: raise RuntimeError(f'Unsafe target: {p}')
+    return p
+def move(src,dst):
+    src,dst=safe(src),safe(dst)
+    if not src.exists(): return
+    if dst.exists(): raise RuntimeError(f'Destination exists: {dst}')
+    dst.parent.mkdir(parents=True,exist_ok=True)
+    shutil.move(str(src),str(dst)); actions.append({'move':str(src.relative_to(ROOT)),'to':str(dst.relative_to(ROOT))})
+def remove(p,reason):
+    p=safe(p)
+    if not p.exists(): return
+    if p.is_dir(): shutil.rmtree(p)
+    else: p.unlink()
+    actions.append({'removed':str(p.relative_to(ROOT)),'reason':reason})
+def read(p):return (B/p).read_text(encoding='utf-8-sig')
+def write(p,s): (B/p).write_text(s,encoding='utf-8')
+def replace(p,a,b):
+    s=read(p)
+    if a not in s: raise RuntimeError(f'Missing edit in {p}: {a[:60]}')
+    write(p,s.replace(a,b))
+def drop_methods(p,names):
+    s=read(p); lines=s.splitlines(keepends=True); nodes=ast.walk(ast.parse(s))
+    spans=[(n.lineno-1,n.end_lineno) for n in nodes if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and n.name in names]
+    for start,end in sorted(spans,reverse=True): del lines[start:end]
+    write(p,''.join(lines))
+
+if NEW.exists() or ARCHIVE.exists(): raise RuntimeError('Consolidation targets must be new directories')
+ARCHIVE.mkdir(); (ARCHIVE/'scripts').mkdir()
+# Extract provider-neutral pieces before removing retired implementations.
+q=read('app/phase3/qwen_tryon.py')
+upload=q[q.index('    def upload('):q.index('    def infer(')]
+download=q[q.index('    def download('):q.index('\n\ndef infer(')]
+f=read('app/phase3/fitdit.py'); manifest=f[f.index('def run_manifest('):]
+manifest=manifest.replace('generate=None','generate').replace('(generate or infer)(person, garments)','generate(person, garments)')
+write('app/phase3/tryon_common.py','''"""Shared transport/image helpers for retained hosted try-on providers."""
+import io
+from urllib.parse import urlparse
+from PIL import Image
+
+class HostedTryOnError(RuntimeError):
+    pass
+
+class HostedImageClient:
+    def __init__(self, client, host):
+        self.client, self.host = client, host
+
+'''+upload+download+'\n\n'+manifest)
+for folder in ['app','tests','scripts']:
+    for p in (B/folder).rglob('*.py'):
+        if '__pycache__' in p.parts: continue
+        s=p.read_text(encoding='utf-8-sig').replace('from app.phase3.fitdit import HostedTryOnError','from app.phase3.tryon_common import HostedTryOnError')
+        s=s.replace('from app.phase3.qwen_tryon import QwenTryOn','from app.phase3.tryon_common import HostedImageClient')
+        if p.name=='weshop_tryon.py': s=s.replace('class WeShopTryOn(QwenTryOn):','class WeShopTryOn(HostedImageClient):')
+        p.write_text(s,encoding='utf-8')
+
+# Preserve FASHN generator, environment and source, independently of the active app.
+for name in ['tryon-weights','tryon-env','tryon-source','tryon-evaluation']:
+    move(B/'storage'/name,ARCHIVE/name)
+for name in ['run_tryon.py','setup_tryon.ps1','benchmark_image_quality.py','audit_tryon_masks.py']:
+    move(B/'scripts'/name,ARCHIVE/'scripts'/name)
+# Preserve the small CPU parser in the main runtime. It is not the FASHN generator.
+site=ROOT/'.venv/Lib/site-packages'
+for name in ['fashn_human_parser','fashn_human_parser-0.1.1.dist-info']:
+    src=ARCHIVE/'tryon-env/Lib/site-packages'/name
+    if src.exists() and not (site/name).exists(): shutil.copytree(src,site/name)
+move(B/'storage/tryon-cache', B/'storage/preparation-cache')
+replace('scripts/prepare_tryon_garments.py','"tryon-cache"','"preparation-cache"')
+
+# Only hosted providers may be selected, even through direct API calls.
+drop_methods('app/phase3/tryon.py',{'local_installed','worker_failure'})
+replace('app/phase3/tryon.py','{"qwen", "fitdit", "fashn_local", "weshop", "idm", "workers_ai"}','{"weshop", "idm"}')
+s=read('app/phase3/tryon.py'); start=s.index('    if selected == "workers_ai":'); end=s.index('    return selected',start); s=s[:start]+s[end:]
+start=s.index('    if "bottom" in slots and');end=s.index('    supported =',start);s=s[:start]+s[end:]
+start=s.index('    if (engine or provider()) == "workers_ai":');end=s.index('    if "shoes"',start);s=s[:start]+s[end:]
+start=s.index('    if len(supported) > 1 and (engine or provider()) not');end=s.index('    return supported',start);s=s[:start]+s[end:]
+# Validate engine even for stored manifests (old jobs cannot resurrect removed options).
+s=s.replace('    slots = [item["slot"] for item in items]','    engine = choose_provider(engine or "")\n    slots = [item["slot"] for item in items]')
+start=s.index('        engine = plan.get(');end=s.index('\n    except (OSError, subprocess.TimeoutExpired):',start)+1
+s=s[:start]+'''        engine = choose_provider(plan.get("provider", provider()))
+        if engine == "weshop":
+            # Both CPU stages use the active runtime; no archived GPU environment.
+            original = plan
+            try:
+                environment = dict(os.environ, OMP_NUM_THREADS="2")
+                with (directory / "inference.log").open("w", encoding="utf-8") as log:
+                    for script, manifest in [("prepare_tryon_background.py", directory / "manifest.json"),
+                                             ("prepare_tryon_garments.py", directory / "prepared-manifest.json")]:
+                        result = subprocess.run([sys.executable, str(BACKEND / "scripts" / script), str(manifest)],
+                            cwd=BACKEND, stdout=log, stderr=subprocess.STDOUT, timeout=180, env=environment,
+                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                        if result.returncode: raise RuntimeError("Garment preparation failed")
+                plan = json.loads((directory / "prepared-manifest.json").read_text(encoding="utf-8"))
+            except (OSError, subprocess.TimeoutExpired, RuntimeError):
+                plan = original
+                plan.setdefault('warnings', []).append('Automatic garment isolation failed; the hosted service will receive the original reference.')
+                (directory / 'manifest.json').write_text(json.dumps(plan), encoding='utf-8')
+        from app.phase3.tryon_common import HostedTryOnError
+        from app.phase3 import hosted_tryon, idm_tryon
+        try:
+            update("processing", "Generating with the hosted demo. Queues and limits apply.")
+            if engine == "weshop": hosted_tryon.run_manifest(plan, progress=lambda message: update('processing', message))
+            else: idm_tryon.run_manifest(plan)
+            update("completed", "Your preview is ready")
+        except HostedTryOnError as exc:
+            update("failed", str(exc))
+''' +s[end:]
+write('app/phase3/tryon.py',s.replace('Private local photo try-on jobs, executed in the isolated GPU environment.','Private hosted try-on jobs with CPU-only garment preparation.'))
+
+drop_methods('app/phase3/api.py',set())
+s=read('app/phase3/api.py');a=s.index('        if engine == "workers_ai":');b=s.index('        if engine == "weshop":',a);s=s[:a]+s[b:]
+s=s.replace('"warnings": ["Experimental sequential preview: the second edit can change the first garment."] if len(images) > 1 and engine not in {"qwen", "workers_ai"} else []','"warnings": []')
+s=s.replace('    from app.phase3.workers_tryon import configured\n','').replace('            "local_tryon_installed": tryon.local_installed(),\n','').replace('            "workers_ai_configured": configured(),\n','')
+write('app/phase3/api.py',s)
+replace('app/cloud_service.py',"photo_engine='qwen'","photo_engine='weshop'")
+for name in ['fitdit.py','qwen_tryon.py','workers_tryon.py']: remove(B/'app/phase3'/name,'Retired try-on provider; shared helpers extracted')
+for name in ['test_fitdit.py','test_qwen_tryon.py','test_workers_tryon.py']: remove(B/'tests'/name,'Tests for removed providers')
+
+s=read('app/phase3/studio/preview.js');a=s.index('    const local =');b=s.index('\n}',a)
+s=s[:a]+'''    const weshop = engine.value === "weshop";
+    el("photo-type-label").hidden = !weshop;
+    el("tryon-engine-note").textContent = weshop
+        ? "Choose one garment. WeShopAI generates the preview; IDM-VTON is the backup for one top. CPU garment preparation runs on our backend. Hosted queues and limits apply."
+        : "IDM-VTON supports one top. Photos are sent to its hosted noncommercial research demo. No local GPU is required.";'''+s[b:]
+a=s.index('    if (health.local_tryon_installed)');b=s.index('    engine.value =',a);s=s[:a]+s[b:]
+s=s.replace('(lastEngine === "fashn_local" ? "" : " This does not request deletion from the external inference service.")','" This does not request deletion from the external inference service."')
+write('app/phase3/studio/preview.js',s)
+s=read('app/phase3/studio/index.html');a=s.index('<option value="fashn_local"');b=s.index('</select>',a);s=s[:a]+s[b:]
+a=s.index('Start with one garment for the clearest comparison.');b=s.index('</p>',a);s=s[:a]+'Choose one garment. WeShopAI supports tops, bottoms and one-pieces; IDM-VTON supports one top. Generated previews may change details and body proportions. Include the legs for bottoms and dresses. Shoes and layered clothing are not rendered reliably.'+s[b:]
+write('app/phase3/studio/index.html',s.replace('preview.js?v=independent-tryon-4','preview.js?v=hosted-only-5'))
+
+# Keep tests for ownership, failures and result delivery while updating supported inputs.
+drop_methods('tests/test_preview_flow.py',{'test_cloudflare_requires_credentials_and_joint_plan_is_not_sequential'})
+replace('tests/test_preview_flow.py','for engine in ["idm", "workers_ai"]:','for engine in ["idm"]:')
+replace('tests/test_preview_flow.py','"app.phase3.idm_tryon" if engine == "idm" else "app.phase3.workers_tryon"','"app.phase3.idm_tryon"')
+for name in ['tests/test_preview_flow.py','tests/test_phase3.py']:
+    s=read(name).replace('"fashn_local"','"weshop"')
+    if name.endswith('test_preview_flow.py'):
+        s=s.replace('with patch.object(tryon, "local_installed", return_value=True), patch.object(tryon, "run",','with patch.object(tryon, "run",')
+        s=s.replace('"item_ids": ["t", "b", "s"]','"item_ids": ["t", "s"]')
+        s=s.replace('{"person.png", "garment-1.png", "garment-2.png", "prompt.txt", "README.txt"}','{"person.png", "garment-1.png", "prompt.txt", "README.txt"}')
+    write(name,s)
+drop_methods('tests/test_phase3.py',{'test_direct_photo_uploads_validate_two_items_and_order_bottom_first'})
+drop_methods('tests/test_tryon.py',{'test_photo_plan_warns_about_omitted_pieces_and_orders_bottom_first'})
+replace('tests/test_cloud_engine.py',"[row[\"id\"] for row in sb.records]","[sb.records[0]['id'], sb.records[2]['id']]")
+replace('tests/test_studio.py','client.get("/studio/assets/live-geometry.js").status_code, 200','client.get("/studio/assets/body-analysis.js").status_code, 200')
+
+# Remove unused UI, stale browser harness and unused third-party rendering library.
+for name in ['avatar.js','live-geometry.js','pose-geometry.js','vendor']:
+    move(B/'app/phase3/studio'/name,ARCHIVE/'historical-ui'/name)
+for name in ['verify_studio_browser.py','verify_pose_geometry.mjs']:
+    move(B/'scripts'/name,ARCHIVE/'scripts'/name)
+
+# Preserve historical reports; keep only current startup guidance at the top level.
+for p in list(B.glob('*.md')):
+    move(p,B/'docs/history'/p.name)
+move(ROOT/'PHASE3_OUTFIT_RECOMMENDATION_PLAN.md',B/'docs/history/PHASE3_OUTFIT_RECOMMENDATION_PLAN.md')
+for p in ['README.md','run_eval.py','schemas.py','taxonomy.py']:
+    remove(ROOT/p,'Obsolete Phase 2 duplicate; authoritative versions remain in backend')
+for name in ['space-bundle','space-bundle-final','space-bundle-ready','ui-preview']:
+    remove(B/'storage'/name,'Generated source copies or temporary UI fixture; rebuild from current source')
+# Browser profiles are disposable; retain the real-photo fixtures and verification record.
+for p in list((B/'storage/pose-check').iterdir()):
+    if p.is_dir(): remove(p,'Disposable headless browser profile')
+for p in (B/'storage').glob('*.log'): remove(p,'Old development process log')
+for p in ['avatar-verification.png','camera-verification.png']:
+    move(B/'storage'/p,ARCHIVE/'historical-ui'/p)
+move(B/'storage/tryon-sample.png',ARCHIVE/'tryon-sample.png')
+# Research source and experiment records retained; remove only discarded downloaded models.
+research=ROOT/'hf_tryon_research'
+for name in ['cat-base','cat-vae','cat-attention']:
+    remove(research/'local_eval'/name,'Downloaded CatVTON weights for a discarded provider')
+remove(research/'catvton_source','Downloaded source for a discarded provider')
+move(research,B/'research/tryon-experiments')
+
+# CPU deployment; no FASHN generator, CUDA runtime or spaces GPU package.
+move(B/'deployment/zerogpu',B/'deployment/cloud')
+req=read('requirements.txt')+'\n'+read('requirements-phase3.txt')+'\nfashn-human-parser==0.1.1\n'
+write('requirements.txt',req)
+remove(B/'requirements-phase3.txt','Merged into the active requirements file')
+write('deployment/cloud/requirements.txt',req+'\ngradio>=5.0\n')
+replace('deployment/cloud/space.py','import spaces\n','')
+replace('scripts/build_space_bundle.py','deployment/zerogpu/','deployment/cloud/')
+replace('scripts/start_studio.ps1',"'../../.venv/Scripts/python.exe'","'../.venv/Scripts/python.exe'")
+# Update explicit relative runtime paths in maintained source/scripts, not historical evidence.
+for folder in ['scripts','deployment']:
+    for p in (B/folder).rglob('*'):
+        if p.is_file() and p.suffix in {'.py','.ps1','.md','.ts'}:
+            s=p.read_text(encoding='utf-8-sig').replace('../../.venv','../.venv').replace('..\\..\\.venv','..\\.venv').replace('deployment/zerogpu','deployment/cloud')
+            p.write_text(s,encoding='utf-8')
+
+# Move the authoritative backend and its runtime together.
+NEW.mkdir(); move(B,NEW/'backend'); move(ROOT/'.venv',NEW/'.venv')
+remove(ROOT/'drapedrop-phase2','Empty former project container')
+# Ensure parser HF cache follows its new active location.
+# Historical DBs and result files are not rewritten here.
+(NEW/'backend/docs/CLEANUP_MANIFEST.json').write_text(json.dumps(actions,indent=2),encoding='utf-8')
+(ARCHIVE/'README.md').write_text('''# FASHN archive
+
+Preserved separately at the user\'s request: generation weights, DWpose assets,
+original source, isolated GPU environment, scripts and evaluation examples.
+The active Drape&Drop_ML app cannot select or import this generator.
+The small FASHN human parser remains an active CPU garment-isolation dependency;
+it is separate from the archived VTON generation model.
+
+The archived environment/scripts contain old absolute paths. Before future use,
+recreate the environment and update model/cache paths; do not assume this is a
+relocatable application. No FASHN generation weights were deleted.
+''',encoding='utf-8')
+print(json.dumps({'active':str(NEW),'archive':str(ARCHIVE),'actions':len(actions)},indent=2))

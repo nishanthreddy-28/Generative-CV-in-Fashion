@@ -4,7 +4,7 @@ import {readdirSync} from 'node:fs';
 import {guestScreens,publicScreens,personalScreens,adminScreens,accountScreens,routeAccess,activeDestination} from '../src/features/navigation.ts';
 test('every actual route has exactly one explicit access classification',()=>{
  const root=new URL('../src/app/',import.meta.url);
- const files=readdirSync(root,{recursive:true}).filter(name=>name.endsWith('.tsx') && !name.endsWith('_layout.tsx')).map(name=>name.slice(0,-4));
+ const files=readdirSync(root,{recursive:true}).filter(name=>name.endsWith('.tsx') && !name.endsWith('_layout.tsx')).map(name=>name.slice(0,-4).replaceAll("\\", "/"));
  const declared=[...guestScreens,...publicScreens,...personalScreens,...adminScreens,...accountScreens];
  assert.equal(new Set(declared).size,declared.length);
  assert.deepEqual([...declared].sort(),files.sort());
@@ -27,4 +27,31 @@ test('detail routes retain the correct primary navigation destination',()=>{
 test('password recovery remains reachable for authenticated settings and guest users',()=>{
  assert.ok(publicScreens.includes('forgot-password'));
  assert.ok(!guestScreens.includes('forgot-password'));
+});
+
+
+test("AI Stylist is a direct app destination with its own active tab", async()=>{
+ const {appDestinations,activeDestination}=await import('../src/features/navigation.ts');
+ assert.ok(appDestinations.some(item=>item.path==='/stylist'&&item.label==='AI Stylist'));
+ assert.equal(activeDestination('/stylist'),'/stylist');
+});
+
+
+test('bottom navigation keeps wardrobe, stylist and try-on while outfits remain accessible as a wardrobe section',async()=>{
+ const {bottomDestinations,appDestinations}=await import('../src/features/navigation.ts');
+ assert.deepEqual(bottomDestinations.map(item=>item.path),['/dashboard','/wardrobe','/stylist','/try-on']);
+ assert.ok(appDestinations.some(item=>item.path==='/outfits'));
+ assert.equal(activeDestination('/outfits/saved-look'),'/outfits');
+});
+
+
+test('nested outfits and body analysis have stable parent destinations even on direct entry',async()=>{
+ const {navigationParent}=await import('../src/features/navigation.ts');
+ assert.equal(navigationParent('/outfits'),'/wardrobe');
+ assert.equal(navigationParent('/outfits/look-id'),'/outfits');
+ assert.equal(navigationParent('/outfits/new'),'/outfits');
+ assert.equal(navigationParent('/body-analysis'),'/settings');
+ assert.equal(activeDestination('/body-analysis'),'/settings');
+ assert.equal(navigationParent('/stylist'),undefined);
+ assert.equal(navigationParent('/outfits-unrelated'),undefined);
 });

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import Any, Literal
 import re
@@ -39,6 +40,7 @@ class UserDataAPI:
         )
         try:
             return await self.transport.send(request, auth=None, follow_redirects=False)
-        except httpx.HTTPError:
+        except httpx.HTTPError as error:
+            logging.getLogger(__name__).warning("Data API transport failed: %s", type(error).__name__)
             raise DependencyUnavailable() from None
         # Caller interprets status; never retries with an elevated credential.

@@ -152,6 +152,9 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" | "reset" }) {
               {message}
             </Text>
           )}
+          {mode === "signup" && success && <Text style={styles.feedback}>
+            No email yet? Check Spam or Junk and confirm the address above. If you already have an account, sign in or reset your password. You can request another verification email after one minute; if it still does not arrive, contact support.
+          </Text>}
           <Button
             dark={dark}
             label={

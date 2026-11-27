@@ -187,12 +187,12 @@ def object_path(data, value: str):
     return value
 
 
-async def storage(data, method, path, *, content=None, body=None):
+async def storage(data, method, path, *, content=None, body=None, content_type="image/jpeg"):
     if data.principal.expires_at<=time.time(): raise Unauthorized()
     req=httpx.Request(method,data.settings.supabase_url+'/storage/v1/'+path,
         headers={'Authorization':'Bearer '+data.principal.access_token,
                  'apikey':data.settings.supabase_publishable_key.get_secret_value(),
-                 'Content-Type':'image/jpeg' if content is not None else 'application/json',
+                 'Content-Type':content_type if content is not None else 'application/json',
                  'x-upsert':'false'},
         **({'content':content} if content is not None else {'json':body} if body is not None else {}),
         extensions={'timeout':{'connect':5.0,'read':10.0,'write':10.0,'pool':5.0}})
@@ -313,8 +313,11 @@ async def garment_image(garment_id:UUID,data:Data):
     except ValidationError: raise DependencyUnavailable() from None
     content=await storage(data,'GET','object/authenticated/'+BUCKET+'/'+object_path(data,info.object))
     if len(content)!=info.byteSize or hashlib.sha256(content).hexdigest()!=info.sha256: raise DependencyUnavailable()
-    image=await anyio.to_thread.run_sync(normalize_image,content)
-    return Response(image,media_type='image/jpeg',headers={'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
+    # Validate stored pixels, but do not re-encode an immutable source: lossy JPEG
+    # re-encoding changes the hash used by reviewed preparation receipts.
+    await anyio.to_thread.run_sync(normalize_image,content)
+    if not content.startswith(b'\xff\xd8'):raise DependencyUnavailable()
+    return Response(content,media_type='image/jpeg',headers={'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})
 
 
 class GalleryPhoto(BaseModel):

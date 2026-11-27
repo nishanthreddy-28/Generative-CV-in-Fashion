@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated, Protocol
 from fastapi import Depends, Request
 
@@ -16,6 +17,9 @@ class UnconfiguredEligibility:
         raise DependencyUnavailable()
 
 
+logger = logging.getLogger(__name__)
+
+
 class DatabaseEligibility:
     async def require_active(self, principal: Principal, data: UserDataAPI) -> None:
         response = await data.request("POST", "rpc/account_access", body={})
@@ -24,6 +28,7 @@ class DatabaseEligibility:
         if response.status_code == 403:
             raise Forbidden()
         if response.status_code != 200:
+            logger.warning("Account eligibility returned HTTP %s", response.status_code)
             raise DependencyUnavailable()
         try:
             result = response.json()

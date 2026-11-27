@@ -1,0 +1,47 @@
+"""Finish the explicit workspace migration; do not run on another checkout."""
+import json, shutil, hashlib
+from pathlib import Path
+B=Path(__file__).resolve().parents[1]
+ROOT=B.parents[1]
+def safe(p):
+    p=p.resolve()
+    if not p.is_relative_to(ROOT) or p==ROOT: raise RuntimeError(str(p))
+    return p
+manifest=B/'docs/CLEANUP_MANIFEST.json'
+actions=json.loads(manifest.read_text())
+def move(src,dst):
+    src,dst=safe(src),safe(dst)
+    if not src.exists():return
+    if dst.exists():raise RuntimeError(str(dst))
+    dst.parent.mkdir(parents=True,exist_ok=True);shutil.move(str(src),str(dst))
+    actions.append({'move':str(src.relative_to(ROOT)),'to':str(dst.relative_to(ROOT))})
+old=str(ROOT/'drapedrop-phase2/backend');new=str(B)
+updated=[]
+def paths(value):
+    if isinstance(value,dict):return {k:paths(v) for k,v in value.items()}
+    if isinstance(value,list):return [paths(v) for v in value]
+    if isinstance(value,str):return value.replace(old,new).replace(old.replace('\\','/'),new.replace('\\','/'))
+    return value
+for p in (B/'storage/tryon-jobs').rglob('*.json'):
+    value=json.loads(p.read_text(encoding='utf-8'))
+    changed=paths(value)
+    if value!=changed:p.write_text(json.dumps(changed),encoding='utf-8');updated.append(str(p.relative_to(B)))
+actions.append({'updated_saved_job_path_files':updated,'reason':'Preserve result/reference access after relocation; no image pixels or ownership changed'})
+move(B/'deployment/README.md',B/'docs/history/DEPLOYMENT_PRE_CLEANUP.md')
+move(B/'deployment/TRYON_EXPERIMENTS.md',B/'docs/history/TRYON_EXPERIMENTS.md')
+for name in ['measure_metrics.py','report_benchmarks.py','benchmark_models.py','plot_benchmarks.py','prepare_viton_benchmark.py','validate_benchmark_results.py','verify_benchmark_parity.py']:
+    move(B/'scripts'/name,B/'research/evaluation-tools'/name)
+move(ROOT/'cleanup_project.py',B/'docs/maintenance/cleanup_project.py')
+stray=B/'{eval,storage'
+if stray.exists() and not any(p.is_file() for p in stray.rglob('*')):
+    shutil.rmtree(safe(stray));actions.append({'removed':str(stray.relative_to(ROOT)),'reason':'Empty malformed scaffolding'})
+weights=[]
+for p in (ROOT/'FASHN_Archive/tryon-weights').rglob('*'):
+    if p.is_file() and p.suffix in {'.safetensors','.onnx','.pth','.pt'}:
+        h=hashlib.sha256()
+        with p.open('rb') as f:
+            for chunk in iter(lambda:f.read(8*1024*1024),b''):h.update(chunk)
+        weights.append({'path':str(p.relative_to(ROOT/'FASHN_Archive')),'bytes':p.stat().st_size,'sha256':h.hexdigest()})
+(ROOT/'FASHN_Archive/WEIGHTS_MANIFEST.json').write_text(json.dumps(weights,indent=2))
+manifest.write_text(json.dumps(actions,indent=2),encoding='utf-8')
+print('Relocated saved metadata:',len(updated),'Archived weight files:',len(weights),flush=True)

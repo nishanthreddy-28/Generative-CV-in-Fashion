@@ -1,0 +1,27 @@
+[Unit]
+Description=Drape and Drop ml
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=simple
+User=drapedrop
+Group=drapedrop
+WorkingDirectory=/opt/drape-drop/ml
+Environment=HOME=/opt/drape-drop
+Environment=HF_HOME=/opt/drape-drop/cache/huggingface
+Environment=MPLCONFIGDIR=/opt/drape-drop/cache/matplotlib
+Environment=TOKENIZERS_PARALLELISM=false
+Environment=OMP_NUM_THREADS=4
+Environment=CUDA_VISIBLE_DEVICES=-1
+ExecStart=/opt/drape-drop/ml-venv/bin/python -m uvicorn integration_worker.main:app --host 127.0.0.1 --port 8090 --env-file .env --no-access-log
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/drape-drop
+
+[Install]
+WantedBy=multi-user.target

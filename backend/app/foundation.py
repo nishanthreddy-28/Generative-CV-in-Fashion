@@ -1,4 +1,5 @@
 """The four existing profile/settings contracts supported by the foundation migration."""
+import logging
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Response
@@ -53,6 +54,7 @@ async def rpc(data: UserDataAPI, operation: str, body: dict, *, missing_detail: 
             code = response.json().get("code")
         except (ValueError, AttributeError):
             code = None
+        logging.getLogger(__name__).warning("Data operation failed: %s HTTP %s code %s", operation, response.status_code, code)
         if missing_detail and code == "P0002":
             raise HTTPException(404, missing_detail)
         if conflict_detail and code == "DD001":

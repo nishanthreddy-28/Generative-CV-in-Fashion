@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { StyleSheet, Text, View } from "react-native";
+import { Link, router } from "expo-router";
 import * as Crypto from "expo-crypto";
 import { Button } from "../../components/Button";
 import { Fields } from "../../components/Fields";
@@ -8,7 +8,7 @@ import { Notice, ResourceState, Screen, ui } from "../../components/Screen";
 import { PhotoField, appendPhoto, type Photo } from "../../components/PhotoField";
 import { useSession } from "../../features/session";
 import type { Field } from "../../features/validation";
-import { useResource } from "../../hooks/useResource";
+import {PrivateBodyPhoto} from "../../components/PrivateBodyPhoto";
 import { useDraft } from "../../hooks/useDraft";
 import { colors } from "../../theme/tokens";
 
@@ -22,24 +22,6 @@ const formFields: Field[] = [
     key, label: `${key[0].toUpperCase()}${key.slice(1)} (optional)`, kind: "number" as const, min: 1, max: 300,
   })),
 ];
-
-function PrivateBodyPhoto({ id }: { id: string }) {
-  const image = useResource<Blob>(`/onboarding/body-photo/${encodeURIComponent(id)}`, false, false, "image");
-  const [preview, setPreview] = useState<{ blob: Blob; uri: string } | null>(null);
-  useEffect(() => {
-    if (!image.data) return;
-    const reader = new FileReader();
-    const blob = image.data;
-    reader.onload = () => { if (typeof reader.result === "string") setPreview({ blob, uri: reader.result }); };
-    reader.readAsDataURL(image.data);
-    return () => { reader.onload = null; if (reader.readyState === FileReader.LOADING) reader.abort(); };
-  }, [image.data]);
-  const uri = image.data && preview?.blob === image.data ? preview.uri : "";
-  return <View style={styles.photoFrame}>
-    {uri ? <Image source={{ uri }} accessibilityLabel="Your private body profile photo" resizeMode="cover" style={StyleSheet.absoluteFill} /> :
-      <Text style={ui.body}>{image.loading ? "Loading your private photo…" : image.error || "Photo preview unavailable."}</Text>}
-  </View>;
-}
 
 export default function Onboarding() {
   const { session, request } = useSession();
@@ -137,10 +119,10 @@ export default function Onboarding() {
     finally { setBusy(false); }
   }
 
-  return <Screen title="Your profile, your fit" subtitle="Add a private body profile photo, then review and confirm your details. Automatic measurements are not available yet.">
+  return <Screen title="Your profile, your fit" subtitle="Add a private body profile photo, then review and confirm your details. Use optional body photo analysis for approximate front-view observations.">
     {loading ? <ResourceState loading error="" retry={retryLoad} /> : !status ?
       <ResourceState loading={false} error={error || "Your profile could not be loaded."} retry={retryLoad} /> : <>
-      <View style={styles.step}><Text style={styles.number}>01</Text><View style={styles.stepCopy}><Text style={ui.heading}>Add a body photo</Text><Text style={ui.body}>Use a clear, well-lit full-body photo. It is private and is not analyzed while automatic processing is unavailable.</Text></View></View>
+      <View style={styles.step}><Text style={styles.number}>01</Text><View style={styles.stepCopy}><Text style={ui.heading}>Add a body photo</Text><Text style={ui.body}>Use a clear, well-lit full-body photo. It stays private. After saving, you can run optional body photo analysis using your known height.</Text></View></View>
       {activeVersion?.id && <PrivateBodyPhoto id={activeVersion.id} />}
       {!status.draft || status.draft.state === "pending" ? <>
         <PhotoField label="Body profile photo" subject="body profile" camera value={photo} disabled={busy} onChange={setPhoto} />
@@ -153,6 +135,7 @@ export default function Onboarding() {
         <Button label="Confirm profile" loading={busy} disabled={busy} onPress={() => void confirmDetails()} />
         <Button label="Discard photo draft" variant="secondary" disabled={busy} onPress={() => void discard()} />
       </>}
+      {(status.draft?.state==="ready"||status.reviewed?.state==="reviewed")&&<Link href="/body-analysis" style={ui.primaryLink}>Analyse your body photo →</Link>}
       {status.reviewed && !status.draft && <Notice title="Profile confirmed" text="Your confirmed details are stored in your profile. You can edit measurements from your account." />}
       {!!message && <Notice title="Saved" text={message} tone="success" />}
       {!!error && <Notice title="Could not complete this step" text={error} tone="error" />}
@@ -166,6 +149,5 @@ const styles = StyleSheet.create({
   step: { flexDirection: "row", gap: 14, alignItems: "flex-start", paddingTop: 8 },
   number: { color: colors.muted, fontSize: 12, fontWeight: "700", letterSpacing: 1.4, paddingTop: 3 },
   stepCopy: { flex: 1, gap: 5 },
-  photoFrame: { width: "100%", aspectRatio: 0.8, maxHeight: 420, alignItems: "center", justifyContent: "center", overflow: "hidden", backgroundColor: colors.raised, borderWidth: 1, borderColor: colors.border },
   pending: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "center", paddingHorizontal: 10 },
 });

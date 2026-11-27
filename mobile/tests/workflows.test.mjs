@@ -321,3 +321,45 @@ test("catalog and admin images require authenticated byte retrieval", async () =
     assert.ok(await apiRequest(path,{responseType:"image",token:"latest"}) instanceof Blob);
   }
 });
+
+
+test("private wardrobe cutouts preserve their WebP content type", async () => {
+  const {apiRequest}=await import('../src/services/api/client.ts');
+  process.env.EXPO_PUBLIC_API_URL="https://service.example.invalid";
+  globalThis.fetch=async()=>new Response(new Uint8Array([82,73,70,70]),{headers:{"Content-Type":"image/webp"}});
+  const blob=await apiRequest('/ml/garments/fixture/closet-image',{responseType:'image',token:'current-token'});
+  assert.equal(blob.type,'image/webp');
+});
+
+
+test("upload validation preserves actionable allowlisted guidance and hides arbitrary server text",async()=>{
+ process.env.EXPO_PUBLIC_API_URL="https://service.example.invalid";
+ for(const [detail,expected] of [["Background removal was uncertain. Choose a clearer garment photo.","Background removal was uncertain"],["private server diagnostics","The service could not accept"]]){
+  globalThis.fetch=async()=>Response.json({detail},{status:422});
+  await assert.rejects(apiRequest("/ml/garments/analyse-upload",{method:"POST",body:new FormData()}),error=>error instanceof ApiError&&error.message.startsWith(expected)&&!error.message.includes("private server"));
+ }
+});
+
+
+test("web preview can use a local API while native keeps its configured tunnel",async()=>{
+ const previousDocument=globalThis.document;
+ const previousWeb=process.env.EXPO_PUBLIC_WEB_API_URL;
+ const previousApi=process.env.EXPO_PUBLIC_API_URL;
+ const previousFetch=globalThis.fetch;
+ const urls=[];
+ try{
+  process.env.EXPO_PUBLIC_API_URL='https://phone.example.invalid';
+  process.env.EXPO_PUBLIC_WEB_API_URL='http://localhost:8000';
+  globalThis.fetch=async url=>{urls.push(url);return new Response('{}',{headers:{'Content-Type':'application/json'}});};
+  globalThis.document={};
+  await apiRequest('/healthz');
+  delete globalThis.document;
+  await apiRequest('/healthz');
+  assert.deepEqual(urls,['http://localhost:8000/healthz','https://phone.example.invalid/healthz']);
+ }finally{
+  if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;
+  if(previousWeb===undefined)delete process.env.EXPO_PUBLIC_WEB_API_URL;else process.env.EXPO_PUBLIC_WEB_API_URL=previousWeb;
+  if(previousApi===undefined)delete process.env.EXPO_PUBLIC_API_URL;else process.env.EXPO_PUBLIC_API_URL=previousApi;
+  globalThis.fetch=previousFetch;
+ }
+});

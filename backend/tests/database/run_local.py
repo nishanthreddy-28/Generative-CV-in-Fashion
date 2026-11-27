@@ -54,7 +54,7 @@ def main():
                     subprocess.run(['psql','-X','-q','-v','ON_ERROR_STOP=1','-h',temporary,'-d','postgres','-f',str(path)],check=True)
             environment['DD_TEST_REGISTRATION_PROTOCOL']='1'
             return subprocess.call([sys.executable,'-m','pytest','-q','tests/test_registration_database.py',
-                                    'tests/test_direct_auth_database.py','tests/test_onboarding_database.py',
+                                    'tests/test_direct_auth_database.py','tests/test_onboarding_database.py','tests/test_pose_database.py','tests/test_ml_session_database.py',
                                     'tests/test_personalization_database.py','tests/test_wardrobe_duplicates_database.py','tests/test_wardrobe_gallery_database.py','tests/test_outfit_duplication_database.py'],cwd=ROOT/'backend',env=environment)
         finally:
             if started:

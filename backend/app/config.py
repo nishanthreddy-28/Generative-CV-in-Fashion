@@ -5,6 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore", hide_input_in_errors=True)
+    ml_receipt_signing_key: SecretStr | None = None
+    ml_worker_url: str | None = None
+    ml_worker_token: SecretStr | None = None
     local_preview: bool = False
     supabase_url: str
     supabase_publishable_key: SecretStr
@@ -14,6 +17,24 @@ class Settings(BaseSettings):
     jwks_ttl_seconds: int = Field(default=300, ge=1, le=600)
     database_foundation_enabled: bool = False
     api_cors_origins: list[str] = []
+
+    @field_validator("ml_worker_url")
+    @classmethod
+    def private_worker_url(cls, value):
+        if value is None:
+            return value
+        parsed = urlparse(value)
+        local = parsed.scheme == "http" and parsed.hostname in ("127.0.0.1", "::1", "localhost")
+        if (not local and parsed.scheme != "https") or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path not in ("", "/"):
+            raise ValueError("ML_WORKER_URL requires HTTPS or direct loopback HTTP")
+        return value.rstrip("/")
+
+    @field_validator("ml_worker_token","ml_receipt_signing_key")
+    @classmethod
+    def private_worker_token(cls, value):
+        if value is not None and len(value.get_secret_value()) < 32:
+            raise ValueError("ML_WORKER_TOKEN requires at least 32 characters")
+        return value
 
     @field_validator("api_cors_origins")
     @classmethod

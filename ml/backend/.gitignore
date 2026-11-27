@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+storage/images/
+storage/*.db
+storage/*.db-wal
+storage/*.db-shm
+eval/images/
+eval/results.json
+.venv/
+storage/phase3_model/
+storage/phase3_features/
+storage/phase3_eval/
+storage/phase3_*verification.json
+.env
+storage/tryon-env/
+storage/tryon-source/
+storage/tryon-weights/
+storage/tryon-cache/
+storage/tryon-jobs/
+storage/tryon-sample.png
+storage/camera-verification.png
+storage/avatar-verification.png
+storage/tryon-evaluation/
+storage/space-bundle*/
+
+# Local benchmark datasets, individual annotations and reports containing photos.
+# Public aggregate results and plots live in EVALUATION.md and docs/evaluation-assets/.
+/storage/benchmarks/
+storage/mask-cache/
+storage/provider-evaluation/
+storage/stylist-comparison/

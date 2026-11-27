@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 import httpx
@@ -45,6 +46,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
                        allow_headers=["Authorization", "Content-Type"])
 
+    @app.middleware("http")
+    async def log_service_failures(request: Request, call_next):
+        response = await call_next(request)
+        if response.status_code >= 500 or (request.url.path=="/ml/garments/analyse-upload" and response.status_code>=400):
+            logging.getLogger(__name__).warning("Request failed: %s %s HTTP %s", request.method, request.scope.get("route").path if request.scope.get("route") else "unmatched", response.status_code)
+        return response
+
     @app.exception_handler(Unauthorized)
     async def unauthorized(request: Request, error: Unauthorized):
         return JSONResponse({"detail": "Valid authentication required."}, status_code=401, headers={"WWW-Authenticate": "Bearer"})
@@ -72,6 +80,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(tryon_router)
     app.include_router(account_router)
     app.include_router(dashboard_router)
+    from .ml import router as ml_router
+    app.include_router(ml_router)
+    from .ml_wardrobe import router as ml_wardrobe_router
+    app.include_router(ml_wardrobe_router)
+    from .prepared_garments import router as prepared_router
+    app.include_router(prepared_router)
+    from .ml_sessions import router as ml_sessions_router
+    app.include_router(ml_sessions_router)
+    from .ml_tryon import router as ml_tryon_router
+    app.include_router(ml_tryon_router)
     app.include_router(onboarding_router)
     app.include_router(personalization_router)
     return app

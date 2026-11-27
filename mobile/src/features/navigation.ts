@@ -2,7 +2,7 @@
 export const guestScreens = ["index", "login", "signup"] as const;
 export const publicScreens = ["forgot-password", "auth-confirm", "reset-password", "oauth-callback", "privacy", "+not-found"] as const;
 export const personalScreens = [
-  "dashboard", "profile/index", "profile/body", "profile/onboarding", "preferences", "personalization", "settings",
+  "stylist", "body-analysis", "dashboard", "profile/index", "profile/body", "profile/onboarding", "preferences", "personalization", "settings",
   "wardrobe/index", "wardrobe/add", "wardrobe/[id]", "catalog/index", "catalog/[id]",
   "outfits/index", "outfits/new", "outfits/[id]", "recommendations", "recommendations/saved", "try-on",
 ] as const;
@@ -14,10 +14,17 @@ export function routeAccess(ready:boolean, role:"user"|"admin"|undefined, deleti
 }
 export const appDestinations = [
  {label:"Home",path:"/dashboard"}, {label:"Wardrobe",path:"/wardrobe"},
- {label:"Catalog",path:"/catalog"}, {label:"Outfits",path:"/outfits"}, {label:"Account",path:"/settings"},
+ {label:"Catalog",path:"/catalog"}, {label:"Outfits",path:"/outfits"}, {label:"AI Stylist",path:"/stylist"}, {label:"Try-On",path:"/try-on"}, {label:"Account",path:"/settings"},
 ] as const;
+export const bottomDestinations=appDestinations.filter(item=>item.path!=="/catalog"&&item.path!=="/settings"&&item.path!=="/outfits");
 export function activeDestination(path:string) {
- if(path.startsWith('/profile') || path==='/preferences' || path==='/personalization')return '/settings';
- if(path.startsWith('/recommendations') || path==='/try-on')return '/outfits';
+ if(path.startsWith('/profile') || path==='/preferences' || path==='/personalization' || path==='/body-analysis')return '/settings';
+ if(path.startsWith('/recommendations'))return '/outfits';
  return appDestinations.find(item=>path===item.path || path.startsWith(item.path+'/'))?.path;
+}
+
+export function navigationParent(path:string):"/outfits"|"/wardrobe"|"/settings"|undefined{
+ if(path.startsWith("/outfits/"))return "/outfits";
+ if(path==="/outfits")return "/wardrobe";
+ if(path==="/body-analysis")return "/settings";
 }

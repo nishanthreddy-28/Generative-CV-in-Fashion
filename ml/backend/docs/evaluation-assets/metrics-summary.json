@@ -1,0 +1,359 @@
+{
+  "report_date": "2026-11-23",
+  "version": 1,
+  "scope": "Exploratory component evaluation; aggregate results only",
+  "selection_seed": 20261122,
+  "dataset_revisions": {
+    "polyvore": "22cc0c748c293a598e1df561a76abe96273cb76a",
+    "deepfashion": "886fbe26ceac0b2bc8195d606e3fde641e7157f8"
+  },
+  "classification": {
+    "n": 500,
+    "correct": 254,
+    "accuracy": 0.508,
+    "accuracy_ci95": [
+      0.46428581664185803,
+      0.5515921939107572
+    ],
+    "top3_accuracy": 0.85,
+    "macro_f1_mapped_classes": 0.5509646692674071,
+    "constant_majority_baseline": 0.112,
+    "scope": "External zero-shot label audit, nine mapped categories, 23 possible outputs. Mirror has no official split column. No local training; upstream pretraining overlap cannot be verified.",
+    "per_class": {
+      "Jeans": {
+        "precision": 0.4268292682926829,
+        "recall": 0.625,
+        "f1-score": 0.5072463768115942,
+        "support": 56.0
+      },
+      "Dress": {
+        "precision": 0.8947368421052632,
+        "recall": 0.9107142857142857,
+        "f1-score": 0.9026548672566371,
+        "support": 56.0
+      },
+      "Shorts": {
+        "precision": 1.0,
+        "recall": 0.30357142857142855,
+        "f1-score": 0.4657534246575342,
+        "support": 56.0
+      },
+      "Sweater": {
+        "precision": 0.84,
+        "recall": 0.375,
+        "f1-score": 0.5185185185185185,
+        "support": 56.0
+      },
+      "Trousers": {
+        "precision": 0.7,
+        "recall": 0.125,
+        "f1-score": 0.21212121212121213,
+        "support": 56.0
+      },
+      "Skirt": {
+        "precision": 0.9090909090909091,
+        "recall": 0.36363636363636365,
+        "f1-score": 0.5194805194805194,
+        "support": 55.0
+      },
+      "Cardigan": {
+        "precision": 0.6805555555555556,
+        "recall": 0.8909090909090909,
+        "f1-score": 0.7716535433070866,
+        "support": 55.0
+      },
+      "Leggings": {
+        "precision": 0.5,
+        "recall": 0.09090909090909091,
+        "f1-score": 0.15384615384615385,
+        "support": 55.0
+      },
+      "Jumpsuit": {
+        "precision": 0.9245283018867925,
+        "recall": 0.8909090909090909,
+        "f1-score": 0.9074074074074074,
+        "support": 55.0
+      },
+      "micro avg": {
+        "precision": 0.7298850574712644,
+        "recall": 0.508,
+        "f1-score": 0.5990566037735849,
+        "support": 500.0
+      },
+      "macro avg": {
+        "precision": 0.7639712085479115,
+        "recall": 0.5084054834054834,
+        "f1-score": 0.5509646692674071,
+        "support": 500.0
+      },
+      "weighted avg": {
+        "precision": 0.7640546286832282,
+        "recall": 0.508,
+        "f1-score": 0.550667611373464,
+        "support": 500.0
+      }
+    }
+  },
+  "recommendation": {
+    "fitb": {
+      "n": 500,
+      "correct": 111,
+      "accuracy": 0.222,
+      "accuracy_ci95": [
+        0.18776935138162992,
+        0.26046978191499315
+      ],
+      "mrr": 0.5119999999999999,
+      "recall_at_2": 0.52,
+      "recall_at_3": 0.772,
+      "ndcg_at_3": 0.5360170665642944,
+      "random_chance_accuracy": 0.25,
+      "random_chance_mrr": 0.5208333333333334
+    },
+    "compatibility": {
+      "n": 1000,
+      "positive": 500,
+      "negative": 500,
+      "auc": 0.47563599999999995,
+      "auc_ci95_case_bootstrap": [
+        0.4394696,
+        0.5078442999999999
+      ],
+      "average_precision": 0.49364326876827647,
+      "accuracy": 0.499,
+      "accuracy_ci95": [
+        0.468073488750724,
+        0.529934164766247
+      ],
+      "balanced_accuracy": 0.499,
+      "f1": 0.08743169398907104,
+      "confusion_matrix_labels_0_1": [
+        [
+          475,
+          25
+        ],
+        [
+          476,
+          24
+        ]
+      ],
+      "validation_n": 200,
+      "validation_selected_threshold": 0.14122578501701355,
+      "validation_balanced_accuracy": 0.52,
+      "constant_majority_baseline": 0.5,
+      "chance_auc": 0.5
+    },
+    "scope": "CIR component, official four-choice FITB and compatibility labels. Dataset item text replaces app's wardrobe metadata text; not end-to-end personalized or chatbot accuracy.",
+    "text_protocol": "title + url_name + description; collapse whitespace; semantic category fallback only for empty text; LaBSE normalized as app",
+    "model_manifest": {
+      "repo": "fkuyumcu/OutfitTransformer-labse",
+      "revision": "7eaf8d92beb709db20498614b1bc04e43f08136a",
+      "sha256": "bb5aad51daa663bc45c489d9711b69661ed75009df267c79be380df4b8614823",
+      "text_repo": "sentence-transformers/LaBSE",
+      "text_revision": "836121a0533e5664b21c7aacc5d22951f2b8b25b",
+      "resnet_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+      "image_preprocessing": "torchvision ResNet18 IMAGENET1K_V1 transforms",
+      "ranking": "mean leave-one-out cosine; adaptation, not published CP benchmark"
+    }
+  },
+  "background_removal": {
+    "n": 100,
+    "scope": "Garment-only product photos; not garment extraction from a donor person. Official cloth masks thresholded at 128; alpha thresholded at 128. Macro mean across 100 images.",
+    "threshold": 128,
+    "provider": "CPUExecutionProvider",
+    "iou": {
+      "mean": 0.9629694544006199,
+      "median": 0.993741995602617,
+      "bootstrap_ci95": [
+        0.9334613419837928,
+        0.9829950440081855
+      ]
+    },
+    "dice": {
+      "mean": 0.9739462343109895,
+      "median": 0.9968611757657768,
+      "bootstrap_ci95": [
+        0.9480199266518334,
+        0.9910618892385031
+      ]
+    },
+    "all_foreground_baseline_iou": {
+      "mean": 0.44159609476725264,
+      "median": 0.4525845845540365,
+      "bootstrap_ci95": [
+        0.4238209619522095,
+        0.4581968218485514
+      ]
+    },
+    "model_sha256": "5600024376f572a557870a5eb0afb1e5961636bef4e1e22132025467d0f03333"
+  },
+  "tryon_pilot": {
+    "n": 20,
+    "scope": "20-case paired reconstruction pilot; original person plus their target top; FASHN masking enabled to erase original clothing. This differs from the app default segmentation-free path. Not an unpaired try-on accuracy, fit guarantee or published full-test result.",
+    "steps": 50,
+    "seed": 42,
+    "category": "tops",
+    "garment_photo_type": "flat-lay",
+    "segmentation_free": false,
+    "guidance_scale": 1.5,
+    "skip_cfg_last_n_steps": 1,
+    "resolution": [
+      768,
+      1024
+    ],
+    "ssim": {
+      "mean": 0.8784705490060262,
+      "median": 0.8757725867300337,
+      "bootstrap_ci95": [
+        0.858810334988818,
+        0.8979467925969953
+      ]
+    },
+    "lpips": {
+      "mean": 0.14348191097378732,
+      "median": 0.14306548982858658,
+      "bootstrap_ci95": [
+        0.12813685586676002,
+        0.15794150440022348
+      ]
+    },
+    "agnostic_baseline_ssim": {
+      "mean": 0.8146130396454152,
+      "median": 0.8151168392040656,
+      "bootstrap_ci95": [
+        0.7952965727898358,
+        0.8338288479591542
+      ]
+    },
+    "agnostic_baseline_lpips": {
+      "mean": 0.40787886679172514,
+      "median": 0.4274121820926666,
+      "bootstrap_ci95": [
+        0.3836426194012165,
+        0.43025317423045634
+      ]
+    },
+    "garment_crop_ssim": {
+      "mean": 0.6542576613290392,
+      "median": 0.699845525521366,
+      "bootstrap_ci95": [
+        0.585197277612211,
+        0.7221947803230402
+      ]
+    },
+    "garment_crop_lpips": {
+      "mean": 0.3599261589348316,
+      "median": 0.35277287662029266,
+      "bootstrap_ci95": [
+        0.32483510544523597,
+        0.3974025126732885
+      ]
+    },
+    "garment_crop_baseline_ssim": {
+      "mean": 0.5670398365645417,
+      "median": 0.5742763159455129,
+      "bootstrap_ci95": [
+        0.4993551162233233,
+        0.6346261908666287
+      ]
+    },
+    "garment_crop_baseline_lpips": {
+      "mean": 0.7607457399368286,
+      "median": 0.7550548315048218,
+      "bootstrap_ci95": [
+        0.7160350707173347,
+        0.8100755788385867
+      ]
+    },
+    "model_sha256": "d6cd38286885bc29fa487ea9383f80ffeb95862e7747c630d42c5d3c05bdd35a",
+    "metric_details": "SSIM: skimage default uniform 7x7 windows, RGB mean, data_range 255. LPIPS: AlexNet v0.1 learned weights, inputs [-1,1]. Output and captured agnostic input Lanczos resized to 768x1024. Paired case bootstrap 2000 resamples."
+  },
+  "classifier_provenance": {
+    "repo": "Marqo/marqo-fashionSigLIP",
+    "cached_revision": "c56244cc94f92419e8369fa71efdaf403b124ce8",
+    "cached_files_sha256": {
+      "open_clip_config.json": "bf024fad1091ed3280e48f8ff2dcdf68785abaa56dad02588c0feed1a6529c42",
+      "open_clip_model.safetensors": "88908200434959fa3154ef79d408aac33341e8797fe5ca8ca6f0463aab32e6b3"
+    },
+    "mode": "offline frozen cache; no training or prompt edits"
+  },
+  "inference_runtime": {
+    "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+    "packages": {
+      "torch": "2.11.0+cu128",
+      "torchvision": "0.26.0+cu128",
+      "open_clip_torch": "3.3.0",
+      "sentence-transformers": "6.2.0",
+      "transformers": "5.23.0",
+      "numpy": "2.5.4",
+      "scikit-learn": "1.9.1",
+      "pyarrow": "26.0.1"
+    },
+    "torch_runtime": "2.11.0+cu128",
+    "cuda": "12.8",
+    "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "protocol_sha256": "653570051a1df2f0ac32c34a54e4c195d5959449ea39c6b6f44a77bba81db86b",
+    "runner_sha256": "31d1883179d59c22e26acc560ec8da971e9236209e5dc53988036074bae683d5"
+  },
+  "image_metric_runtime": {
+    "generation_and_segmentation_runner_sha256": "3b04c8be6149ba11128da91802eeddb9afdd8e2830ebbed87e89aa9d2e5cb997",
+    "segmentation_packages": {
+      "rembg": "2.0.84",
+      "onnxruntime": "1.30.0",
+      "pillow": "12.3.0",
+      "numpy": "2.5.3"
+    },
+    "metric_packages": {
+      "lpips": "0.1.4",
+      "scikit-image": "0.26.0",
+      "torch": "2.14.0",
+      "torchvision": "0.29.0"
+    }
+  },
+  "verification": {
+    "parity_verification.json": {
+      "passed": true,
+      "compatibility_cases": 12,
+      "fitb_cases": 12,
+      "compatibility_max_abs_error": 1.4901161193847656e-08,
+      "fitb_max_abs_error": 6.705522537231445e-08,
+      "test": "Saved runner outputs vs actual PretrainedScorer.score and retrieve_scores using identical frozen features",
+      "scope": "Validates scoring parity; not evidence of model accuracy or metadata equivalence"
+    },
+    "result_validation.json": {
+      "passed": true,
+      "checks": [
+        "All 500 classification labels and product IDs match frozen selection",
+        "Classification top-1 and top-3 independently reconstructed",
+        "All 500 FITB answers checked against original question/outfit references",
+        "FITB accuracy and MRR independently reconstructed",
+        "All 1200 compatibility labels checked against original source lines",
+        "Compatibility threshold reconstructed from validation only",
+        "Test AUC and balanced accuracy independently reconstructed"
+      ]
+    },
+    "classification_image_alignment.json": {
+      "passed": true,
+      "checked": 500,
+      "source_rows": 52591,
+      "batch_lengths": [
+        367,
+        512
+      ],
+      "check": "Every selected image byte hash, item_ID and category label matches the actual source parquet row"
+    },
+    "image_metric_sanity.json": {
+      "passed": true,
+      "identical_image_lpips": 0.0,
+      "identical_image_ssim": 1.0,
+      "lpips_version": "0.1.4",
+      "torch": "2.14.0+cpu"
+    }
+  },
+  "tryon_mask_audit": {
+    "n": 20,
+    "method": "Fraction of GT upper-garment labels 5/6/7 covered by exact RGB(127,127,127) fill in the captured agnostic input; binary fill mask projected with nearest-neighbour. Original grey pixels can slightly overestimate coverage. No case is excluded.",
+    "mean_coverage": 0.998216444818269,
+    "minimum_coverage": 0.9888568870478841
+  }
+}

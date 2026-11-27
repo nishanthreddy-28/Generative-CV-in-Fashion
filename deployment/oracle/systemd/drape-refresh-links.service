@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh Drape and Drop temporary testing URLs after boot
+After=network-online.target drape-api-tunnel.service drape-web-tunnel.service drape-expo-tunnel.service
+Wants=network-online.target drape-api-tunnel.service drape-web-tunnel.service drape-expo-tunnel.service
+[Service]
+Type=oneshot
+ExecStart=/opt/drape-drop/api-venv/bin/python /usr/local/libexec/drape-refresh-links.py
+TimeoutStartSec=360
+UMask=0077
+[Install]
+WantedBy=multi-user.target

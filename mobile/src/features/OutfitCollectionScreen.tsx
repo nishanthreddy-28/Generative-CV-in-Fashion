@@ -1,3 +1,6 @@
+import {GeneratedLooks} from "./GeneratedLooks";
+import {WardrobeImage} from "../components/WardrobeImage";
+import {groupSavedOutfits} from "./outfitGroups";
 import { Link, useFocusEffect } from "expo-router";
 import { colors, typography } from "../theme/tokens";
 import { useCallback, useState } from "react";
@@ -19,10 +22,12 @@ export function OutfitCollectionScreen() {
   const [loading,setLoading]=useState(false);const [error,setError]=useState("");
   const [validation,setValidation]=useState("");
   const [filtersOpen,setFiltersOpen]=useState(false);
+  const [showCopies,setShowCopies]=useState(false);
+  const [tab,setTab]=useState<"saved"|"generated">("saved");
   const userId=session?.user.id;const key=JSON.stringify([userId,applied]);
   const visible=result?.key===key ? result : null;
   useFocusEffect(useCallback(()=>{
-    if(preview || !userId)return;
+    if(preview || !userId || tab!=="saved")return;
     const controller=new AbortController();setLoading(true);setError("");
     void loadOutfitPages(request,applied,pages,controller.signal)
       .then(page=>{if(!controller.signal.aborted)setResult({key,...page});})
@@ -34,7 +39,7 @@ export function OutfitCollectionScreen() {
       })
       .finally(()=>{if(!controller.signal.aborted)setLoading(false);});
     return ()=>controller.abort();
-  },[applied,key,pages,preview,userId,request]));
+  },[applied,key,pages,preview,userId,request,tab]));
   function apply(next:OutfitFilters) {
     try {outfitQuery(next);setApplied({...next,search:next.search.trim()});setPages(1);setValidation("");return true;}
     catch(e){setValidation(e instanceof Error ? e.message : "Invalid filters.");return false;}
@@ -44,8 +49,11 @@ export function OutfitCollectionScreen() {
       style={[ui.chip,draft[field]===value && ui.selected]} onPress={()=>setDraft(current=>({...current,[field]:value}))}>
       <Text style={ui.chipLabel}>{label}</Text>
     </Pressable>)}</View>;
-  return <Screen title="Saved outfits" subtitle="Create, edit, and revisit your outfits.">
+  return <Screen title="Your outfits" subtitle="Your created outfits and AI-generated looks, together.">
     <Gate preview={preview}>
+      <View style={ui.row}>{([["saved","Saved outfits"],["generated","Generated looks"]] as const).map(([value,label])=><Pressable key={value} accessibilityRole="tab" accessibilityState={{selected:tab===value}} onPress={()=>setTab(value)} style={[ui.chip,tab===value&&ui.selected]}><Text style={ui.chipLabel}>{label}</Text></Pressable>)}</View>
+      {tab==="generated"?<GeneratedLooks/>:<>
+
       <Link href="/outfits/new" style={ui.primaryLink}>+ Create outfit</Link>
       <Text style={ui.label}>Search outfit names</Text>
       <TextInput accessibilityLabel="Search outfits" placeholderTextColor={colors.muted} placeholder="Search by outfit name" style={ui.input} value={draft.search} maxLength={200}
@@ -72,16 +80,19 @@ export function OutfitCollectionScreen() {
       <ResourceState loading={loading} error={error} retry={()=>setApplied(current=>({...current}))} />
       {!loading && !error && visible?.items.length === 0 && <Notice title="No matching outfits"
         text="Create an outfit or adjust the filters." />}
-      {(visible?.items ?? []).map(item=><View key={item.id} style={ui.card}>
-        <Text style={typography.eyebrow}>{(item.occasion || "SAVED LOOK").toUpperCase()}</Text>
-        <Text style={[typography.editorial,{fontSize:24,lineHeight:30}]}>{item.name}</Text>
-        <Text style={ui.body}>{item.items?.length ?? item.garmentIds.length} pieces</Text>
-        {Boolean(item.description) && <Text style={ui.body}>{item.description}</Text>}
-        <RouteLink to={`/outfits/${encodeURIComponent(item.id)}`} preview={preview}>View and edit outfit →</RouteLink>
-      </View>)}
+      <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showCopies}} onPress={()=>setShowCopies(value=>!value)} style={ui.chip}><Text style={ui.chipLabel}>{showCopies?"✓ ":""}Show duplicate copies</Text></Pressable>
+      {groupSavedOutfits(visible?.items??[]).flatMap(group=>(showCopies?group.copies:[group.outfit]).map(item=><View key={item.id} style={[ui.card,{borderRadius:20,gap:12,padding:16}]}>
+        <View style={{flexDirection:"row",gap:8}}>{(item.items??[]).slice(0,4).map(piece=><View key={piece.source+piece.garmentId} style={{flex:1,maxWidth:"32%"}}><WardrobeImage id={piece.garmentId} source={piece.source} label={item.name}/></View>)}</View>
+        <Text style={typography.eyebrow}>{(item.occasion||"SAVED LOOK").toUpperCase()}</Text>
+        <Text style={[typography.editorial,{fontSize:23,lineHeight:29}]} numberOfLines={2}>{item.name}</Text>
+        <Text style={ui.body}>{item.items?.length??item.garmentIds.length} pieces{!showCopies&&group.copies.length>1?` · ${group.copies.length} saved copies`:""}</Text>
+        {!!item.description&&<Text style={ui.body} numberOfLines={3}>{item.description}</Text>}
+        <RouteLink to={`/outfits/${encodeURIComponent(item.id)}`} preview={preview}>View look →</RouteLink>
+      </View>))}
       {visible?.nextCursor && <Button label="Load more outfits" variant="secondary" disabled={loading || Boolean(error)} onPress={()=>setPages(n=>n+1)} />}
       {visible && !visible.nextCursor && !loading && !error && visible.items.length>0 && <Text style={ui.body}>You’ve reached the end of your outfits.</Text>}
       {pages>1 && <Button label="Back to first page" variant="secondary" disabled={loading} onPress={()=>setPages(1)} />}
+      </>}
     </Gate>
   </Screen>;
 }
